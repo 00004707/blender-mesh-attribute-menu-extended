@@ -7,6 +7,36 @@
 
 but kinda works so feel free to test it
 
+*Note: blender spreadsheet does not show the string values. The addon sets the values correctly.*
+
+### Example use cases
+
+<details> <summary>Use and create Shape Keys in Geometry Nodes</summary>
+    Convert Shape Keys to Vector Attributes and use Set Position node to use the shape key
+    <br>
+	Create Shape Key Offset Vector Attributes to use with *Offset* input of Set Position node
+</details>
+
+<details> <summary>Create Sculpt Mask or Face Sets in Geometry Nodes</summary>
+    Convert float vertex attributes to sculpt mode mask
+    <br>
+    Convert integer vertex attributes to face sets
+</details>
+
+<details> <summary>Use edge seams in Geometry Nodes</summary>
+    Split mesh on UV islands by converting edge seams into edge boolean attribute
+</details>
+
+<details> <summary>Set color attribute to single face corner</summary>
+    Using attribute assignment menu
+</details>
+
+<details> <summary>Create custom split normals in Geometry Nodes</summary>
+    TODO
+</details>
+
+
+
 ### Set Attribute Values For selection in Edit Mode
 
 ![Attribute Set](https://i.imgur.com/c8e9oF7.png)
@@ -32,7 +62,7 @@ but kinda works so feel free to test it
 
 ![Attribute Set](https://i.imgur.com/5QfmyCo.png)
 
-* Create data from 35 mesh data, including: Shape Keys, Edge Seam, Selection, Creases and more
+* Create attribute from 35 mesh data, including: Shape Keys, Edge Seam, Selection, Creases and more
 * Support for any source domain, eg.: Mean Bevel for Vertices and edges
 * Auto convert attribute upon creation
 
