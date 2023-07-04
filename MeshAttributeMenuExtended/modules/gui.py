@@ -137,8 +137,8 @@ def attribute_assign_panel(self, context):
                     elif dt == "BOOLEAN":
                         sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select True")
                         dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect True")
-                        dsel_op.bool_condition_enum = sel_op.bool_condition_enum = "NEQ"
-                        dsel_op.val_bool = sel_op.val_bool = False
+                        dsel_op.bool_condition_enum = sel_op.bool_condition_enum = "EQ"
+                        dsel_op.val_bool = sel_op.val_bool = True
                         sel_op.deselect = False
                         dsel_op.deselect = True
                         layout.prop(prop_group, "val_bool", text=f"{friendly_domain_name} Boolean Value")
@@ -193,4 +193,3 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
-    

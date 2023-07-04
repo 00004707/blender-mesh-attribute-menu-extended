@@ -198,43 +198,62 @@ class CreateAttribFromData(bpy.types.Operator):
         # Check if the user has selected input data if applicable to specific sources:
         if self.domain_data_type in ["FACE_FROM_FACE_MAP"]:
             if self.enum_face_maps == 'NULL':
-                self.report({'ERROR'}, f"No Face Map Selected. Nothing done")
+                if not self.batch_convert_enabled:
+                    self.report({'ERROR'}, f"No Face Map Selected. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No Face Maps. Nothing done")
+                
                 return False
+                
     
         # material slots
         if self.domain_data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"]:
             if self.enum_material_slots == 'NULL':
-                self.report({'ERROR'}, f"No material slot selected. Nothing done")
+                if not self.batch_convert_enabled:
+                    self.report({'ERROR'}, f"No material slot selected. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No Material slots. Nothing done")
+
                 return False
     
         # materials
         if self.domain_data_type in ["FACE_IS_MATERIAL_ASSIGNED"]:
             if self.enum_materials == 'NULL':
-                self.report({'ERROR'}, f"No required data to perform this operation. Nothing done")
+                if not self.batch_convert_enabled:
+                    self.report({'ERROR'}, f"No Materials assigned. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No Materials. Nothing done")
+                
                 return False
     
         # shape keys
         if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
-            if self.batch_convert_enabled and not self.batch_convert_sk_offset_src_toggle:
-                if self.enum_shape_keys_offset_source == 'NULL':
-                    self.report({'ERROR'}, f"Source shape key to get offset from == invalid. Nothing done")
-                    return False
+            if self.batch_convert_enabled:
+                if not self.batch_convert_sk_offset_src_toggle and self.enum_shape_keys_offset_source == 'NULL':
+                        self.report({'ERROR'}, f"Source shape key to get offset from is invalid. Nothing done")
+                        return False
 
-            if self.batch_convert_enabled and self.batch_convert_sk_offset_src_toggle:
-                if self.enum_shape_keys == 'NULL':
-                    self.report({'ERROR'}, f"Target shape key to get offset from == invalid. Nothing done")
+                if self.batch_convert_sk_offset_src_toggle and self.enum_shape_keys == 'NULL':
+                    self.report({'ERROR'}, f"Target shape key to get offset from is invalid. Nothing done")
                     return False
+                
             
         if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION":
             if self.enum_shape_keys == 'NULL':
-                self.report({'ERROR'}, f"No shape key selected. Nothing done")
+                if not self.batch_convert_enabled:
+                    self.report({'ERROR'}, f"No shape key selected. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No shape keys. Nothing done")
                 return False
         
         # vertex groups
-        if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]:
+        if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]: # ???????????
             if self.enum_vertex_groups == 'NULL':
-                self.report({'ERROR'}, f"No vertex group selected. Nothing done")
+                if not self.batch_convert_enabled:
+                    self.report({'ERROR'}, f"No vertex group selected. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No vertex groups. Nothing done")
                 return False
 
         # invalid domain enum for multiple choices
@@ -272,25 +291,28 @@ class CreateAttribFromData(bpy.types.Operator):
 
         # Read prefixes and suffixes of automatic naming
         data_type = data.object_data_sources[self.domain_data_type].data_type
-        name = data.object_data_sources[self.domain_data_type].attribute_auto_name
+        
 
         # Single assignment to single attribute
         if etc.verbose_mode:
             print(f"Batch mode supported & enabled: {not (not data.object_data_sources[self.domain_data_type].batch_convert_support or not self.batch_convert_enabled) }")
         if not data.object_data_sources[self.domain_data_type].batch_convert_support or not self.batch_convert_enabled:
-
+            
             # Automatic name
+            
             if self.attrib_name == "":
+                name = data.object_data_sources[self.domain_data_type].attribute_auto_name
                 # this is dirty but it already gets the right data so...
-                # if mesh has no data "NULL" just pass the 0 value, it won't be used, checks if context requires them are done before
-                name = name.format(face_map=func.get_face_maps_enum(self, context)[int(self.enum_face_maps) if self.enum_face_maps != 'NULL' else 0][1],
-                                shape_key=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys) if self.enum_shape_keys != 'NULL' else 0][1], 
-                                shape_key_offset_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source) if self.enum_shape_keys_offset_source != 'NULL' else 0][1], 
-                                domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
-                                vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups) if self.enum_vertex_groups != 'NULL' else 0][1], 
-                                material=func.get_materials_enum(self, context)[int(self.enum_materials) if self.enum_materials != 'NULL' else 0][1], 
-                                material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots) if self.enum_material_slots != 'NULL' else 0][1]) 
-                
+                # If the enum is NONE then likely this option in GUI was hidden, and is not used. Checks for user input validity in given context were done before
+                name = name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                                face_map=func.get_face_maps_enum(self, context)[int(self.enum_face_maps)][1] if self.enum_face_maps != 'NULL' else None,
+                                shape_key=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
+                                shape_key_offset_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source)][1] if self.enum_shape_keys_offset_source != 'NULL' else None, 
+                                vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
+                                material=func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
+                                material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None) 
+            else:
+                name = self.attrib_name
             name = func.get_safe_attrib_name(obj, name) # naming the same way as vertex group will crash blender.
             attrib = obj.data.attributes.new(name=name, type=data_type, domain=self.target_attrib_domain)
             obj_data = func.get_mesh_data(obj, 
@@ -302,9 +324,13 @@ class CreateAttribFromData(bpy.types.Operator):
                                         fm_index=self.enum_face_maps,
                                         sel_mat=self.enum_materials,
                                         mat_index=self.enum_material_slots)
-            print(obj_data)
+            if etc.verbose_mode:
+                print(f"Creating attribute from data: {obj_data}")
             func.set_attribute_values(attrib, obj_data)
-            func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
+
+            # convert if enabled
+            if self.auto_convert:
+                func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
                                                domain=self.enum_attrib_converter_domain, 
                                                data_type=self.enum_attrib_converter_datatype)
 
@@ -318,37 +344,114 @@ class CreateAttribFromData(bpy.types.Operator):
         # "FACE_IS_MATERIAL_SLOT_ASSIGNED", 
         # "FACE_FROM_FACE_MAP"
         else:
-            for element in func.get_all_mesh_data_ids_of_type(obj,data_type):
-                # Setting custom name on this is disabled.
-                name = name.format(face_map=func.get_face_maps_enum(self, context)[element if self.enum_face_maps != 'NULL' else 0][1],
-                                shape_key=func.get_shape_keys_enum(self, context)[element if self.enum_shape_keys != 'NULL' else 0][1], 
-                                shape_key_offset_from=func.get_shape_keys_enum(self, context)[element if self.enum_shape_keys_offset_source != 'NULL' else 0][1], 
-                                domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
-                                vertex_group=func.get_vertex_groups_enum(self, context)[element if self.enum_vertex_groups != 'NULL' else 0][1], 
-                                material=func.get_materials_enum(self, context)[element if self.enum_materials != 'NULL' else 0][1], 
-                                material_slot=func.get_material_slots_enum(self, context)[element if self.enum_material_slots != 'NULL' else 0][1]) 
-                name = func.get_safe_attrib_name(obj, name) # better be safe than sorry
-                attrib = obj.data.attributes.new(name=name, type=data_type, domain=self.target_attrib_domain)
+            for element in func.get_all_mesh_data_ids_of_type(obj, self.domain_data_type):
+                
+                if etc.verbose_mode:
+                    print(f"Batch converting #{element}")
+
+                # case: check for each group if vertex is in it, or get vertex weight for each vertex group for each vertex
+                # each case, iterate over every vertex group
+                if self.domain_data_type in ['VERT_IS_IN_VERTEX_GROUP', "VERT_FROM_VERTEX_GROUP"]: 
+                    vertex_group_name = func.get_vertex_groups_enum(self, context)[element][1]
+
+                    vg_index = element
+                else:
+                    vertex_group_name = None
+                    vg_index = None
+
+
+                shape_key = None
+                shape_key_offset_from = None
+                sk_index = None
+                sk_offset_index = None
+
+                # case: get shape key position for each shape key 
+                if self.domain_data_type in ["VERT_SHAPE_KEY_POSITION"]:
+                    shape_key = func.get_shape_keys_enum(self, context)[element][1]
+                    sk_index = element
+                    if etc.verbose_mode:
+                        print(f"Source is shape key POS ({shape_key}), \nFROM: {func.get_shape_keys_enum(self, context)[element]} ")
+                      
+
+                # case: get shape key offset from specific one
+                elif self.domain_data_type == 'VERT_SHAPE_KEY_POSITION_OFFSET':
+
+                    # case: user wants to set offset from
+                    if self.batch_convert_sk_offset_src_toggle:
+                        shape_key = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source)][1]
+                        shape_key_offset_from = func.get_shape_keys_enum(self, context)[element][1]
+                        sk_index = self.enum_shape_keys
+                        sk_offset_index = element
+                    # case: user wants to set offset to
+                    else:
+                        shape_key = func.get_shape_keys_enum(self, context)[element][1]
+                        shape_key_offset_from = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1]
+                        sk_index = element
+                        sk_offset_index = self.enum_shape_keys_offset_source
+
+                    if etc.verbose_mode:
+                        print(f"Source is shape key offset, \n FROM: {func.get_shape_keys_enum(self, context)[element]} \n TO: {func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)]}")
+                        
+                # case: check for each material if it's assigned
+                #iterate over every material
+                if self.domain_data_type == "FACE_IS_MATERIAL_ASSIGNED":
+                    material = func.get_materials_enum(self, context)[element][1]
+                    sel_mat = element
+                else:
+                    material = None
+                    sel_mat = None
+
+                #case; check for each material slot if it's assigned
+                # iterate over every material slot
+                if self.domain_data_type == "FACE_IS_MATERIAL_SLOT_ASSIGNED":
+                    material_slot = func.get_material_slots_enum(self, context)[element][1]
+                    mat_index = element
+                else:
+                    material_slot = None
+                    mat_index = None
+
+                #case: check for each face map if it's assigned
+                #iterate over every face map
+                if self.domain_data_type == "FACE_FROM_FACE_MAP":
+                    face_map = func.get_face_maps_enum(self, context)[element][1]
+                    fm_index = element
+                else:
+                    face_map = None
+                    fm_index = None
+
+                # set name
+                if self.attrib_name == "":
+                    xname = data.object_data_sources[self.domain_data_type].attribute_auto_name
+                    xname = xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                                    face_map=face_map,
+                                    shape_key=shape_key, 
+                                    shape_key_offset_from=shape_key_offset_from, 
+                                    vertex_group=vertex_group_name, 
+                                    material=material, 
+                                    material_slot=material_slot) 
+                else:
+                    xname = self.attrib_name
+
+                xname = func.get_safe_attrib_name(obj, xname) # better be safe than sorry
+
+                attrib = obj.data.attributes.new(name=xname, type=data_type, domain=self.target_attrib_domain)
 
                 # There is a single exception: shape key offset, where user has to input from what this offset has to be
-                if self.batch_convert_sk_offset_src_toggle:
-                    offset_from = self.enum_shape_keys
-                    offset_to = element
-                else:
-                    offset_from = element
-                    offset_to = self.enum_shape_keys_offset_source
-
+                
                 obj_data = func.get_mesh_data(obj, 
                                         self.domain_data_type, 
                                         self.target_attrib_domain, 
-                                        vg_index=element,
-                                        sk_index=offset_from,
-                                        sk_offset_index=offset_to,
-                                        fm_index=element,
-                                        sel_mat=element,
-                                        mat_index=element)
+                                        vg_index=vg_index,
+                                        sk_index=sk_index,
+                                        sk_offset_index=sk_offset_index,
+                                        fm_index=fm_index,
+                                        sel_mat=sel_mat,
+                                        mat_index=mat_index)
                 func.set_attribute_values(attrib, obj_data)
-                func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
+
+                # convert if enabled
+                if self.auto_convert:
+                    func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
                                                domain=self.enum_attrib_converter_domain, 
                                                data_type=self.enum_attrib_converter_datatype)
 
@@ -367,8 +470,10 @@ class CreateAttribFromData(bpy.types.Operator):
         batch_convert_support = False if self.domain_data_type == '' else data.object_data_sources[self.domain_data_type].batch_convert_support
 
         row = self.layout
-        if not (batch_convert_support and self.batch_convert_enabled):
-            row.prop(self, "attrib_name", text="Name")
+        # if not (batch_convert_support and self.batch_convert_enabled):
+        row.prop(self, "attrib_name", text="Name")
+        if self.attrib_name == '':
+            row.label(text="Using auto-generated name", icon='INFO')
 
         row.prop(self, "domain_data_type", text="Data")
         
@@ -379,19 +484,19 @@ class CreateAttribFromData(bpy.types.Operator):
         row.label(text="")
         
         # face maps
-        if self.domain_data_type in ["FACE_FROM_FACE_MAP"]:
+        if self.domain_data_type in ["FACE_FROM_FACE_MAP"] and not self.batch_convert_enabled:
             row.prop(self, "enum_face_maps", text="Face Map")
         
         # material slots
-        if self.domain_data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"]:
+        if self.domain_data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"] and not self.batch_convert_enabled:
             row.prop(self, "enum_material_slots", text="Material Slot")
         
         # materials
-        if self.domain_data_type in ["FACE_IS_MATERIAL_ASSIGNED"]:
+        if self.domain_data_type in ["FACE_IS_MATERIAL_ASSIGNED"] and not self.batch_convert_enabled:
             row.prop(self, "enum_materials", text="Material")
         
         # shape keys
-        if self.domain_data_type in ["VERT_SHAPE_KEY_POSITION_OFFSET", "VERT_SHAPE_KEY_POSITION"]:
+        if self.domain_data_type == "VERT_SHAPE_KEY_POSITION_OFFSET" or (self.domain_data_type == "VERT_SHAPE_KEY_POSITION" and not self.batch_convert_enabled):
             
             if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
@@ -408,7 +513,7 @@ class CreateAttribFromData(bpy.types.Operator):
                 row.prop(self, "enum_shape_keys", text="Shape Key")
                  
         # vertex groups
-        if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]:
+        if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.batch_convert_enabled:
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
             
         # convert all of type to attrib
@@ -656,10 +761,12 @@ class RemoveAllAttribute(bpy.types.Operator):
         attrib_names = [a.name for a in obj.data.attributes]
         
         for name in attrib_names:
+            if not func.get_is_attribute_valid(name) or name not in obj.data.attributes:
+                continue
+            
             a = obj.data.attributes[name]
             
-            if (func.get_is_attribute_valid(name) and
-                (self.bool_include_uvs if self.is_uvmap(a) else True) and 
+            if ((self.bool_include_uvs if self.is_uvmap(a) else True) and 
                 (self.bool_include_color_attribs if self.is_color_attrib(a) else True)):
                     if etc.verbose_mode:
                         print(f"Attribute removed - {a.name}: {a.domain}, {a.data_type}")
@@ -696,6 +803,8 @@ class ConvertToMeshData(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     append_to_current: bpy.props.BoolProperty(name="Append", default=False)
+
+    apply_to_first_shape_key: bpy.props.BoolProperty(name="Apply to first shape key too", default=True, description="With this disabled, it might produce result you did not expect")
 
     delete_if_converted: bpy.props.BoolProperty(name="Delete after conversion", default=False)
 
@@ -736,13 +845,16 @@ class ConvertToMeshData(bpy.types.Operator):
         data_target_data_type = data.object_data_targets[self.data_target].data_type
         data_target_compatible_domains = func.get_target_compatible_domains(self, context)
 
+        if etc.verbose_mode:
+            print(f"Converting attribute {src_attrib.name} to {self.data_target}")
+
         # Check for user input validity
         input_invalid = False
         if self.data_target == "TO_FACE_MAP_INDEX" and not len(obj.face_maps):
             self.report({'ERROR'}, "No Face Maps. Nothing done")
             input_invalid = True
 
-        elif self.data_target == "TO_MATERIAL_INDEX" and len(obj.material_slots):
+        elif self.data_target == "TO_MATERIAL_INDEX" and not len(obj.material_slots):
             self.report({'ERROR'}, "No material slots. Nothing done")
             input_invalid = True
 
@@ -755,22 +867,37 @@ class ConvertToMeshData(bpy.types.Operator):
         data_type_compatible = src_attrib_data_type == data_target_data_type
         
         attrib_to_convert = src_attrib
-        if not domain_compatible or data_type_compatible:
+        if not domain_compatible or not data_type_compatible:
+            if etc.verbose_mode:
+                print(f"Conversion required! Source: {src_attrib.data_type} in  {src_attrib.domain}. Target: {self.convert_to_domain} in {data_target_data_type}")
             new_attrib = obj.data.attributes.new(name="temp_remove_if_failed", type=src_attrib.data_type, domain=src_attrib.domain)
             new_attrib_name = new_attrib.name
+            if etc.verbose_mode:
+                print(f"Created temporary attribute {new_attrib_name}")
             func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib))
-            func.convert_attribute(self, obj, new_attrib_name, 'GENERIC', self.convert_to_domain, data_target_data_type)
-            attrib_to_convert = new_attrib
+            func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', self.convert_to_domain, data_target_data_type)
+            attrib_to_convert = obj.data.attributes[new_attrib_name]
+
+        if etc.verbose_mode:
+            print(f"Converting {attrib_to_convert.name} to {self.data_target}")
+
+        attribute_to_convert_name = attrib_to_convert.name
 
         # Set mesh data
-        func.set_mesh_data(obj, self.data_target, attrib_to_convert, face_map_name=self.attrib_name, vertex_group_name=self.attrib_name)
+        func.set_mesh_data(obj, self.data_target, 
+                           attrib_to_convert, 
+                           face_map_name=self.attrib_name, 
+                           vertex_group_name=self.attrib_name, 
+                           enable_auto_smooth=self.enable_auto_smooth, 
+                           apply_to_first_shape_key=self.apply_to_first_shape_key)
         
-        # post-conversion cleanup
-        if not domain_compatible or data_type_compatible:
-            obj.data.attributes.remove(new_attrib)
+        #post-conversion cleanup
+        if not domain_compatible or not data_type_compatible:
+            obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
 
+        # remove if user enabled
         if self.delete_if_converted:
-            obj.data.attributes.remove(src_attrib)
+            obj.data.attributes.remove(obj.data.attributes[src_attrib_name])
 
         obj.data.update()
 
@@ -793,6 +920,10 @@ class ConvertToMeshData(bpy.types.Operator):
 
         row = self.layout
         row.prop(self, "data_target", text="Target")
+
+        # TO avoid unexpected results
+        if self.data_target in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
+            row.prop(self, 'apply_to_first_shape_key')
 
         # Custom name for face maps and vertex groups
         if self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:

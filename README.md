@@ -35,7 +35,9 @@ but kinda works so feel free to test it
     TODO
 </details>
 
-
+<details> <summary>Store multiple sculpt mode masks</summary>
+    TODO
+</details>
 
 ### Set Attribute Values For selection in Edit Mode
 

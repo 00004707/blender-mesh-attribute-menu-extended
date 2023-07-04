@@ -19,6 +19,12 @@ def get_is_attribute_valid(attrib_name):
     Ignore non-editable, hidden or other invalid attributes.
     """
     forbidden_attribs = ['position', 'sharp_face' '.sculpt_face_set', 'edge_creases', 'material_index']
+    forbidden_attrib_prefixes = ['.' #technically the dot will negate all of below, but still
+                                  '.vs.',   # vertex selection in UVMap editor
+                                  '.es.',   # edge selection in UVMap editor
+                                  '.pn.'    # I don't know, something with polygons I guess, returns boolean
+    ]
+
     return not attrib_name.startswith(".") and attrib_name not in forbidden_attribs
 
 def get_valid_attributes(object):
@@ -42,9 +48,14 @@ def get_attrib_values(attribute):
     # Returns a list of same type variables as attribute data type
 
     """
-    value_attrib_name = get_attrib_value_propname(attribute)
 
+    value_attrib_name = get_attrib_value_propname(attribute)
     dt = attribute.data_type
+
+    if etc.verbose_mode:
+        print(f"Getting {attribute.name} values from prop: {value_attrib_name}, data type = {dt}" )
+
+    
     if dt == "FLOAT":
         a_vals = [0.0] * len(attribute.data)
         attribute.data.foreach_get(value_attrib_name, a_vals)
@@ -204,12 +215,17 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     return True
 
 def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
+        if etc.verbose_mode:
+            print(f"Converting attribute {attrib_name}")
         # Auto convert to different data type, if enabled in gui
         attrib = obj.data.attributes[attrib_name]
         if attrib is not None:
-            obj.data.attributes.active = attrib
-            print(obj.name)
-            print(obj.data.attributes.active)
+            # There is some issue with this below
+            #obj.data.attributes.active = attrib
+            # Will have to use active_index instead. There are hidden attributes, and when setting .active if fails! 
+            atrr_index = obj.data.attributes.keys().index(attrib_name)
+            obj.data.attributes.active_index = atrr_index
+
             if etc.verbose_mode:
                 print(f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}")
             bpy.ops.geometry.attribute_convert(mode=mode, domain=domain, data_type=data_type)
@@ -219,8 +235,7 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
 # ------------------------------------------
 # Mesh related
 
-#TODO rename to set_mesh_domain_attribute
-def set_domain_attr(obj, attribute_name:str, domain:str, values: list):
+def set_domain_attribute_values(obj, attribute_name:str, domain:str, values: list):
     """
     Sets values of attribute stored in domain like: edges[0].use_sharp 
     """
@@ -750,45 +765,105 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
     kwargs (if applicable)
     face_map_name           Name of the face map to create
     vertex_group_name       Name of the vertex group to create
+    enable_auto_smooth      bool
+    apply_to_first_shape_key    bool
     
     """
+
+    def set_visibility_helper(obj, a_vals):
+
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        bm.verts.ensure_lookup_table()
+        bm.edges.ensure_lookup_table()
+        bm.faces.ensure_lookup_table()
+        for i, val in enumerate(a_vals):
+            if src_attrib.domain == 'POINT':
+                vertex = bm.verts[i]
+                vertex.hide = val
+                for edge in vertex.link_edges:
+                    if a_vals[edge.verts[0].index] and a_vals[edge.verts[1].index]:
+                        edge.hide = val 
+                    else:
+                        edge.hide = not val
+                for face in vertex.link_faces:
+                    hide = val
+                    for v in face.verts:
+                        if not a_vals[v.index]:
+                            hide = not val
+                            break
+                    face.hide = hide
+            elif src_attrib.domain == 'EDGE':
+                edge = bm.edges[i]
+                edge.hide = val
+                for vert in edge.verts:
+                    vert.hide = val
+                for face in edge.link_faces:
+                    face.hide = val
+            elif src_attrib.domain == 'FACE':
+                face = bm.faces[i]
+                face.hide = val
+                for vert in edge.verts:
+                    vert.hide = val
+                for edge in face.edges:
+                    edge.hide = val
+        bm.to_mesh(obj.data)
+        bm.free()
+
+    a_vals = func.get_attrib_values(src_attrib)
+    if etc.verbose_mode:
+        print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
+    
+    src_attrib_name = src_attrib.name
+
         # BOOLEANS
     if data_target == "TO_VISIBLE":
         a_vals = [not val for val in a_vals]
-        func.set_domain_attr(obj, 'hide', src_attrib.domain, a_vals)
+        set_visibility_helper(obj, a_vals)
+        # func.set_domain_attribute_values(obj, 'hide', src_attrib.domain, a_vals)
 
     elif data_target == "TO_HIDDEN":
-        func.set_domain_attr(obj, 'hide', src_attrib.domain, a_vals)
+        set_visibility_helper(obj, a_vals)
 
     elif data_target == "TO_SELECTED":
-        func.set_domain_attr(obj, 'select', src_attrib.domain, a_vals) 
+        for i, val in enumerate(a_vals):
+            func.set_selection_of_mesh_domain(obj, src_attrib.domain, val)
 
     elif data_target == "TO_NOT_SELECTED":
-        a_vals = [not val for val in a_vals]
-        func.set_domain_attr(obj, 'select', src_attrib.domain, a_vals) 
+        for i, val in enumerate(a_vals):
+            func.set_selection_of_mesh_domain(obj, src_attrib.domain, not val)
     
     # -- EDGE ONLY
 
     elif data_target == "TO_SEAM":
-        func.set_domain_attr(obj, 'seam', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_SHARP":
-        func.set_domain_attr(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_FREESTYLE_MARK":
-        func.set_domain_attr(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
 
     # -- FACE ONLY
 
     elif data_target == "TO_FACE_MAP":
-        fm_name = "Face Map" if kwargs.face_map_name == '' else kwargs.face_map_name
+        fm_name = "Face Map" if kwargs["face_map_name"] == '' else kwargs["face_map_name"]
         fm = obj.face_maps.new(name=fm_name)
         
+        # create layer
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        bm.faces.layers.face_map.verify()
+        bm.to_mesh(obj.data)
+        bm.free()
+
+        # Set face map index to selected polygons in attribute (True)
         for i, val in enumerate(a_vals):
-            fm.data[i].value = val
+            if val:
+                obj.data.face_maps[0].data[i].value = fm.index
 
     elif data_target == "TO_FACE_SHADE_SMOOTH":
-        func.set_domain_attr(obj, 'use_smooth', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'use_smooth', src_attrib.domain, a_vals) 
         
     
     # INTEGER
@@ -797,24 +872,21 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
     elif data_target == "TO_SCULPT_MODE_FACE_SETS":
         # case: no face sets
         if ".sculpt_face_set" not in obj.data.polygon_layers_int:
-            obj.data.polygon_layers_int.new(".sculpt_face_set" )
+            obj.data.polygon_layers_int.new(name=".sculpt_face_set" )
 
         for i, val in enumerate(a_vals):
             obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
         
     elif data_target == "TO_MATERIAL_INDEX":
         # todo %
-        func.set_domain_attr(obj, 'material_index', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
     
     elif data_target == "TO_FACE_MAP_INDEX":
-        # TODO CREATE FACE MAP DATA IF DOES NOT EXIST or check if this does tho
+        for i, val in enumerate(a_vals):
+            # limit the value
+            val = max(0, min(val, len(obj.face_maps)-1))
+            obj.data.face_maps[0].data[i].value = val
 
-        for face in obj.data.polygons:
-            for i, val in enumerate(a_vals):
-                # limit the value
-                math.clamp(i, 0, len(obj.face_maps)-1)
-                obj.face_maps[i].data[face.index].value = i == face.index
-    
         
 
     # 8-BIT INTEGER
@@ -824,14 +896,30 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
 
     # -- VERTEX + EDGE
     elif data_target == "TO_MEAN_BEVEL_WEIGHT":
-        func.set_domain_attr(obj, 'bevel_weight', src_attrib.domain, a_vals) 
+        func.set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
 
+    
     elif data_target == "TO_MEAN_CREASE":
         if src_attrib.domain == 'POINT':
-            # TODO
-            pass
+            if bpy.app.version < (4,0):
+                
+                # Create layer if it does not exist:
+                if not len(obj.data.vertex_creases):
+                    bm = bmesh.new()
+                    bm.from_mesh(obj.data)
+                    bm.verts.layers.crease.verify()
+                    bm.to_mesh(obj.data)
+                    bm.free()
+                for i, val in enumerate(a_vals):
+                    obj.data.vertex_creases[0].data[i].value = val
+            else:
+                if not "vertex_creases" in obj.data.attributes:
+                    obj.data.attributes.new("vertex_creases", 'FLOAT', 'POINT')
+                
+                func.set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
+                
         elif src_attrib.domain == 'EDGE':
-            func.set_domain_attr(obj, 'crease', src_attrib.domain, a_vals) 
+            func.set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
 
     # -- VERTEX
     elif data_target == "TO_SCULPT_MODE_MASK":
@@ -852,8 +940,8 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         
         
     elif data_target == "TO_VERTEX_GROUP":
-        #TODO SAFE NAME OF VERTEX GROUPS TO AVOID CRASHING
-        vg = obj.vertex_groups.new(name=src_attrib_name + " Group" if kwargs.vertex_group_name == '' else kwargs.vertex_group_name)
+        name = func.get_safe_attrib_name(obj, src_attrib_name, 'Group')
+        vg = obj.vertex_groups.new(name=name if kwargs["vertex_group_name"] == '' else kwargs["vertex_group_name"])
         for vert in obj.data.vertices:
             weight = a_vals[vert.index]
             vg.add([vert.index], weight, 'REPLACE')
@@ -861,7 +949,14 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
 
     # VECTOR
     elif data_target == "TO_POSITION":
-        func.set_domain_attr(obj, 'co', src_attrib.domain, [val for vec in a_vals for val in vec]) 
+        func.set_domain_attribute_values(obj, 'co', src_attrib.domain, a_vals) 
+
+        # Apply to first shape key too, if enabled
+        if hasattr(obj.data.shape_keys, 'key_blocks') and kwargs["apply_to_first_shape_key"]:
+            sk = obj.data.shape_keys.key_blocks[obj.data.shape_keys.key_blocks.keys()[0]].data
+            for i, val in enumerate(a_vals):
+                sk[i].co = val
+
     
     elif data_target == "TO_SHAPE_KEY":
         sk = obj.shape_key_add(name=src_attrib_name)
@@ -870,7 +965,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
             sk.data[vert.index].co = l[vert.index]
 
     elif data_target == 'TO_SPLIT_NORMALS':
-        obj.data.use_auto_smooth = self.enable_auto_smooth
+        obj.data.use_auto_smooth = kwargs['enable_auto_smooth']
         if src_attrib.domain == 'POINT':
             obj.data.normals_split_custom_set_from_vertices([[vec[0],vec[1],vec[2]] for vec in a_vals])
         elif src_attrib.domain == 'CORNER':

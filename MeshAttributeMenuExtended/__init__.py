@@ -31,9 +31,16 @@ else:
     from .modules import ops
     #print("loaded")
 
+# Important notes 
+# Attribute access is prone to unexpected behaviour
+# Setting active attribute with obj.data.attributes.active, might work might not
+# it's best to get obj.data.attributes.keys().index("attribute_name") and set attribute with obj.data.attributes.active_index instead
+# "attrib = obj.data.attributes.active" makes "attrib" still dynamic - it changes depending on mode, context and even use of bpy.ops
+# the best way to handle those is by NAME, most and foremost, and then by index, secondly, if setting by name fails
+# idk how to use pointers here, this might have helped, if possible at all
+
 
 # TODO check creating of attribs from data on various blender versions
-# TODO Byte color is unsigned ints only!
 # TODO attrib offset from all shapekeys and also shapekey pos, perhaps same for vertex groups etc?
 # TODO overwrite them too
 # TODO get val under selected
@@ -46,6 +53,8 @@ else:
 # uvmap with name .vs.UVMap? ops line 649 and other staring with .vs.????
 # TODO To vertex group index assignment with static weight value 
 # TODO Cant set the active attribute in attribute_convert for some reason
+# TODO Batch name formatting by user input
+# creating new vertex creases might not be working in older versions of blender ~~ 3.1?
 # ------------------------------------------
 # registers
 

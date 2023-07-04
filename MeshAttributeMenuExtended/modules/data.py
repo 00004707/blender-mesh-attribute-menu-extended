@@ -15,7 +15,7 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
     val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
     val_string: bpy.props.StringProperty(name="String Value", default="")
-    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=False)
+    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
     val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
     val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
@@ -266,7 +266,7 @@ object_data_sources = {
     ),
 
     # EDGE ONLY
-    "INSERT_SEPARATOR_EDGE": None,
+    "INSERT_NEWLINE_EDGE": None,
 
     "EDGE_SEAM": ObjectDataSource(
         enum_gui_friendly_name="Edge Seam ⁻ ᵉᵈᵍᵉ",
@@ -534,7 +534,7 @@ object_data_sources = {
     ),
 
     # FACE CORNER ONLY
-    "INSERT_SEPARATOR_FACE_CORNER": None,
+    "INSERT_NEWLINE_FACE_CORNER": None,
     
     "SPLIT_NORMALS": ObjectDataSource(
         enum_gui_friendly_name="Split Normals ⁻ ᶜᵒʳⁿᵉʳ",
@@ -635,7 +635,7 @@ ObjectDataTarget = namedtuple("MeshDataSource", [
 # NONE, FORMAT DOES NOT PLAY NICE WITH ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ STRINGS
 object_data_targets = {
 
-    # POINT EDGE FACE
+    #POINT EDGE FACE
     "TO_VISIBLE": ObjectDataTarget(
         enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
         enum_gui_description="Convert this attribute to visible in edit mode",
@@ -676,8 +676,8 @@ object_data_targets = {
             unsupported_from_blender_ver=None,
         ),
 
-    # VERTEX EDGE
-    "INSERT_NEWLINE_VE": None,  
+    # # VERTEX EDGE
+    # "INSERT_NEWLINE_VE": None,  
 
     
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
