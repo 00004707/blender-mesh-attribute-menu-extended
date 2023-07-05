@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 1),
+    "version": (0, 1, 0),
     "blender": (3, 5, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
@@ -41,8 +41,7 @@ else:
 
 
 # TODO check creating of attribs from data on various blender versions
-# TODO attrib offset from all shapekeys and also shapekey pos, perhaps same for vertex groups etc?
-# TODO overwrite them too
+# TODO overwrite on creating attributes from data option
 # TODO get val under selected
 # TODO check if attrib is get by name if edit mode was switched for each op
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
@@ -50,7 +49,6 @@ else:
 # TODO new data type in 3.6 INT32_2D 2D Integer Vector
 # TODO from material slot id
 # TODO add to current SM
-# uvmap with name .vs.UVMap? ops line 649 and other staring with .vs.????
 # TODO To vertex group index assignment with static weight value 
 # TODO Cant set the active attribute in attribute_convert for some reason
 # TODO Batch name formatting by user input

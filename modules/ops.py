@@ -959,8 +959,8 @@ class CopyAttributeToSelected(bpy.types.Operator):
     bl_description = "Copies attribute from active mesh to selected meshes, by index"
     bl_options = {'REGISTER', 'UNDO'}
 
-    overwrite: bpy.props.BoolProperty(name="Overwrite", default=False, description="Overwrite on target if exists, and is same data type or domain")
-    overwrite_different_type: bpy.props.BoolProperty(name="Overwrite different type", default=False, description="For the attribute in target that has a different domain or data type")
+    overwrite: bpy.props.BoolProperty(name="Overwrite", default=True, description="Overwrite on target if exists, and is same data type or domain")
+    overwrite_different_type: bpy.props.BoolProperty(name="Overwrite different type", default=True, description="For the attribute in target that has a different domain or data type")
 
     extend_mode: bpy.props.EnumProperty(
         name="Extend Mode",
@@ -970,7 +970,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
         ("REPEAT", "Repeat", ""),
         ("PING_PONG", "Ping-Pong", "BlendeRRednelB"),
         ],
-        default="ZERO",
+        default="REPEAT",
         
     )
 
@@ -986,7 +986,18 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return len(context.selected_objects) > 1 and True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects] and context.active_object.data.attributes.active
+        active_attrib = context.active_object.data.attributes.active
+        selected_more_than_one_obj = len(context.selected_objects) > 1 
+        valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
+
+        if not active_attrib:
+            self.poll_message_set("No active attribute")
+        elif not selected_more_than_one_obj:
+            self.poll_message_set("Select multiple objects")  
+        elif not valid_object_types:
+            self.poll_message_set("One of selected objects is not a mesh")
+              
+        return selected_more_than_one_obj and active_attrib and valid_object_types
 
     def execute(self, context):
         obj = context.active_object
@@ -999,13 +1010,9 @@ class CopyAttributeToSelected(bpy.types.Operator):
         # get size of the source attribute domain
         source_size = self.get_attribute_data_length(obj, src_attrib)
 
-
-
         for sel_obj in [sel_obj for sel_obj in bpy.context.selected_objects if sel_obj.type =='MESH' and sel_obj is not obj]:
-            
             sel_obj_attr = None
-            
-
+        
             # check if present in target mesh
             if src_attrib_name in [a.name for a in sel_obj.data.attributes]:
                 sel_obj_attr = sel_obj.data.attributes[src_attrib_name]
@@ -1016,15 +1023,18 @@ class CopyAttributeToSelected(bpy.types.Operator):
                 
                 #overwrite different type?
                 not_same_type = sel_obj_attr.domain != src_attrib.domain or sel_obj_attr.data_type != src_attrib.domain
-
                 if not_same_type and not self.overwrite_different_type:
                     continue
+                
+                # remove current if overwriting
                 elif not_same_type:
                     sel_obj.data.attributes.remove(sel_obj_attr)
-                    sel_obj_attr = sel_obj.data.attributes.new(name=src_attrib_name, type=src_attrib.data_type, domain=src_attrib.domain)
-            else:
-                sel_obj_attr = sel_obj.data.attributes.new(name=src_attrib_name, type=src_attrib.data_type, domain=src_attrib.domain)
+                    
+            # create new attribute with target settings
+            sel_obj_attr = sel_obj.data.attributes.new(name=src_attrib_name, type=src_attrib.data_type, domain=src_attrib.domain)
             
+            # size check
+
             # check if the target mesh has different amount of faces/verts/etc.
             target_size = self.get_attribute_data_length(sel_obj, sel_obj_attr)
 
@@ -1037,30 +1047,35 @@ class CopyAttributeToSelected(bpy.types.Operator):
             else:
                 target_size = len(sel_obj.data.loops)
             
-            # trim or extend if needed
+            # case: target is larger
             if target_size > source_size:
                 
-                # different types for that case
-                if self.extend_mode not in ["REPEAT", "PING_PONG"]: #placeholder for new ideas with non-repeatable values
+                # Fill extra with single value
+                if self.extend_mode not in ["REPEAT", "PING_PONG"]: 
                     
+                    # With value on last index
                     if self.extend_mode =='LAST_VAL':
                         fill_value = [a_vals[-1]]
 
+                    # With 'zero' value
                     elif self.extend_mode =='ZERO':
                         fill_value = func.get_attrib_default_value(src_attrib)
-                        if src_attrib.data_type != 'STRING' and len(fill_value) > 1:
-                            fill_value = fill_value[0]
                         fill_value = [fill_value]
 
                     target_a_vals = a_vals + (fill_value * (target_size-source_size))
+                
+                # Fill extra with non-single value
                 else:
                     times = target_size - source_size
 
+                    # Repeat from start
                     if self.extend_mode =="REPEAT":
                         target_a_vals = a_vals * times
+                    
+                    # Repeat but from end to start then from start to end
                     elif self.extend_mode == "PING_PONG":
                         target_a_vals = []
-                        for t in times:
+                        for t in range(0, times):
                             if t%2:
                                 target_a_vals += a_vals[::-1]
                             else:
@@ -1068,13 +1083,15 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
                     target_a_vals = target_a_vals[:target_size]
 
-                
+            # case: target is smaller
             elif target_size < source_size:
                 target_a_vals = a_vals[:target_size]
+            
+            # case: target is same size
             else:
                 target_a_vals = a_vals
 
-            sel_obj_attr.data.foreach_set(func.get_attrib_value_propname(sel_obj_attr), target_a_vals)
+            func.set_attribute_values(sel_obj_attr, target_a_vals)
 
         obj.data.update()
 
@@ -1086,6 +1103,9 @@ class CopyAttributeToSelected(bpy.types.Operator):
         row.prop(self, "overwrite", text="Overwrite if exists")
         row.prop(self, "overwrite_different_type", text="Overwrite different type")
         row.prop(self, "extend_mode", text="Extend Mode")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
 class ConditionalSelection(bpy.types.Operator):
     bl_idname = "mesh.attribute_conditioned_select"
