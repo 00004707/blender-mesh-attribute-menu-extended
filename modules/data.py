@@ -862,6 +862,11 @@ attribute_data_types = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
+    "INT8": AttributeDataType(
+        friendly_name="8-bit Integer",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
         min_blender_ver=None,

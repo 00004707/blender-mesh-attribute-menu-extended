@@ -52,136 +52,56 @@ def attribute_assign_panel(self, context):
                     sub.operator_context = 'EXEC_DEFAULT'
                     # Input fields for each type
                     if dt == "FLOAT":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0")
-                        dsel_op.numeric_condition_enum = sel_op.numeric_condition_enum = "NEQ"
-                        dsel_op.val_float = sel_op.val_float = 0.0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
                         layout.prop(prop_group, "val_float", text=f"{friendly_domain_name} Float Value")
 
                     elif dt == "INT":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0")
-                        dsel_op.numeric_condition_enum = sel_op.numeric_condition_enum = "NEQ"
-                        dsel_op.val_int = sel_op.val_int = 0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
                         layout.prop(prop_group, "val_int", text=f"{friendly_domain_name} Integer Value")
 
                     elif dt == "FLOAT_VECTOR":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0,0,0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0,0,0")
-                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
-                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
-                        dsel_op.vec_z_condition_enum = sel_op.vec_z_condition_enum = "NEQ"
-                        dsel_op.vec_w_condition_enum = sel_op.vec_w_condition_enum = "NEQ"
-                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
-                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
-                        dsel_op.val_vector_z_toggle = sel_op.val_vector_z_toggle = True
-                        dsel_op.val_vector_w_toggle = sel_op.val_vector_w_toggle = True
-                        dsel_op.val_float_x = sel_op.val_float_x = 0.0
-                        dsel_op.val_float_y = sel_op.val_float_y = 0.0
-                        dsel_op.val_float_z = sel_op.val_float_z = 0.0
-                        dsel_op.val_float_w = sel_op.val_float_w = 0.0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0,0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0,0")
                         layout.prop(prop_group, "val_vector", text=f"{friendly_domain_name} Vector Value")
 
                     elif dt == "FLOAT_COLOR":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select Non Black")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect Non Black")
-                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
-                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
-                        dsel_op.vec_z_condition_enum = sel_op.vec_z_condition_enum = "NEQ"
-                        dsel_op.vec_w_condition_enum = sel_op.vec_w_condition_enum = "NEQ"
-                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
-                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
-                        dsel_op.val_vector_z_toggle = sel_op.val_vector_z_toggle = True
-                        dsel_op.val_vector_w_toggle = sel_op.val_vector_w_toggle = True
-                        dsel_op.val_float_x = sel_op.val_float_x = 0.0
-                        dsel_op.val_float_y = sel_op.val_float_y = 0.0
-                        dsel_op.val_float_z = sel_op.val_float_z = 0.0
-                        dsel_op.val_float_w = sel_op.val_float_w = 0.0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select Non Black")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Black")
                         layout.prop(prop_group, "val_color", text=f"{friendly_domain_name} Color Value")
 
                     elif dt == "BYTE_COLOR":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select Non Black")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect Non Black")
-                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
-                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
-                        dsel_op.vec_z_condition_enum = sel_op.vec_z_condition_enum = "NEQ"
-                        dsel_op.vec_w_condition_enum = sel_op.vec_w_condition_enum = "NEQ"
-                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
-                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
-                        dsel_op.val_vector_z_toggle = sel_op.val_vector_z_toggle = True
-                        dsel_op.val_vector_w_toggle = sel_op.val_vector_w_toggle = True
-                        dsel_op.val_float_x = sel_op.val_float_x = 0.0
-                        dsel_op.val_float_y = sel_op.val_float_y = 0.0
-                        dsel_op.val_float_z = sel_op.val_float_z = 0.0
-                        dsel_op.val_float_w = sel_op.val_float_w = 0.0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select Non Black")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Black")
                         layout.prop(prop_group, "val_bytecolor", text=f"{friendly_domain_name} Bytecolor Value")
 
                     elif dt == "STRING":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select Non Empty")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect Non Empty")
-                        dsel_op.numeric_condition_enum = sel_op.numeric_condition_enum = "NEQ"
-                        dsel_op.val_string = sel_op.val_string = ""
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select Non Empty")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Empty")
                         layout.prop(prop_group, "val_string", text=f"{friendly_domain_name} String Value")
 
                     elif dt == "BOOLEAN":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select True")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect True")
-                        dsel_op.bool_condition_enum = sel_op.bool_condition_enum = "EQ"
-                        dsel_op.val_bool = sel_op.val_bool = True
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select True")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect True")
                         layout.prop(prop_group, "val_bool", text=f"{friendly_domain_name} Boolean Value")
 
                     elif dt == "FLOAT2":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0,0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0,0")
-                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
-                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
-                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
-                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
-                        dsel_op.val_float_x = sel_op.val_float_x = 0.0
-                        dsel_op.val_float_y = sel_op.val_float_y = 0.0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0")
                         layout.prop(prop_group, "val_vector2d", text=f"{friendly_domain_name} Vector 2D Value")
 
                     elif dt == "INT32_2D":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0,0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0,0")
-                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
-                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
-                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
-                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
-                        dsel_op.val_int_x = sel_op.val_int_x = 0
-                        dsel_op.val_int_y = sel_op.val_int_y = 0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0")
                         layout.prop(prop_group, "val_int32_2d", text=f"{friendly_domain_name} Vector 2D Value")
 
                     elif dt == "INT8":
-                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0")
-                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0")
-                        dsel_op.numeric_condition_enum = sel_op.numeric_condition_enum = "NEQ"
-                        dsel_op.val_int8 = sel_op.val_int8 = 0
-                        sel_op.deselect = False
-                        dsel_op.deselect = True
+                        sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
                         layout.prop(prop_group, "val_int8", text=f"{friendly_domain_name} 8-bit Integer Value")
                         
 
-                    
-                
                 # Toggle Face Corner Spill 
                 if ob.data.attributes.active.domain == "CORNER":
                     layout.prop(prop_group, "face_corner_spill", text=f"Face Corner Spill")

@@ -66,7 +66,9 @@ classes = [data.MAME_PropValues,
            ops.RemoveAllAttribute, 
            ops.ConvertToMeshData, 
            #ops.ConditionedRemoveAttribute,
-           ops.CopyAttributeToSelected]
+           ops.CopyAttributeToSelected,
+           ops.DeSelectDomainWithAttributeZeroValue,
+           ops.SelectDomainWithAttributeZeroValue]
 
 def register():
     

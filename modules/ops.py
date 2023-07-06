@@ -27,7 +27,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
 
     @classmethod
-    def poll(cls, context):
+    def poll(self, context):
         return (context.active_object.mode == 'EDIT' 
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
@@ -257,7 +257,7 @@ class CreateAttribFromData(bpy.types.Operator):
 
 
     @classmethod
-    def poll(cls, context):
+    def poll(self, context):
         return (context.active_object is not None) and context.active_object.type == "MESH"
     
     def execute(self, context):    
@@ -1175,6 +1175,16 @@ class ConditionalSelection(bpy.types.Operator):
         default="COLOR"
     )
 
+    vector_value_cmp_type: bpy.props.EnumProperty(
+        name="Operation",
+        description="Select an option",
+        items=[
+            ("AND", "And", "All of the conditions above need to be met"),
+            ("OR", "Or", "Any of the conditions above need to be met"),
+        ],
+        default="AND"
+    )
+
     # do same for vectors
 
     val_int: bpy.props.IntProperty(name="Integer Value", default=0)
@@ -1184,8 +1194,8 @@ class ConditionalSelection(bpy.types.Operator):
     val_bool: bpy.props.BoolProperty(name="Boolean Value", default=False)
     val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
     val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
-    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,0.0))
-    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,0.0))
+    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if func.check_if_supported_by_blender_ver(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
 
@@ -1232,11 +1242,8 @@ class ConditionalSelection(bpy.types.Operator):
 
 
     @classmethod
-    def poll(cls, context):
-        return (context.active_object.mode == 'EDIT' 
-                and context.active_object.type == 'MESH' 
-                and context.active_object.data.attributes.active 
-                and func.get_is_attribute_valid(context.active_object.data.attributes.active.name))
+    def poll(self, context):
+        return func.conditional_selection_poll(self, context)
     
     def execute(self, context):
         
@@ -1252,7 +1259,7 @@ class ConditionalSelection(bpy.types.Operator):
         attrib_data_type = attrib.data_type
         case_sensitive_comp = False
         filtered_indexes = []
-
+        
         def debug_print():
             print(f"""ConditionalSelectionTrigger
 Cond: {condition}
@@ -1261,17 +1268,27 @@ DataType: {attrib_data_type}
 CaseSensitive: {case_sensitive_comp}
 FiltIndex: {filtered_indexes}""")
 
-        def compare_float_vals_and(vals_list):
+        
+
+        def compare_float_individual_vals(vals_list, mode='AND'):
+            """
+            Compares list of floats containing indiviual vertex values eg [X[x1,x2,x3] Y[y1,y2,y3] Z[z1,z2,z3]]"""
+            if mode == 'AND':
             # compare to each other "and"
                 for i in range(1, len(vals_list)):
                     for num in vals_list[0]:
                         if num not in vals_list[i]:
                             vals_list[0].remove(num)
                 return vals_list[0]
+            elif mode == 'OR':
+                r = []
+                for dimension in vals_list:
+                    r += dimension
+                return list(set(r))
 
         #case 1: single number/value
         if attrib_data_type in ['FLOAT', 'INT', 'INT8', 'STRING', 'BOOLEAN']:
-            if attrib_data_type in ['FLOAT', 'INT', 'INT8', 'BOOLEAN']:
+            if attrib_data_type in ['FLOAT', 'INT', 'INT8']:
                 condition = self.numeric_condition_enum
                 if attrib_data_type == 'INT':
                     comparison_value = self.val_int
@@ -1279,7 +1296,9 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_int8
                 elif attrib_data_type == 'FLOAT':
                     comparison_value = self.val_float
-                elif attrib_data_type == 'BOOLEAN':
+
+            elif attrib_data_type == 'BOOLEAN':
+                    condition = self.bool_condition_enum
                     comparison_value = self.val_bool
 
             elif attrib_data_type == 'STRING':
@@ -1291,7 +1310,7 @@ FiltIndex: {filtered_indexes}""")
 
             
         # case 2: multiple values
-        elif attrib_data_type in ['FLOAT_VECTOR', 'VECTOR2'] or (attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']):
+        elif attrib_data_type in ['FLOAT_VECTOR', 'FLOAT2']:
             vals_to_cmp = []
             filtered_indexes = []
 
@@ -1314,45 +1333,53 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_float_z
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[2] for entry in attrib.data], condition, comparison_value))
                 
-                filtered_indexes = compare_float_vals_and(vals_to_cmp)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
 
-            elif attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
+        elif attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
+            vals_to_cmp = []
+            filtered_indexes = []
 
-                # value editor for RGB/hsv values
-                if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+            # value editor for RGB/hsv values
+            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle or self.val_vector_w_toggle:
+                
+                colors = []
+                for entry in attrib.data:
+                    color = entry.color
+
+                    if self.color_value_type_enum == 'HSVA':
+                        hsv = list(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + [color[3]]
+                        colors.append(hsv)
+                        if etc.verbose_mode:
+                            print(f"rgb: {list(entry.color)} -> hsv: {hsv}")
+                    else:
+                        colors.append((color[0], color[1], color[2], color[3]))
                     
-                    for entry in attrib.data:
-                        color = entry.color
+                #r
+                if self.val_vector_x_toggle:
+                    condition = self.vec_x_condition_enum
+                    comparison_value = self.val_float_color_x #if self.color_gui_mode_enum == 'VALUE' else self.val_color[0]
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[0] for c in colors], condition, comparison_value))
 
-                        if self.color_value_type_enum == 'HSVA':
-                            color = list(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + [color[3]]
-                        #r
-                        if self.val_vector_x_toggle:
-                            condition = self.vec_x_condition_enum
-                            comparison_value = self.val_float_color_x if self.color_gui_mode_enum == 'VALUE' else self.val_color[0]
-                            vals_to_cmp.append(func.get_filtered_indexes_by_condition(color[0], condition, comparison_value))
+                #g
+                if self.val_vector_y_toggle:
+                    condition = self.vec_y_condition_enum
+                    comparison_value = self.val_float_color_y #if self.color_gui_mode_enum == 'VALUE' else self.val_color[1]
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[1] for c in colors], condition, comparison_value))
+                
+                #b
+                if self.val_vector_z_toggle:
+                    
+                    condition = self.vec_z_condition_enum
+                    comparison_value = self.val_float_color_z #if self.color_gui_mode_enum == 'VALUE' else self.val_color[2]
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[2] for c in colors], condition, comparison_value))
 
-                        #g
-                        if self.val_vector_y_toggle:
-                            condition = self.vec_y_condition_enum
-                            comparison_value = self.val_float_color_y if self.color_gui_mode_enum == 'VALUE' else self.val_color[1]
-                            vals_to_cmp.append(func.get_filtered_indexes_by_condition(color[1], condition, comparison_value))
-                        
-                        #b
-                        if self.val_vector_z_toggle:
-                            
-                            condition = self.vec_z_condition_enum
-                            comparison_value = self.val_float_color_z if self.color_gui_mode_enum == 'VALUE' else self.val_color[2]
-                            vals_to_cmp.append(func.get_filtered_indexes_by_condition(color[2], condition, comparison_value))
+                #a
+                if self.val_vector_w_toggle:
+                    condition = self.vec_w_condition_enum
+                    comparison_value = self.val_float_color_w #if self.color_gui_mode_enum == 'VALUE' else self.val_color[3]
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[3] for c in colors], condition, comparison_value))
 
-                        #a
-                        if self.val_vector_w_toggle:
-                            
-                            condition = self.vec_w_condition_enum
-                            comparison_value = self.val_float_color_w
-                            vals_to_cmp.append(func.get_filtered_indexes_by_condition(color[3], condition, comparison_value))
-
-                        filtered_indexes = compare_float_vals_and(vals_to_cmp)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
 
         # case 3: multiple values with integers
         elif attrib_data_type in ['INT32_2D']:
@@ -1377,7 +1404,7 @@ FiltIndex: {filtered_indexes}""")
                 #     comparison_value = self.val_int_z
                 #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
 
-                filtered_indexes = compare_float_vals_and(vals_to_cmp)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
         
         if etc.verbose_mode:
             debug_print()
@@ -1388,7 +1415,6 @@ FiltIndex: {filtered_indexes}""")
         return {"FINISHED"}
     
     def invoke(self, context, event):
-        print(dir(context))
         return context.window_manager.invoke_props_dialog(self)
     
     def draw(self, context):
@@ -1407,7 +1433,7 @@ FiltIndex: {filtered_indexes}""")
         elif attribute.data_type == 'STRING':
             grid = row.grid_flow(columns=2, even_columns=True)
             grid.prop(self, "string_condition_enum", text="")
-            grid.prop(self, "val_bool", text="Value")
+            grid.prop(self, "val_string", text="Value")
 
             row.prop(self, "string_case_sensitive_bool", text="Case Sensitive")
 
@@ -1453,55 +1479,58 @@ FiltIndex: {filtered_indexes}""")
                 grid.enabled = self.val_vector_z_toggle
                 grid.prop(self, "vec_z_condition_enum", text="")
                 grid.prop(self, "val_float_z", text="Value") 
+            row.prop(self, 'vector_value_cmp_type')
 
         # COLOR
         elif attribute.data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
-            row.prop(self, "color_gui_mode_enum", text="Mode")
+                #row.prop(self, "color_gui_mode_enum", text="Mode")
             
             
 
             # show normal color picker, if set to value then show values in grids
-            if self.color_gui_mode_enum == 'COLOR':
-                row.prop(self, "val_color", text="Value")
+            # if self.color_gui_mode_enum == 'COLOR':
+            #     row.prop(self, "val_color", text="Value")
+                self.color_gui_mode_enum = 'VALUE'
                 
-                
-            elif self.color_gui_mode_enum == 'VALUE':
+            # elif self.color_gui_mode_enum == 'VALUE':
                 # gui that compares individual values like a vector, with hsv mode too
                 row.prop(self, "color_value_type_enum", text="Value Type")
 
-                rgb = self.color_value_mode_enum == 'RGBA'
+                rgb = True if self.color_value_type_enum == 'RGBA' else False
 
-                row.prop(self, "val_vector_x_toggle", text="R" if rgb else 'H')
+                row.prop(self, "val_vector_x_toggle", text="Red" if rgb else 'Hue')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
                 grid.enabled = self.val_vector_x_toggle
                 grid.prop(self, "vec_x_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_x", text="Value")
+                    grid.prop(self, "val_float_color_x", text="Value")
 
-                row.prop(self, "val_vector_y_toggle", text="G" if rgb else 'S')
+                row.prop(self, "val_vector_y_toggle", text="Green" if rgb else 'Saturation')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
                 grid.enabled = self.val_vector_y_toggle
                 grid.prop(self, "vec_y_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_y", text="Value")  
+                    grid.prop(self, "val_float_color_y", text="Value")  
                 
-                row.prop(self, "val_vector_z_toggle", text="B" if rgb else 'V')
+                row.prop(self, "val_vector_z_toggle", text="Blue" if rgb else 'Value')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
                 grid.enabled = self.val_vector_z_toggle
                 grid.prop(self, "vec_z_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_z", text="Value") 
+                    grid.prop(self, "val_float_color_z", text="Value") 
 
-                row.prop(self, "val_vector_w_toggle", text="A")
+                row.prop(self, "val_vector_w_toggle", text="Alpha")
                 
                 grid = row.grid_flow(columns=2, even_columns=True)
                 grid.enabled = self.val_vector_w_toggle
                 grid.prop(self, "vec_w_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_w", text="Value")
+                    grid.prop(self, "val_float_color_w", text="Value")
+                    
+                row.prop(self, 'vector_value_cmp_type')
 
         # INT32_2D
         elif attribute.data_type in ['INT32_2D']:
@@ -1519,7 +1548,8 @@ FiltIndex: {filtered_indexes}""")
             grid = row.grid_flow(columns=2, even_columns=True)
             grid.enabled = self.val_vector_y_toggle
             grid.prop(self, "vec_y_condition_enum", text="")
-            grid.prop(self, "val_int_y", text="Value")  
+            grid.prop(self, "val_int_y", text="Value") 
+            row.prop(self, 'vector_value_cmp_type') 
             
 
             # if attribute.data_type == 'future 3d int vectors':
@@ -1530,8 +1560,114 @@ FiltIndex: {filtered_indexes}""")
             #     grid.prop(self, "vec_z_condition_enum", text="")
             #     grid.prop(self, "val_int_z", text="Value") 
 
-        row.prop(self, 'deselect')  
-            
+        row.prop(self, 'deselect')         
+
+class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
+    """
+    Used in gui to select domains with non-zero value
+    """
+    bl_idname = "mesh.attribute_zero_value_select"
+    bl_label = "Select Domain With Zero Value of Current Attribute"
+    bl_description = "Select attribute with zero value"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        dt = context.active_object.data.attributes.active.data_type
+        
+        # do not compare alpha value
+        if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
+            w_toggle = False
+        else:
+            w_toggle = True
+
+        bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
+                                                deselect = False,
+                                                val_float = 0.0,
+                                                val_int = 0,
+                                                numeric_condition_enum = 'NEQ',
+                                                vec_x_condition_enum = "NEQ",
+                                                vec_y_condition_enum = "NEQ",
+                                                vec_z_condition_enum = "NEQ",
+                                                vec_w_condition_enum = "NEQ",
+                                                string_condition_enum = 'NEQ',
+                                                vector_value_cmp_type = 'OR',
+                                                bool_condition_enum = "EQ",
+                                                val_vector_x_toggle = True,
+                                                val_vector_y_toggle = True,
+                                                val_vector_z_toggle = True,
+                                                val_vector_w_toggle = w_toggle,
+                                                val_float_x = 0.0,
+                                                val_float_y = 0.0,
+                                                val_float_z = 0.0,
+                                                val_float_w = 0.0,
+                                                val_float_color_x = 0.0,
+                                                val_float_color_y = 0.0,
+                                                val_float_color_z = 0.0,
+                                                val_float_color_w = 0.0,
+                                                val_string = "",
+                                                val_bool = True,
+                                                val_int_x = 0,
+                                                val_int_y = 0,
+                                                val_int8 = 0)
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        return func.conditional_selection_poll(self, context)
+
+class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
+    """
+    Used in gui to deselect domains with non-zero value
+    """
+    bl_idname = "mesh.attribute_zero_value_deselect"
+    bl_label = "Deselect Domain With Zero Value of Current Attribute"
+    bl_description = "Deselect attribute with zero value"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        dt = context.active_object.data.attributes.active.data_type
+        
+        # do not compare alpha value
+        if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
+            w_toggle = False
+        else:
+            w_toggle = True
+
+        bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
+                                                deselect = True,
+                                                val_float = 0.0,
+                                                val_int = 0,
+                                                numeric_condition_enum = 'NEQ',
+                                                vec_x_condition_enum = "NEQ",
+                                                vec_y_condition_enum = "NEQ",
+                                                vec_z_condition_enum = "NEQ",
+                                                vec_w_condition_enum = "NEQ",
+                                                string_condition_enum = 'NEQ',
+                                                vector_value_cmp_type = 'OR',
+                                                bool_condition_enum = "EQ",
+                                                val_vector_x_toggle = True,
+                                                val_vector_y_toggle = True,
+                                                val_vector_z_toggle = True,
+                                                val_vector_w_toggle = w_toggle,
+                                                val_float_x = 0.0,
+                                                val_float_y = 0.0,
+                                                val_float_z = 0.0,
+                                                val_float_w = 0.0,
+                                                val_float_color_x = 0.0,
+                                                val_float_color_y = 0.0,
+                                                val_float_color_z = 0.0,
+                                                val_float_color_w = 0.0,
+                                                val_string = "",
+                                                val_bool = True,
+                                                val_int_x = 0,
+                                                val_int_y = 0,
+                                                val_int8 = 0)
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        return func.conditional_selection_poll(self, context)
+
 # TODO
 # class ConditionedRemoveAttribute(bpy.types.Operator):
 #     bl_idname = "mesh.attribute_conditioned_remove"

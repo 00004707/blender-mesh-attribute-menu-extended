@@ -17,7 +17,7 @@ def get_is_attribute_valid(attrib_name):
     """
     Ignore non-editable, hidden or other invalid attributes.
     """
-    forbidden_attribs = ['position', 'sharp_face' '.sculpt_face_set', 'edge_creases', 'material_index']
+    forbidden_attribs = ['position', 'sharp_face', '.sculpt_face_set', 'edge_creases', 'material_index']
     forbidden_attrib_prefixes = ['.' #technically the dot will negate all of below, but still
                                   '.vs.',   # vertex selection in UVMap editor
                                   '.es.',   # edge selection in UVMap editor
@@ -303,7 +303,6 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                             if any(vert.index in indexes for vert in face.verts):
                                 if selection:
                                     face.select = state
-                                    print(f"f: {face.index}")
                                 else:
                                     face.hide = state
 
@@ -1307,3 +1306,11 @@ def get_attribute_domains_enum(self, context):
             l.append((item, data.attribute_domains[item].friendly_name, ""))
     return l
 
+def conditional_selection_poll(self, context):
+    """
+    poll function of any operator that calls conditional selection
+    """
+    return (context.active_object.mode == 'EDIT' 
+                and context.active_object.type == 'MESH' 
+                and context.active_object.data.attributes.active 
+                and get_is_attribute_valid(context.active_object.data.attributes.active.name))
