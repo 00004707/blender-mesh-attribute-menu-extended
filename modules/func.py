@@ -9,7 +9,6 @@ import bmesh
 import math
 from . import etc
 from . import data
-from . import func
 
 # ------------------------------------------
 # Attribute related
@@ -84,6 +83,10 @@ def get_attrib_values(attribute):
         a_vals = [0.0] * (len(attribute.data) * 2)
         attribute.data.foreach_get(value_attrib_name, a_vals)
         return [(a_vals[i], a_vals[i+1]) for i in range(0, len(a_vals), 2)]
+    elif dt == "INT32_2D":
+        a_vals = [0] * (len(attribute.data) * 2)
+        attribute.data.foreach_get(value_attrib_name, a_vals)
+        return [(a_vals[i], a_vals[i+1]) for i in range(0, len(a_vals), 2)]
     elif dt == "INT8":
         a_vals = [0] * len(attribute.data)
         attribute.data.foreach_get(value_attrib_name, a_vals)
@@ -116,6 +119,8 @@ def get_attrib_default_value(attribute):
         return False
     elif dt == "FLOAT2":
         return (0.0, 0.0)
+    elif dt == "INT32_2D":
+        return (0, 0)
     elif dt == "INT8":
         return 0 
 
@@ -135,7 +140,7 @@ def set_attribute_values(attribute, value, on_indexes = []):
     """
     # for each mode
     if len(on_indexes) == 0:
-        prop_name = func.get_attrib_value_propname(attribute)
+        prop_name = get_attrib_value_propname(attribute)
         
         # create storage
         if type(value) is list:
@@ -146,7 +151,7 @@ def set_attribute_values(attribute, value, on_indexes = []):
             storage = [value] * len(attribute.data)
 
         # convert to single dimension list if of vector type
-        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR']:
+        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D']:
             storage = [val for vec in storage for val in vec]
         
         storage = list(storage)
@@ -195,8 +200,6 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print(f"Attribute data length: {len(active_attrib.data)}")
         print(f"Selected domains: [{len(selected_el)} total] - {selected_el}")
         print(f"Setting value: {value}")
-
-
 
     if etc.verbose_mode:
         a_vals = get_attrib_values(attribute)
@@ -253,14 +256,140 @@ def set_domain_attribute_values(obj, attribute_name:str, domain:str, values: lis
         for i, loop in enumerate(obj.data.loops):
             setattr(loop, attribute_name, values[i])
 
-#TODO set domain attribute can do this as well, just remove it
-def set_selection_of_mesh_domain(obj, domain, index, state = True):
-            if domain == "POINT":
-                obj.data.vertices[index].select = state
-            elif domain == "POINT":
-                obj.data.edges[index].select = state
-            elif domain == "FACE":
-                obj.data.polygons[index].select = state
+def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = True, selection = True):
+    """
+    Selection and visibility works a bit differently than other attributes
+    Those require setting the state of faces, edges and vertices separately too
+    """
+    if etc.verbose_mode:
+        print(f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}")
+
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    if domain != 'CORNER':
+        try:
+            if domain == 'POINT':
+                for vertindex in indexes:
+                    if selection:
+                        bm.verts[vertindex].select = state
+                    else:
+                        bm.verts[vertindex].hide = state
+
+                    for edge in bm.verts[vertindex].link_edges:
+                        if state:
+                            if all(vert.index in indexes for vert in edge.verts):
+                                if selection:
+                                    edge.select = state
+                                else:
+                                    edge.hide = state
+                        else:
+                            if any(vert.index in indexes for vert in edge.verts):
+                                if selection:
+                                    edge.select = state
+                                else:
+                                    edge.hide = state
+
+                    for face in bm.verts[vertindex].link_faces:
+                        if state:
+                            if all(vert.index in indexes for vert in face.verts):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                        else:
+                            if any(vert.index in indexes for vert in face.verts):
+                                if selection:
+                                    face.select = state
+                                    print(f"f: {face.index}")
+                                else:
+                                    face.hide = state
+
+            elif domain == 'EDGE':
+                for edgeindex in indexes:
+                    if selection:
+                        bm.edges[edgeindex].select = state
+                    else:
+                        bm.edges[edgeindex].hide = state
+
+                    for vert in bm.edges[edgeindex].verts:
+                        if selection:
+                            vert.select = state
+                        else:
+                            vert.hide = state
+                
+                    for face in bm.edges[edgeindex].link_faces:
+                        if state:
+                            if all(edge.index in indexes for edge in face.edges):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                        else:
+                            if any(edge.index in indexes for edge in face.edges):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                    
+            elif domain == 'FACE':
+                for faceindex in indexes:
+                    if selection:
+                        bm.faces[faceindex].select = state
+                    else:
+                        bm.faces[faceindex].hide = state
+
+                    for vert in bm.faces[faceindex].verts:
+                        if selection:
+                            vert.select = state
+                        else:
+                            vert.hide = state
+                    
+                    for edge in bm.faces[faceindex].edges:
+                        if selection:
+                            edge.select = state
+                        else:
+                            edge.hide = state
+            
+            bm.to_mesh(obj.data)
+            bm.free()
+        except Exception as e:
+            # clear bmesh on exception to avoid extra problems
+            bm.to_mesh(obj.data)
+            bm.free()
+            raise Exception(e)
+
+    else:
+        edge_indexes_to_select = []
+
+        for cornerindex in indexes:
+            loop = obj.data.loops[cornerindex]
+
+            # get the face index that has this corner
+            faceindex = -1
+            for face in bm.faces:
+                if cornerindex in [loop.index for loop in face.loops]:
+                    faceindex = face.index
+            
+            # get edges that are connected to vertex assinged to this corner
+            edges = bm.verts[loop.vertex_index].link_edges
+            if etc.verbose_mode:
+                print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
+                print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
+            
+            # get edges that are in face index of this corner
+            for edge in edges:
+                if edge in bm.faces[faceindex].edges:
+                    edge_indexes_to_select.append(edge.index)
+        
+        bm.free()
+        if etc.verbose_mode:
+            print(f"Filtered edges of the corner are {edge_indexes_to_select}")
+        set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
+
+    
 
 def get_mesh_selected_by_domain(obj, domain, spill=False):
     # get the selected vertices/edges/faces/face corner
@@ -324,57 +453,18 @@ def get_mesh_selected_by_domain(obj, domain, spill=False):
                         result.append(fc)
                 
                 return result
-
-
-            # else: # idk if use this at all
-            #     # get active vertex in edit mode
-            #     active_vert = None
-            #     bpy.ops.object.mode_set(mode='EDIT')
-            #     bm = bmesh.from_edit_mesh(obj.data)
-            #     for el in bm.select_history:
-            #         if isinstance(el, bmesh.types.BMVert):
-            #             active_vert = el.index
-            #     bm.free()
-            #     bpy.ops.object.mode_set(mode='OBJECT')
-                    
-            #     result = []
-            #     sel_verts = [v.index for v in obj.data.vertices if v.select]
-            #     print(f"Selected verts: {sel_verts}")
-            #     for face in obj.data.polygons:
-            #         # We need at least 3 vertices selected to check which face user wants to use
-            #         selected_verts_of_face = 0
-            #         for vert in face.vertices:
-            #             if vert in sel_verts:
-            #                 selected_verts_of_face += 1
-                    
-            #         if selected_verts_of_face < 3:
-            #             continue
-            #         print(f"Face: {face.index}")
-            #         print(f"Active vert: {active_vert}")
-            
-            #         if active_vert is None:
-            #             return []
-
-            #         for fc in face.loop_indices:
-            #              if obj.data.loops[fc].vertex_index == active_vert:
-            #                  result.append(obj.data.loops[fc])
-            #                  print(f"Loop: {obj.data.loops[fc].index}")
-                    
-            #     return result
-
-        
-    else:
-        return False
+    
+    return False
 
 def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_value, case_sensitive_string = False):
         # Returns a list of indexes of source data entries that meet the input condition compared to compare_value
         
-        # input is 1 dimensional list with values
+        # input is 1 dimensional list with values, do not pass vectors, pass individual values
         
         indexes = []
-        print(type(source_data[0]))
-        print(source_data)
-        print(compare_value)
+        if etc.verbose_mode:
+            print(f"Get filtered indexes with settings:\n{condition} to {compare_value}, case sensitive {case_sensitive_string} \non dataset {source_data}")
+
         #booleans
         if type(source_data[0]) is bool:
             for i, data in enumerate(source_data):
@@ -431,6 +521,8 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
                 elif condition == "ENDS_WITH" and value.endswitch(cmp): #endswith
                     indexes.append(i)
 
+        if etc.verbose_mode:
+            print(f"Filtered indexes: {indexes}")
         return indexes
 
 def get_mesh_data(obj, data_type, source_domain, **kwargs):
@@ -447,6 +539,7 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     """
     if etc.verbose_mode:
         print(f"get_mesh_data_kwargs: {kwargs}")
+
     def get_simple_domain_attrib_val(domain, attribute_name):
         """
         Gets values from obj.data.vertices[i].attribute_name and similar
@@ -759,7 +852,6 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     else:
         raise etc.MeshDataReadException("get_mesh_data", f"Invalid domain data type ({data_type}) or this data is not available on this domain ({source_domain})")
 
-# TODO CREATE FACE MAP DATA IF DOES NOT EXIST or check if this does tho
 def set_mesh_data(obj, data_target, src_attrib, **kwargs):
     """
     kwargs (if applicable)
@@ -770,47 +862,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
     
     """
 
-    def set_visibility_helper(obj, a_vals):
-
-        bm = bmesh.new()
-        bm.from_mesh(obj.data)
-        bm.verts.ensure_lookup_table()
-        bm.edges.ensure_lookup_table()
-        bm.faces.ensure_lookup_table()
-        for i, val in enumerate(a_vals):
-            if src_attrib.domain == 'POINT':
-                vertex = bm.verts[i]
-                vertex.hide = val
-                for edge in vertex.link_edges:
-                    if a_vals[edge.verts[0].index] and a_vals[edge.verts[1].index]:
-                        edge.hide = val 
-                    else:
-                        edge.hide = not val
-                for face in vertex.link_faces:
-                    hide = val
-                    for v in face.verts:
-                        if not a_vals[v.index]:
-                            hide = not val
-                            break
-                    face.hide = hide
-            elif src_attrib.domain == 'EDGE':
-                edge = bm.edges[i]
-                edge.hide = val
-                for vert in edge.verts:
-                    vert.hide = val
-                for face in edge.link_faces:
-                    face.hide = val
-            elif src_attrib.domain == 'FACE':
-                face = bm.faces[i]
-                face.hide = val
-                for vert in edge.verts:
-                    vert.hide = val
-                for edge in face.edges:
-                    edge.hide = val
-        bm.to_mesh(obj.data)
-        bm.free()
-
-    a_vals = func.get_attrib_values(src_attrib)
+    a_vals = get_attrib_values(src_attrib)
     if etc.verbose_mode:
         print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
     
@@ -818,31 +870,31 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
 
         # BOOLEANS
     if data_target == "TO_VISIBLE":
-        a_vals = [not val for val in a_vals]
-        set_visibility_helper(obj, a_vals)
-        # func.set_domain_attribute_values(obj, 'hide', src_attrib.domain, a_vals)
+        vis_indexes = [index for index, value in enumerate(a_vals) if value]
+        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, vis_indexes, True, selection=False)
 
     elif data_target == "TO_HIDDEN":
-        set_visibility_helper(obj, a_vals)
+        hid_indexes = [index for index, value in enumerate(a_vals) if value]
+        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, hid_indexes, False, selection=False)
 
     elif data_target == "TO_SELECTED":
-        for i, val in enumerate(a_vals):
-            func.set_selection_of_mesh_domain(obj, src_attrib.domain, val)
+        sel_indexes = [index for index, value in enumerate(a_vals) if value]
+        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, sel_indexes, True)
 
     elif data_target == "TO_NOT_SELECTED":
-        for i, val in enumerate(a_vals):
-            func.set_selection_of_mesh_domain(obj, src_attrib.domain, not val)
-    
+         nsel_indexes = [index for index, value in enumerate(a_vals) if value]
+         set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, nsel_indexes, False)
+
     # -- EDGE ONLY
 
     elif data_target == "TO_SEAM":
-        func.set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_SHARP":
-        func.set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_FREESTYLE_MARK":
-        func.set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
 
     # -- FACE ONLY
 
@@ -863,7 +915,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
                 obj.data.face_maps[0].data[i].value = fm.index
 
     elif data_target == "TO_FACE_SHADE_SMOOTH":
-        func.set_domain_attribute_values(obj, 'use_smooth', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'use_smooth', src_attrib.domain, a_vals) 
         
     
     # INTEGER
@@ -879,7 +931,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         
     elif data_target == "TO_MATERIAL_INDEX":
         # todo %
-        func.set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
     
     elif data_target == "TO_FACE_MAP_INDEX":
         for i, val in enumerate(a_vals):
@@ -896,7 +948,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
 
     # -- VERTEX + EDGE
     elif data_target == "TO_MEAN_BEVEL_WEIGHT":
-        func.set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
 
     
     elif data_target == "TO_MEAN_CREASE":
@@ -916,10 +968,10 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
                 if not "vertex_creases" in obj.data.attributes:
                     obj.data.attributes.new("vertex_creases", 'FLOAT', 'POINT')
                 
-                func.set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
+                set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
                 
         elif src_attrib.domain == 'EDGE':
-            func.set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
+            set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
 
     # -- VERTEX
     elif data_target == "TO_SCULPT_MODE_MASK":
@@ -940,7 +992,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         
         
     elif data_target == "TO_VERTEX_GROUP":
-        name = func.get_safe_attrib_name(obj, src_attrib_name, 'Group')
+        name = get_safe_attrib_name(obj, src_attrib_name, 'Group')
         vg = obj.vertex_groups.new(name=name if kwargs["vertex_group_name"] == '' else kwargs["vertex_group_name"])
         for vert in obj.data.vertices:
             weight = a_vals[vert.index]
@@ -949,7 +1001,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
 
     # VECTOR
     elif data_target == "TO_POSITION":
-        func.set_domain_attribute_values(obj, 'co', src_attrib.domain, a_vals) 
+        set_domain_attribute_values(obj, 'co', src_attrib.domain, a_vals) 
 
         # Apply to first shape key too, if enabled
         if hasattr(obj.data.shape_keys, 'key_blocks') and kwargs["apply_to_first_shape_key"]:
@@ -975,7 +1027,6 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         raise etc.MeshDataWriteException("set_mesh_data", f"Can't find {data_target} to set")
     return True
         
-
 def get_all_mesh_data_ids_of_type(obj,data_type):
     """
     Gets each unique indentifiers (index) for data type to iterate on to, and to then evaluate every case
@@ -1018,26 +1069,13 @@ def get_friendly_domain_name(domain_name_raw, plural=False):
         return domain_name_raw.lower().capitalize() if not plural else domain_name_raw.lower().capitalize() + "s"
 
 def get_friendly_data_type_name(data_type_raw):
-    if data_type_raw == 'INT':
-        return 'Integer'
-    elif data_type_raw == 'FLOAT':
-        return 'Float'
-    elif data_type_raw == 'STRING':
-        return 'String'
-    elif data_type_raw == 'FLOAT2':
-        return 'Vector 2D'
-    elif data_type_raw == 'FLOAT_VECTOR':
-        return 'Vector'
-    elif data_type_raw == 'FLOAT_COLOR':
-        return 'Color'
-    elif data_type_raw == 'BYTE_COLOR':
-        return 'Byte Color'
-    elif data_type_raw == 'BOOLEAN':
-        return 'Boolean'
-    elif data_type_raw == 'INT8':
-        return '8-bit Integer'
+    if data_type_raw in data.attribute_data_types:
+        return data.attribute_data_types[data_type_raw].friendly_name
     else:
         return data_type_raw
+
+def check_if_supported_by_blender_ver(minver, minver_unsupported):
+    return (minver is None or bpy.app.version >= minver) and (minver_unsupported is None or bpy.app.version < minver_unsupported)
 
 # Data enums
 # --------------------------------------------
@@ -1184,7 +1222,7 @@ def get_source_data_enum(self, context):
             minver = data.object_data_sources[item].min_blender_ver
             unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
             
-            if (minver is None or bpy.app.version >= minver) and (unsupported_from is None or bpy.app.version < unsupported_from):
+            if check_if_supported_by_blender_ver(minver, unsupported_from): 
                 e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description))
     return e
 
@@ -1248,3 +1286,24 @@ def get_target_compatible_domains(self, context):
         items.append(("CORNER", "Face Corner", "Store this data in face corners"))
     
     return items
+
+def get_attribute_data_types_enum(self,context):
+    """
+    Gets attribute data types for this blender version
+    """
+    l = []  
+    for item in data.attribute_data_types:
+        if check_if_supported_by_blender_ver(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+            l.append((item, data.attribute_data_types[item].friendly_name, ""))
+    return l
+
+def get_attribute_domains_enum(self, context):
+    """
+    Gets attribute domains for this blender version
+    """
+    l = []
+    for item in data.attribute_domains:
+        if check_if_supported_by_blender_ver(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+            l.append((item, data.attribute_domains[item].friendly_name, ""))
+    return l
+

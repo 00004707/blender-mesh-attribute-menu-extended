@@ -65,6 +65,10 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_vector2d
         elif dt == "INT8":
             value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int8
+        elif dt == "INT32_2D":
+            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int32_2d
+        else:
+            self.report({'ERROR', "Unsupported data type!"})
 
         # Set the value
         func.set_attribute_value_on_selection(self, context, obj, attribute, value)
@@ -163,26 +167,13 @@ class CreateAttribFromData(bpy.types.Operator):
     enum_attrib_converter_domain:bpy.props.EnumProperty(
         name="Domain",
         description="Select an option",
-        items=[("POINT", "Vertex", ""),
-               ("EDGE", "Edge", ""),
-               ("FACE", "Face", ""),
-               ("CORNER", "Face Corner", ""),],
-        default="POINT",
+        items=func.get_attribute_domains_enum,
     )
 
     enum_attrib_converter_datatype: bpy.props.EnumProperty(
         name="Mode",
         description="Select an option",
-        items=[("FLOAT", "Float", ""),
-                ("INT", "Integer", ""),
-                ("FLOAT_VECTOR", "Vector", ""),
-                ("FLOAT_COLOR", "Color", ""),
-                ("BYTE_COLOR", "Byte Color", ""),
-                ("STRING", "String", ""),
-                ("BOOLEAN", "Boolean", ""),
-                ("FLOAT2", "Vector 2D", ""),
-                ("INT8", "8-bit Integer", ""),],
-        default="FLOAT",
+        items=func.get_attribute_data_types_enum,
     )
 
     def perform_user_input_test(self):
@@ -996,7 +987,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
             self.poll_message_set("Select multiple objects")  
         elif not valid_object_types:
             self.poll_message_set("One of selected objects is not a mesh")
-              
+
         return selected_more_than_one_obj and active_attrib and valid_object_types
 
     def execute(self, context):
@@ -1195,11 +1186,18 @@ class ConditionalSelection(bpy.types.Operator):
     val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,0.0))
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,0.0))
+    if func.check_if_supported_by_blender_ver(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+        val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
 
     val_float_x: bpy.props.FloatProperty(name="X", default=0.0)
     val_float_y: bpy.props.FloatProperty(name="Y", default=0.0)
     val_float_z: bpy.props.FloatProperty(name="Z", default=0.0)
     val_float_w: bpy.props.FloatProperty(name="W", default=0.0)
+
+    val_int_x: bpy.props.IntProperty(name="X", default=0)
+    val_int_y: bpy.props.IntProperty(name="Y", default=0)
+    val_int_z: bpy.props.IntProperty(name="Z", default=0)
+    val_int_w: bpy.props.IntProperty(name="W", default=0)
 
     val_float_color_x: bpy.props.FloatProperty(name="X", default=0.0, min=0.0, max=1.0)
     val_float_color_y: bpy.props.FloatProperty(name="Y", default=0.0, min=0.0, max=1.0)
@@ -1286,17 +1284,15 @@ FiltIndex: {filtered_indexes}""")
 
             elif attrib_data_type == 'STRING':
                 condition = self.string_condition_enum
+                comparison_value = self.val_string
                 case_sensitive_comp = self.string_case_sensitive_bool
 
             filtered_indexes = func.get_filtered_indexes_by_condition([entry.value for entry in attrib.data], condition, comparison_value, case_sensitive_comp)
-            if etc.verbose_mode:
-                debug_print()
 
             
         # case 2: multiple values
         elif attrib_data_type in ['FLOAT_VECTOR', 'VECTOR2'] or (attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']):
             vals_to_cmp = []
-
             filtered_indexes = []
 
             if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
@@ -1317,7 +1313,7 @@ FiltIndex: {filtered_indexes}""")
                     condition = self.vec_z_condition_enum
                     comparison_value = self.val_float_z
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[2] for entry in attrib.data], condition, comparison_value))
-
+                
                 filtered_indexes = compare_float_vals_and(vals_to_cmp)
 
             elif attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
@@ -1358,10 +1354,35 @@ FiltIndex: {filtered_indexes}""")
 
                         filtered_indexes = compare_float_vals_and(vals_to_cmp)
 
+        # case 3: multiple values with integers
+        elif attrib_data_type in ['INT32_2D']:
+            vals_to_cmp = []
+            filtered_indexes = []
+            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+                #x
+                if self.val_vector_x_toggle:
+                    condition = self.vec_x_condition_enum
+                    comparison_value = self.val_int_x
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
 
+                #y
+                if self.val_vector_y_toggle:
+                    condition = self.vec_y_condition_enum
+                    comparison_value = self.val_int_y
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
+                
+                # if attrib_data_type == 'future vectors?' and self.val_vector_z_toggle:
+                #     #z
+                #     condition = self.vec_z_condition_enum
+                #     comparison_value = self.val_int_z
+                #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
 
-        for i in filtered_indexes:
-            func.set_selection_of_mesh_domain(obj, attrib.domain, i, not self.deselect )
+                filtered_indexes = compare_float_vals_and(vals_to_cmp)
+        
+        if etc.verbose_mode:
+            debug_print()
+
+        func.set_selection_or_visibility_of_mesh_domain(obj, attrib.domain, filtered_indexes, not self.deselect)
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {"FINISHED"}
@@ -1481,6 +1502,33 @@ FiltIndex: {filtered_indexes}""")
                 grid.prop(self, "vec_w_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_w", text="Value")
+
+        # INT32_2D
+        elif attribute.data_type in ['INT32_2D']:
+
+            row.prop(self, "val_vector_x_toggle", text="X")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_x_toggle
+            grid.prop(self, "vec_x_condition_enum", text="")
+            grid.prop(self, "val_int_x", text="Value")
+
+
+            row.prop(self, "val_vector_y_toggle", text="Y")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_y_toggle
+            grid.prop(self, "vec_y_condition_enum", text="")
+            grid.prop(self, "val_int_y", text="Value")  
+            
+
+            # if attribute.data_type == 'future 3d int vectors':
+            #     row.prop(self, "val_vector_z_toggle", text="Z")
+
+            #     grid = row.grid_flow(columns=2, even_columns=True)
+            #     grid.enabled = self.val_vector_z_toggle
+            #     grid.prop(self, "vec_z_condition_enum", text="")
+            #     grid.prop(self, "val_int_z", text="Value") 
 
         row.prop(self, 'deselect')  
             

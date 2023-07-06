@@ -6,6 +6,8 @@ Data
 
 import bpy
 from collections import namedtuple
+from . import func
+from . import data
 
 class MAME_PropValues(bpy.types.PropertyGroup):
     """
@@ -20,6 +22,8 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    #if func.check_if_supported_by_blender_ver(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+    val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
 
     face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
 
@@ -839,4 +843,87 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
         ),    
+}
+
+AttributeDataType = namedtuple("AttributeDataType", [
+    "friendly_name",
+    "min_blender_ver",
+    "unsupported_from_blender_ver",
+])
+
+attribute_data_types = {
+    "FLOAT": AttributeDataType(
+        friendly_name="Float",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "INT": AttributeDataType(
+        friendly_name="Integer",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "FLOAT_VECTOR": AttributeDataType(
+        friendly_name="Vector",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "FLOAT_COLOR": AttributeDataType(
+        friendly_name="Color",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "BYTE_COLOR": AttributeDataType(
+        friendly_name="Byte Color",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "STRING": AttributeDataType(
+        friendly_name="String",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "BOOLEAN": AttributeDataType(
+        friendly_name="Boolean",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "FLOAT2": AttributeDataType(
+        friendly_name="Vector 2D",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "INT32_2D": AttributeDataType(
+        friendly_name='2D Integer Vector',
+        min_blender_ver=(3,6,0),
+        unsupported_from_blender_ver=None,
+    ),
+}
+
+AttributeDomain = namedtuple("AttributeDomain", [
+    "friendly_name",
+    "min_blender_ver",
+    "unsupported_from_blender_ver",
+])
+
+attribute_domains = {
+    "POINT": AttributeDomain(
+        friendly_name="Vertex",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "EDGE": AttributeDomain(
+        friendly_name="Edge",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "FACE": AttributeDomain(
+        friendly_name="Face",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "CORNER": AttributeDomain(
+        friendly_name="Face Corner",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
 }

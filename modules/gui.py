@@ -4,6 +4,7 @@
  
 import bpy 
 from . import func
+from . import data
 
 def attribute_assign_panel(self, context):
     """
@@ -36,7 +37,7 @@ def attribute_assign_panel(self, context):
                 prop_group = context.object.MAME_PropValues
 
                 # Check for supported types
-                if dt not in ['FLOAT', 'INT', 'INT8', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'STRING', 'BOOLEAN', 'FLOAT2']:
+                if dt not in data.attribute_data_types:
                     layout.label(text="This attribute type is not supported.")
                 else:
                     # Assignment buttons
@@ -155,6 +156,19 @@ def attribute_assign_panel(self, context):
                         sel_op.deselect = False
                         dsel_op.deselect = True
                         layout.prop(prop_group, "val_vector2d", text=f"{friendly_domain_name} Vector 2D Value")
+
+                    elif dt == "INT32_2D":
+                        sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0,0")
+                        dsel_op = sub.operator("mesh.attribute_conditioned_select", text="Deselect≠0,0")
+                        dsel_op.vec_x_condition_enum = sel_op.vec_x_condition_enum = "NEQ"
+                        dsel_op.vec_y_condition_enum = sel_op.vec_y_condition_enum = "NEQ"
+                        dsel_op.val_vector_x_toggle = sel_op.val_vector_x_toggle = True
+                        dsel_op.val_vector_y_toggle = sel_op.val_vector_y_toggle = True
+                        dsel_op.val_int_x = sel_op.val_int_x = 0
+                        dsel_op.val_int_y = sel_op.val_int_y = 0
+                        sel_op.deselect = False
+                        dsel_op.deselect = True
+                        layout.prop(prop_group, "val_int32_2d", text=f"{friendly_domain_name} Vector 2D Value")
 
                     elif dt == "INT8":
                         sel_op = sub.operator("mesh.attribute_conditioned_select", text="Select≠0")

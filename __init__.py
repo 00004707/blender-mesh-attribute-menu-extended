@@ -43,16 +43,17 @@ else:
 # TODO check creating of attribs from data on various blender versions
 # TODO overwrite on creating attributes from data option
 # TODO get val under selected
-# TODO check if attrib is get by name if edit mode was switched for each op
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
 # todo allow get data from mesh from selected face corners
-# TODO new data type in 3.6 INT32_2D 2D Integer Vector
+
 # TODO from material slot id
 # TODO add to current SM
 # TODO To vertex group index assignment with static weight value 
 # TODO Cant set the active attribute in attribute_convert for some reason
 # TODO Batch name formatting by user input
+# TODO Add shape key if there is none, in from object data.
 # creating new vertex creases might not be working in older versions of blender ~~ 3.1?
+
 # ------------------------------------------
 # registers
 
