@@ -681,7 +681,7 @@ object_data_targets = {
         ),
 
     # # VERTEX EDGE
-    # "INSERT_NEWLINE_VE": None,  
+    "INSERT_NEWLINE_VE": None,  
 
     
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
