@@ -388,8 +388,6 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
-    
-
 def get_mesh_selected_by_domain(obj, domain, spill=False):
     # get the selected vertices/edges/faces/face corner
 
@@ -714,8 +712,10 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
         
     # EDGE SHARP
     elif data_type == "EDGE_SHARP":
-        if bpy.app.version < (3,6):
+        if hasattr(obj.data.edges, "use_sharp"):
             return get_simple_domain_attrib_val(source_domain, "use_sharp")
+        elif hasattr(obj.data.edges, "use_edge_sharp"):
+            return get_simple_domain_attrib_val(source_domain, "use_edge_sharp")
         else:
             if not "sharp_edge" in obj.data.attributes:
                 return [False] * len(obj.data.edges)
@@ -870,11 +870,11 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         # BOOLEANS
     if data_target == "TO_VISIBLE":
         vis_indexes = [index for index, value in enumerate(a_vals) if value]
-        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, vis_indexes, True, selection=False)
+        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, vis_indexes, False, selection=False)
 
     elif data_target == "TO_HIDDEN":
         hid_indexes = [index for index, value in enumerate(a_vals) if value]
-        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, hid_indexes, False, selection=False)
+        set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, hid_indexes, True, selection=False)
 
     elif data_target == "TO_SELECTED":
         sel_indexes = [index for index, value in enumerate(a_vals) if value]
@@ -890,7 +890,11 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_SHARP":
-        set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
+        if hasattr(obj.data.edges, "use_sharp"):
+            set_domain_attribute_values(obj, "use_sharp", src_attrib.domain, a_vals) 
+        elif hasattr(obj.data.edges, "use_edge_sharp"):
+            set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
+
 
     elif data_target == "TO_FREESTYLE_MARK":
         set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
@@ -1073,7 +1077,7 @@ def get_friendly_data_type_name(data_type_raw):
     else:
         return data_type_raw
 
-def check_if_supported_by_blender_ver(minver, minver_unsupported):
+def get_blender_support(minver, minver_unsupported):
     return (minver is None or bpy.app.version >= minver) and (minver_unsupported is None or bpy.app.version < minver_unsupported)
 
 # Data enums
@@ -1221,7 +1225,7 @@ def get_source_data_enum(self, context):
             minver = data.object_data_sources[item].min_blender_ver
             unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
             
-            if check_if_supported_by_blender_ver(minver, unsupported_from): 
+            if get_blender_support(minver, unsupported_from): 
                 e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description))
     return e
 
@@ -1292,7 +1296,7 @@ def get_attribute_data_types_enum(self,context):
     """
     l = []  
     for item in data.attribute_data_types:
-        if check_if_supported_by_blender_ver(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+        if get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
             l.append((item, data.attribute_data_types[item].friendly_name, ""))
     return l
 
@@ -1302,7 +1306,7 @@ def get_attribute_domains_enum(self, context):
     """
     l = []
     for item in data.attribute_domains:
-        if check_if_supported_by_blender_ver(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+        if get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
             l.append((item, data.attribute_domains[item].friendly_name, ""))
     return l
 

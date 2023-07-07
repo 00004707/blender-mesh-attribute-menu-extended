@@ -6,66 +6,14 @@ Data
 
 import bpy
 from collections import namedtuple
-from . import func
-from . import data
+from . import etc
 
-class MAME_PropValues(bpy.types.PropertyGroup):
-    """
-    All editable props in GUI
-    """
-    val_int: bpy.props.IntProperty(name="Integer Value", default=0)
-    val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
-    val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
-    val_string: bpy.props.StringProperty(name="String Value", default="")
-    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
-    val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
-    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    #if func.check_if_supported_by_blender_ver(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
-    val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
+enhanced_enum_titles = bool(bpy.app.version > (3,2,0))
 
-    face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
+def get_blender_support(minver, minver_unsupported):
+    return (minver is None or bpy.app.version >= minver) and (minver_unsupported is None or bpy.app.version < minver_unsupported)
 
-    val_random_toggle: bpy.props.BoolProperty(name="Randomize", default=False)
-    val_random_min_float:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
-    val_random_max_float:bpy.props.FloatProperty(name="Float Random Max", default=1.0)
-    val_random_min_int:bpy.props.IntProperty(name="Integer Random Min", default=0)
-    val_random_max_int:bpy.props.IntProperty(name="Integer Random Max", default=100)
-    val_random_min_int8:bpy.props.IntProperty(name="8-Bit Integer Random Min", default=0, min=0, max=127)
-    val_random_max_int8:bpy.props.IntProperty(name="8-Bit Integer Random Max", default=127, min=0, max=127)
-    val_random_min_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0))
-    val_random_max_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0))
-    val_random_min_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Min", size=3, default=(0.0,0.0,0.0))
-    val_random_max_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Max", size=3, default=(0.0,0.0,0.0))
-    
-    color_rand_type: bpy.props.EnumProperty(
-        name="Color Randomize Type",
-        description="Select an option",
-        items=[
-            
-            ("HSV", "Randomize HSV Values", "Randomize HSV Values"),
-            ("RGB", "Randomize RGB Values", "Randomize RGB Values"),
-        ],
-        default="HSV"
-    )
-    
-    val_random_hue_toggle: bpy.props.BoolProperty(name="Randomize Hue", default=True)
-    val_random_saturation_toggle: bpy.props.BoolProperty(name="Randomize Saturation", default=True)
-    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Value", default=True)
-
-    val_random_r_toggle: bpy.props.BoolProperty(name="Randomize Red", default=True)
-    val_random_g_toggle: bpy.props.BoolProperty(name="Randomize Green", default=True)
-    val_random_b_toggle: bpy.props.BoolProperty(name="Randomize Blue", default=True)
-
-    val_random_min_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(0.0,0.0,0.0))
-    val_random_max_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(1.0,1.0,1.0))
-
-    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
-    val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
-    val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)
-
-# Defines object data source
+# Defines object data sourc,e
 ObjectDataSource = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",
     "enum_gui_description",
@@ -641,7 +589,7 @@ object_data_targets = {
 
     #POINT EDGE FACE
     "TO_VISIBLE": ObjectDataTarget(
-        enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Visible In Edit Mode",
         enum_gui_description="Convert this attribute to visible in edit mode",
         
         domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -651,7 +599,7 @@ object_data_targets = {
     ),
 
     "TO_HIDDEN": ObjectDataTarget(
-            enum_gui_friendly_name="To Hidden In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Hidden In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Hidden In Edit Mode",
             enum_gui_description="Convert this attribute to hidden in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -661,7 +609,7 @@ object_data_targets = {
         ),
 
     "TO_SELECTED": ObjectDataTarget(
-            enum_gui_friendly_name="To Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Selected In Edit Mode",
             enum_gui_description="Convert this attribute to selected in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -671,7 +619,7 @@ object_data_targets = {
         ),
 
     "TO_NOT_SELECTED": ObjectDataTarget(
-            enum_gui_friendly_name="To Not Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Not Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Not Selected In Edit Mode",
             enum_gui_description="Convert this attribute to selected in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -685,7 +633,7 @@ object_data_targets = {
 
     
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
-            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ",
+            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Not Selected In Edit Mode",
             enum_gui_description="Convert this attribute to bevel weight",
             
             domains_supported=['POINT', 'EDGE'],
@@ -695,7 +643,7 @@ object_data_targets = {
         ),
 
     "TO_MEAN_CREASE": ObjectDataTarget(
-            enum_gui_friendly_name="To Mean Crease ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name="To Mean Crease ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Mean Crease",
             enum_gui_description="Convert this attribute to mean crease",
             
             domains_supported=['POINT', 'EDGE'],
@@ -708,7 +656,7 @@ object_data_targets = {
     "INSERT_SEPARATOR_VC": None,  
 
     'TO_SPLIT_NORMALS': ObjectDataTarget(
-            enum_gui_friendly_name="To Split Normals ⁻ ᵛᵉʳᵗᵉˣ ᶜᵒʳⁿᵉʳ",
+            enum_gui_friendly_name="To Split Normals ⁻ ᵛᵉʳᵗᵉˣ ᶜᵒʳⁿᵉʳ" if enhanced_enum_titles else "To Split Normals",
             enum_gui_description="Convert this attribute to split normals",
             
             domains_supported=['POINT', 'CORNER'],
@@ -721,7 +669,7 @@ object_data_targets = {
     "INSERT_SEPARATOR_V": None, 
 
     "TO_POSITION": ObjectDataTarget(
-            enum_gui_friendly_name="To Position ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name="To Position ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Position",
             enum_gui_description="Convert this attribute to mesh positon",
             
             domains_supported=['POINT'],
@@ -731,7 +679,7 @@ object_data_targets = {
         ),
 
     "TO_SCULPT_MODE_MASK": ObjectDataTarget(
-            enum_gui_friendly_name="To Sculpt Mode Mask ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name="To Sculpt Mode Mask ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Sculpt Mode Mask",
             enum_gui_description="Convert this attribute to sculpt mode mask",
             
             domains_supported=['POINT'],
@@ -741,7 +689,7 @@ object_data_targets = {
         ),
 
     "TO_VERTEX_GROUP": ObjectDataTarget(
-            enum_gui_friendly_name="To Vertex Group  ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name="To Vertex Group  ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Vertex Group",
             enum_gui_description="Convert this attribute to vertex group",
             
             domains_supported=['POINT'],
@@ -751,7 +699,7 @@ object_data_targets = {
         ),
         
     "TO_SHAPE_KEY": ObjectDataTarget(
-            enum_gui_friendly_name="To Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name="To Shape Key ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Shape Key",
             enum_gui_description="Convert this attribute to mesh shape key",
             
             domains_supported=['POINT'],
@@ -764,7 +712,7 @@ object_data_targets = {
     "INSERT_NEWLINE_E": None, 
 
     "TO_SEAM": ObjectDataTarget(
-            enum_gui_friendly_name="To Seams ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name="To Seams ⁻ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Seams",
             enum_gui_description="Convert this attribute to edge seams",
             domains_supported=['EDGE'],
             data_type='BOOLEAN',
@@ -773,7 +721,7 @@ object_data_targets = {
         ),
 
     "TO_SHARP": ObjectDataTarget(
-            enum_gui_friendly_name="To Sharp ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name="To Sharp ⁻ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Sharp",
             enum_gui_description="Convert this attribute to edge sharps",         
             domains_supported=['EDGE'],
             data_type='BOOLEAN',
@@ -782,7 +730,7 @@ object_data_targets = {
         ),
 
     "TO_FREESTYLE_MARK": ObjectDataTarget(
-            enum_gui_friendly_name="To Freestyle Mark ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name="To Freestyle Mark ⁻ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Freestyle Mark",
             enum_gui_description="Convert this attribute to edge freestyle mark",
             
             domains_supported=['EDGE'],
@@ -795,7 +743,7 @@ object_data_targets = {
     "INSERT_SEPARATOR_F": None, 
 
     "TO_FACE_SHADE_SMOOTH": ObjectDataTarget(
-            enum_gui_friendly_name="To Face Shade Smooth ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Face Shade Smooth ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Face Shade Smooth",
             enum_gui_description="Convert this attribute to face shade smooth",
             
             domains_supported=['FACE'],
@@ -805,7 +753,7 @@ object_data_targets = {
         ),
 
     "TO_FACE_MAP": ObjectDataTarget(
-            enum_gui_friendly_name="To Face Map ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Face Map ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Face Map",
             enum_gui_description="Convert this attribute to face map",
             
             domains_supported=['FACE'],
@@ -815,7 +763,7 @@ object_data_targets = {
         ),
 
     "TO_SCULPT_MODE_FACE_SETS": ObjectDataTarget(
-            enum_gui_friendly_name="To Sculpt Mode Face Sets ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Sculpt Mode Face Sets ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Sculpt Mode Face Sets",
             enum_gui_description="Convert this attribute to Sculpt Mode Face Sets",
             
             domains_supported=['FACE'],
@@ -825,7 +773,7 @@ object_data_targets = {
         ),
 
     "TO_MATERIAL_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="To Material Index ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="To Material Index ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Material Index",
             enum_gui_description="Convert this attribute to Material Index",
             
             domains_supported=['FACE'],
@@ -835,7 +783,7 @@ object_data_targets = {
         ),
 
     "TO_FACE_MAP_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="Set Face Map Index ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name="Set Face Map Index ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "Set Face Map Index",
             enum_gui_description="Convert this attribute to set face map index",
             
             domains_supported=['FACE'],
@@ -932,3 +880,59 @@ attribute_domains = {
         unsupported_from_blender_ver=None,
     ),
 }
+
+class MAME_PropValues(bpy.types.PropertyGroup):
+    """
+    All editable props in GUI
+    """
+    val_int: bpy.props.IntProperty(name="Integer Value", default=0)
+    val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
+    val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
+    val_string: bpy.props.StringProperty(name="String Value", default="")
+    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
+    val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
+    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
+    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    if get_blender_support(attribute_data_types['INT32_2D'].min_blender_ver, attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+        val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
+
+    face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
+
+    val_random_toggle: bpy.props.BoolProperty(name="Randomize", default=False)
+    val_random_min_float:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
+    val_random_max_float:bpy.props.FloatProperty(name="Float Random Max", default=1.0)
+    val_random_min_int:bpy.props.IntProperty(name="Integer Random Min", default=0)
+    val_random_max_int:bpy.props.IntProperty(name="Integer Random Max", default=100)
+    val_random_min_int8:bpy.props.IntProperty(name="8-Bit Integer Random Min", default=0, min=0, max=127)
+    val_random_max_int8:bpy.props.IntProperty(name="8-Bit Integer Random Max", default=127, min=0, max=127)
+    val_random_min_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0))
+    val_random_max_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0))
+    val_random_min_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Min", size=3, default=(0.0,0.0,0.0))
+    val_random_max_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Max", size=3, default=(0.0,0.0,0.0))
+    
+    color_rand_type: bpy.props.EnumProperty(
+        name="Color Randomize Type",
+        description="Select an option",
+        items=[
+            
+            ("HSV", "Randomize HSV Values", "Randomize HSV Values"),
+            ("RGB", "Randomize RGB Values", "Randomize RGB Values"),
+        ],
+        default="HSV"
+    )
+    
+    val_random_hue_toggle: bpy.props.BoolProperty(name="Randomize Hue", default=True)
+    val_random_saturation_toggle: bpy.props.BoolProperty(name="Randomize Saturation", default=True)
+    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Value", default=True)
+
+    val_random_r_toggle: bpy.props.BoolProperty(name="Randomize Red", default=True)
+    val_random_g_toggle: bpy.props.BoolProperty(name="Randomize Green", default=True)
+    val_random_b_toggle: bpy.props.BoolProperty(name="Randomize Blue", default=True)
+
+    val_random_min_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(0.0,0.0,0.0))
+    val_random_max_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(1.0,1.0,1.0))
+
+    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
+    val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
+    val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)

@@ -5,6 +5,7 @@
 import bpy 
 from . import func
 from . import data
+from . import etc
 
 def attribute_assign_panel(self, context):
     """
@@ -108,6 +109,8 @@ def attribute_assign_panel(self, context):
         else:
             # Extra tools
             # sub = row.row(align=True)
+            if etc.verbose_mode:
+                row.operator("mame.tester", text="debug tester")
             pass
 
 

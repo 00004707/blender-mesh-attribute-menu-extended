@@ -1196,7 +1196,7 @@ class ConditionalSelection(bpy.types.Operator):
     val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    if func.check_if_supported_by_blender_ver(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+    if func.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
 
     val_float_x: bpy.props.FloatProperty(name="X", default=0.0)
@@ -1667,6 +1667,69 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         return func.conditional_selection_poll(self, context)
+
+class MAMETestAll(bpy.types.Operator):
+    """
+    DEBUG TEST EVERYTHING
+    """
+    bl_idname = "mame.tester"
+    bl_label = "mame test"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        # bpy.ops.mesh.primitive_monkey_add()
+        # obj = context.active_object
+        excs = []
+        for source_data in [el[0] for el in func.get_source_data_enum_without_separators(self, context)]:
+            for target_domain in ['POINT','EDGE','FACE','CORNER']:
+                # for convert_domain in func.get_attribute_domains_enum(self, context):
+                #     for convert_dt in func.get_attribute_data_types_enum(self, context):
+                    
+                    
+                        bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT',
+                                                                attrib_name='',
+                                                                domain_data_type=source_data)
+                                                                #target_attrib_domain=target_domain)#,
+                    
+        if excs:
+            raise Exception(excs)   
+        
+                                # batch_convert_enabled= True,
+                                # auto_convert = True,
+                                # enum_attrib_converter_mode='GENERIC')
+                                # enum_attrib_converter_domain=convert_domain,
+                                # enum_attrib_converter_datatype=convert_dt)
+    
+    # enum_face_maps=''
+    # enum_material_slots: bpy.props.EnumProperty(
+    # enum_materials: bpy.props.EnumProperty(
+    # enum_vertex_groups: bpy.props.EnumProperty(
+    # enum_shape_keys: bpy.props.EnumProperty(
+    # enum_shape_keys_offset_source: bpy.props.EnumProperty(
+
+ 
+                            
+
+        return {'FINISHED'}
+        for domain in func.get_target_compatible_domains(self, context):
+            for data_target in func.get_target_data_enum(self, context):
+                bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT',
+                                                            append_to_current=False,
+                                                            apply_to_first_shape_key=True,
+                                                            delete_if_converted=False,
+                                                            data_target=data_target,
+                                                            attrib_name="",
+                                                            convert_to_domain=domain,
+                                                            enable_auto_smooth=True)
+                                                
+
+        return {'FINISHED'}
+
+
+    @classmethod
+    def poll(self, context):
+        return True
 
 # TODO
 # class ConditionedRemoveAttribute(bpy.types.Operator):

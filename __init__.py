@@ -53,6 +53,8 @@ else:
 # TODO Batch name formatting by user input
 # TODO Add shape key if there is none, in from object data.
 # creating new vertex creases might not be working in older versions of blender ~~ 3.1?
+# TODO boolean from visible
+# TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
 
 # ------------------------------------------
 # registers
@@ -68,7 +70,13 @@ classes = [data.MAME_PropValues,
            #ops.ConditionedRemoveAttribute,
            ops.CopyAttributeToSelected,
            ops.DeSelectDomainWithAttributeZeroValue,
-           ops.SelectDomainWithAttributeZeroValue]
+           ops.SelectDomainWithAttributeZeroValue,
+           #etc.AddonPreferences
+           ]
+
+if etc.verbose_mode:
+    print("MAME: verbose mode is enabled")
+    classes.append(ops.MAMETestAll)
 
 def register():
     
