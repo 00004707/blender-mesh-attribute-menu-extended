@@ -896,11 +896,11 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_SHARP":
-        if hasattr(obj.data.edges, "use_sharp"):
-            set_domain_attribute_values(obj, "use_sharp", src_attrib.domain, a_vals) 
-        elif hasattr(obj.data.edges, "use_edge_sharp"):
-            set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
-
+        if len(obj.data.edges):
+            if hasattr(obj.data.edges[0], "use_sharp"):
+                set_domain_attribute_values(obj, "use_sharp", src_attrib.domain, a_vals) 
+            elif hasattr(obj.data.edges[0], "use_edge_sharp"):
+                set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
 
     elif data_target == "TO_FREESTYLE_MARK":
         set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
