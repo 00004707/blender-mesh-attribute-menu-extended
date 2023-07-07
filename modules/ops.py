@@ -984,15 +984,17 @@ class CopyAttributeToSelected(bpy.types.Operator):
         active_attrib = context.active_object.data.attributes.active
         selected_more_than_one_obj = len(context.selected_objects) > 1 
         valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
-
+        valid_attribute = func.get_is_attribute_valid(active_attrib.name)
         if not active_attrib:
             self.poll_message_set("No active attribute")
         elif not selected_more_than_one_obj:
             self.poll_message_set("Select multiple objects")  
         elif not valid_object_types:
             self.poll_message_set("One of selected objects is not a mesh")
+        elif not valid_attribute:
+            self.poll_message_set("Can't copy this attribute")
 
-        return selected_more_than_one_obj and active_attrib and valid_object_types
+        return all([selected_more_than_one_obj, active_attrib, valid_object_types, valid_attribute])
 
     def execute(self, context):
         obj = context.active_object
