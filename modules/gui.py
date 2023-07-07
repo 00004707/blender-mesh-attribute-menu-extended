@@ -95,7 +95,12 @@ def attribute_assign_panel(self, context):
                     elif dt == "INT32_2D":
                         sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0")
                         sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0")
-                        layout.prop(prop_group, "val_int32_2d", text=f"{friendly_domain_name} Vector 2D Value")
+                        layout.prop(prop_group, "val_int32_2d", text=f"{friendly_domain_name} 2D Int Vector Value")
+
+                    elif dt == "QUATERNION":
+                        sub.operator("mesh.attribute_zero_value_select", text="Sel≠1,0,0,0")
+                        sub.operator("mesh.attribute_zero_value_deselect", text="Desel≠1,0,0,0")
+                        layout.prop(prop_group, "val_quaternion", text=f"{friendly_domain_name} Quaternion Value")
 
                     elif dt == "INT8":
                         sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
@@ -109,7 +114,7 @@ def attribute_assign_panel(self, context):
         else:
             # Extra tools
             # sub = row.row(align=True)
-            if etc.verbose_mode:
+            if etc.enable_debug_tester:
                 row.operator("mame.tester", text="debug tester")
             pass
 

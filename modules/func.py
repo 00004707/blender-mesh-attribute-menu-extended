@@ -87,6 +87,10 @@ def get_attrib_values(attribute):
         a_vals = [0] * (len(attribute.data) * 2)
         attribute.data.foreach_get(value_attrib_name, a_vals)
         return [(a_vals[i], a_vals[i+1]) for i in range(0, len(a_vals), 2)]
+    elif dt == "QUATERNION":
+        a_vals = [0.0] * (len(attribute.data) * 4)
+        attribute.data.foreach_get(value_attrib_name, a_vals)
+        return [(a_vals[i], a_vals[i+1], a_vals[i+2], a_vals[i+3]) for i in range(0, len(a_vals), 4)]
     elif dt == "INT8":
         a_vals = [0] * len(attribute.data)
         attribute.data.foreach_get(value_attrib_name, a_vals)
@@ -121,6 +125,8 @@ def get_attrib_default_value(attribute):
         return (0.0, 0.0)
     elif dt == "INT32_2D":
         return (0, 0)
+    elif dt == "QUATERNION":
+        return (1.0, 0.0, 0.0, 0.0)
     elif dt == "INT8":
         return 0 
 
@@ -151,7 +157,7 @@ def set_attribute_values(attribute, value, on_indexes = []):
             storage = [value] * len(attribute.data)
 
         # convert to single dimension list if of vector type
-        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D']:
+        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
             storage = [val for vec in storage for val in vec]
         
         storage = list(storage)

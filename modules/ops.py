@@ -67,6 +67,8 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int8
         elif dt == "INT32_2D":
             value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int32_2d
+        elif dt == "QUATERNION":
+            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_quaternion
         else:
             self.report({'ERROR', "Unsupported data type!"})
 
@@ -780,11 +782,15 @@ class RemoveAllAttribute(bpy.types.Operator):
         row = self.layout
         row.label(text="WARNING")
         row.separator()
-        row.label(text="Attributes include UVMaps and Color Attributes")
+        warn_text = "Attributes include Color Attributes"
+        if bpy.app.version >= (3,5,0):
+            warn_text += " and UVMaps"
+        row.label(text=warn_text)
         row.label(text="Potentially more data in newer versions of blender")
         row.separator()
         row.label(text="Include:")
-        row.prop(self, "bool_include_uvs", text="UVMaps")
+        if bpy.app.version >= (3,5,0):
+            row.prop(self, "bool_include_uvs", text="UVMaps")
         row.prop(self, "bool_include_color_attribs", text="Color Attributes")
 
 class ConvertToMeshData(bpy.types.Operator):
@@ -1100,7 +1106,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
 class ConditionalSelection(bpy.types.Operator):
     bl_idname = "mesh.attribute_conditioned_select"
-    bl_label = "Select by condition"
+    bl_label = "Select in edit mode by condition"
     bl_description = "Select mesh domain by attribute value with specified conditions"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -1381,7 +1387,7 @@ FiltIndex: {filtered_indexes}""")
 
                 filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
 
-        # case 3: multiple values with integers
+        # case 3: integer vector values (.VALUE PROPERTY, NOT .VECTOR)
         elif attrib_data_type in ['INT32_2D']:
             vals_to_cmp = []
             filtered_indexes = []
@@ -1398,14 +1404,51 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_int_y
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
                 
-                # if attrib_data_type == 'future vectors?' and self.val_vector_z_toggle:
+                # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
                 #     #z
                 #     condition = self.vec_z_condition_enum
                 #     comparison_value = self.val_int_z
                 #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
 
+                # if attrib_data_type in ['QUATERNION'] and self.val_vector_w_toggle:
+                #     #w
+                #     condition = self.vec_w_condition_enum
+                #     comparison_value = self.val_int_w
+                #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
+
                 filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
         
+        # case 4: float vector values with .value property
+        elif attrib_data_type in ['QUATERNION']:
+            vals_to_cmp = []
+            filtered_indexes = []
+            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+                #x
+                if self.val_vector_x_toggle:
+                    condition = self.vec_x_condition_enum
+                    comparison_value = self.val_float_x
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
+
+                #y
+                if self.val_vector_y_toggle:
+                    condition = self.vec_y_condition_enum
+                    comparison_value = self.val_float_y
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
+                
+                # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
+                    #z
+                condition = self.vec_z_condition_enum
+                comparison_value = self.val_float_z
+                vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
+
+                # if attrib_data_type in ['QUATERNION'] and self.val_vector_w_toggle:
+                    #w
+                condition = self.vec_w_condition_enum
+                comparison_value = self.val_float_w
+                vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
+
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
+
         if etc.verbose_mode:
             debug_print()
 
@@ -1552,13 +1595,57 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, 'vector_value_cmp_type') 
             
 
-            # if attribute.data_type == 'future 3d int vectors':
+            # if attribute.data_type in ['QUATERNION']:
             #     row.prop(self, "val_vector_z_toggle", text="Z")
 
             #     grid = row.grid_flow(columns=2, even_columns=True)
             #     grid.enabled = self.val_vector_z_toggle
             #     grid.prop(self, "vec_z_condition_enum", text="")
             #     grid.prop(self, "val_int_z", text="Value") 
+            
+            # if attribute.data_type in ['QUATERNION']:
+            #     row.prop(self, "val_vector_w_toggle", text="W")
+
+            #     grid = row.grid_flow(columns=2, even_columns=True)
+            #     grid.enabled = self.val_vector_z_toggle
+            #     grid.prop(self, "vec_w_condition_enum", text="")
+            #     grid.prop(self, "val_int_w", text="Value") 
+
+        # QUATERNION
+        elif attribute.data_type in ['QUATERNION']:
+
+            row.prop(self, "val_vector_x_toggle", text="X")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_x_toggle
+            grid.prop(self, "vec_x_condition_enum", text="")
+            grid.prop(self, "val_float_x", text="Value")
+
+
+            row.prop(self, "val_vector_y_toggle", text="Y")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_y_toggle
+            grid.prop(self, "vec_y_condition_enum", text="")
+            grid.prop(self, "val_float_y", text="Value") 
+            
+
+            row.prop(self, "val_vector_z_toggle", text="Z")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_z_toggle
+            grid.prop(self, "vec_z_condition_enum", text="")
+            grid.prop(self, "val_float_z", text="Value") 
+        
+
+            row.prop(self, "val_vector_w_toggle", text="W")
+
+            grid = row.grid_flow(columns=2, even_columns=True)
+            grid.enabled = self.val_vector_z_toggle
+            grid.prop(self, "vec_w_condition_enum", text="")
+            grid.prop(self, "val_float_w", text="Value") 
+
+            row.prop(self, 'vector_value_cmp_type') 
 
         row.prop(self, 'deselect')         
 
@@ -1580,6 +1667,11 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
         else:
             w_toggle = True
 
+        # set default value to 1.0 for quats
+        if dt == "QUATERNION":
+            val_float_x = 1.0
+        else:
+            val_float_x = 0.0
         bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
                                                 deselect = False,
                                                 val_float = 0.0,
@@ -1596,7 +1688,7 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 val_vector_y_toggle = True,
                                                 val_vector_z_toggle = True,
                                                 val_vector_w_toggle = w_toggle,
-                                                val_float_x = 0.0,
+                                                val_float_x = val_float_x,
                                                 val_float_y = 0.0,
                                                 val_float_z = 0.0,
                                                 val_float_w = 0.0,
@@ -1633,6 +1725,11 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
         else:
             w_toggle = True
 
+        # set default value to 1.0 for quats
+        if dt == "QUATERNION":
+            val_float_x = 1.0
+        else:
+            val_float_x = 0.0
         bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
                                                 deselect = True,
                                                 val_float = 0.0,
@@ -1649,7 +1746,7 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 val_vector_y_toggle = True,
                                                 val_vector_z_toggle = True,
                                                 val_vector_w_toggle = w_toggle,
-                                                val_float_x = 0.0,
+                                                val_float_x = val_float_x,
                                                 val_float_y = 0.0,
                                                 val_float_z = 0.0,
                                                 val_float_w = 0.0,

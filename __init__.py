@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 1, 0),
-    "blender": (3, 5, 0),
+    "version": (0, 2, 0),
+    "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
     "warning": "",
@@ -40,21 +40,18 @@ else:
 # idk how to use pointers here, this might have helped, if possible at all
 
 
-# TODO check creating of attribs from data on various blender versions
 # TODO overwrite on creating attributes from data option
 # TODO get val under selected
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
-# todo allow get data from mesh from selected face corners
-
-# TODO from material slot id
 # TODO add to current SM
 # TODO To vertex group index assignment with static weight value 
-# TODO Cant set the active attribute in attribute_convert for some reason
 # TODO Batch name formatting by user input
 # TODO Add shape key if there is none, in from object data.
-# creating new vertex creases might not be working in older versions of blender ~~ 3.1?
 # TODO boolean from visible
 # TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
+# TODO ConditionedRemoveAttribute
+# TODO Search for attribute
+# TODO Convert multiple attributes at once etc.
 
 # ------------------------------------------
 # registers
@@ -67,15 +64,13 @@ classes = [data.MAME_PropValues,
            ops.InvertAttribute, 
            ops.RemoveAllAttribute, 
            ops.ConvertToMeshData, 
-           #ops.ConditionedRemoveAttribute,
            ops.CopyAttributeToSelected,
            ops.DeSelectDomainWithAttributeZeroValue,
            ops.SelectDomainWithAttributeZeroValue,
-           #etc.AddonPreferences
+           etc.AddonPreferences
            ]
 
-if etc.verbose_mode:
-    print("MAME: verbose mode is enabled")
+if etc.enable_debug_tester:
     classes.append(ops.MAMETestAll)
 
 def register():
