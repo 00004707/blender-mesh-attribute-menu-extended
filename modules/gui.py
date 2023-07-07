@@ -45,8 +45,10 @@ def attribute_assign_panel(self, context):
                     sub = row.row(align=True)
                     btn_assign = sub.operator('object.set_active_attribute_to_selected', text=f"Assign")
                     btn_assign.clear = False
+                    btn_assign.fc_spill = prop_group.face_corner_spill
                     btn_clear = sub.operator('object.set_active_attribute_to_selected', text=f"Clear")
                     btn_clear.clear = True
+                    btn_clear.fc_spill = prop_group.face_corner_spill
 
                     #Selection buttons
                     sub = row.row(align=True)

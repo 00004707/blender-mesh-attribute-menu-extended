@@ -22,9 +22,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     clear: bpy.props.BoolProperty(name="clear", default = False)
-    random: bpy.props.BoolProperty(name="clear", default = False)
-    random_range: bpy.props.BoolProperty(name="clear", default = False)
-
+    fc_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False)
 
     @classmethod
     def poll(self, context):
@@ -73,7 +71,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             self.report({'ERROR', "Unsupported data type!"})
 
         # Set the value
-        func.set_attribute_value_on_selection(self, context, obj, attribute, value)
+        func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.fc_spill)
         
         bpy.ops.object.mode_set(mode='EDIT')
         

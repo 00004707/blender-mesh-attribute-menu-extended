@@ -1312,7 +1312,7 @@ def get_attribute_domains_enum(self, context):
     """
     l = []
     for item in data.attribute_domains:
-        if get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+        if get_blender_support(data.attribute_domains[item].min_blender_ver, data.attribute_domains[item].unsupported_from_blender_ver):
             l.append((item, data.attribute_domains[item].friendly_name, ""))
     return l
 
