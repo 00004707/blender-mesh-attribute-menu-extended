@@ -800,7 +800,8 @@ class ConvertToMeshData(bpy.types.Operator):
     append_to_current: bpy.props.BoolProperty(name="Append", default=False)
 
     apply_to_first_shape_key: bpy.props.BoolProperty(name="Apply to first shape key too", default=True, description="With this disabled, it might produce result you did not expect")
-
+    create_shape_key_if_not_present: bpy.props.BoolProperty(name="Also create Basis shape key", default=True, description="Creates a basis shape key before converting")
+    
     delete_if_converted: bpy.props.BoolProperty(name="Delete after conversion", default=False)
 
     data_target: bpy.props.EnumProperty(
@@ -857,6 +858,13 @@ class ConvertToMeshData(bpy.types.Operator):
             bpy.ops.object.mode_set(mode=current_mode)
             return {'CANCELLED'}
         
+
+        # add basis shape key if none present and enabled in gui
+        if self.data_target in ['TO_SHAPE_KEY'] and not hasattr(obj.data.shape_keys, 'key_blocks') and self.create_shape_key_if_not_present:
+            bpy.ops.object.shape_key_add(from_mix=False)
+            if etc.verbose_mode:
+                print("Creating basis shape key...")
+
         # Convert if needed, use copy
         domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
         data_type_compatible = src_attrib_data_type == data_target_data_type
@@ -865,19 +873,18 @@ class ConvertToMeshData(bpy.types.Operator):
         if not domain_compatible or not data_type_compatible:
             if etc.verbose_mode:
                 print(f"Conversion required! Source: {src_attrib.data_type} in  {src_attrib.domain}. Target: {self.convert_to_domain} in {data_target_data_type}")
-            new_attrib = obj.data.attributes.new(name="temp_remove_if_failed", type=src_attrib.data_type, domain=src_attrib.domain)
+            new_attrib = obj.data.attributes.new(name=src_attrib.name + " SK", type=src_attrib.data_type, domain=src_attrib.domain)
             new_attrib_name = new_attrib.name
             if etc.verbose_mode:
                 print(f"Created temporary attribute {new_attrib_name}")
             func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib))
             func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', self.convert_to_domain, data_target_data_type)
             attrib_to_convert = obj.data.attributes[new_attrib_name]
+            attribute_to_convert_name = new_attrib_name
 
         if etc.verbose_mode:
             print(f"Converting {attrib_to_convert.name} to {self.data_target}")
-
-        attribute_to_convert_name = attrib_to_convert.name
-
+        
         # Set mesh data
         func.set_mesh_data(obj, self.data_target, 
                            attrib_to_convert, 
@@ -919,6 +926,9 @@ class ConvertToMeshData(bpy.types.Operator):
         # TO avoid unexpected results
         if self.data_target in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
             row.prop(self, 'apply_to_first_shape_key')
+
+        if self.data_target in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
+            row.prop(self, 'create_shape_key_if_not_present')
 
         # Custom name for face maps and vertex groups
         if self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
