@@ -132,6 +132,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_duplicate', icon='DUPLICATE')
     self.layout.operator('mesh.attribute_invert', icon='UV_ISLANDSEL')
     self.layout.operator('mesh.attribute_copy', icon='COPYDOWN')
+    self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
     # self.layout.operator('mesh.attribute_find', icon='VIEWZOOM')
     # self.layout.operator('mesh.attributes_sort', icon='SEQ_HISTOGRAM')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')

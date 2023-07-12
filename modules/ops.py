@@ -1838,6 +1838,67 @@ class MAMETestAll(bpy.types.Operator):
     def poll(self, context):
         return True
 
+
+class AttributeResolveNameCollisions(bpy.types.Operator):
+    bl_idname = "mesh.attribute_resolve_name_collisions"
+    bl_label = "Resolve name collisions"
+    bl_description = "Renames attributes to avoid name collisions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        valid_object_types = context.active_object.type == 'MESH'
+        valid_attributes = len(context.active_object.data.attributes)
+        if not valid_object_types:
+            self.poll_message_set("Selected object is not a mesh")
+        elif not valid_attributes:
+            self.poll_message_set("No attributes")
+
+        return all([valid_object_types, valid_attributes])
+
+    def execute(self, context):
+        obj = context.active_object
+        current_mode = obj.mode
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        restricted_names = []
+
+        # get vertex groups name, if any
+        vg_names = [vg.name for vg in obj.vertex_groups]
+        restricted_names += vg_names
+
+        # get UVMap names, if any
+        uvm_names = [uv.name for uv in obj.data.uv_layers]
+        restricted_names += uvm_names
+
+        # get color attrib names, if any
+        uvm_names = [uv.name for uv in obj.data.uv_layers]
+        restricted_names += uvm_names
+
+
+        # rename those, get by index, by name is fucky wucky
+        renamed = 0
+        failed = 0
+        enumerate(obj.data.attributes)
+        for i, a in enumerate(obj.data.attributes):
+            print(f"{a} {i}")
+            if obj.data.attributes[i].name in restricted_names:
+                if (not func.get_is_attribute_valid(obj.data.attributes[i].name) 
+                    or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER') #ignore uvmaps, they're auto renamed
+                    or (obj.data.attributes[i].data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] and obj.data.attributes[i].domain in ['POINT', 'CORNER'])): # same for color attribs
+                    failed += 1
+                else:
+                    renamed +=1
+                    j = 0
+                    while obj.data.attributes[i].name in restricted_names:
+                        j += 1
+                        obj.data.attributes[i].name = str(obj.data.attributes[i].name) + "." + str(j).zfill(3)
+                    
+        self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else "") + (f", did not rename {failed} (reserved attribute names/auto renamed)" if failed else ""))
+
+        bpy.ops.object.mode_set(mode=current_mode)
+        return {'FINISHED'}
+
 # TODO
 # class ConditionedRemoveAttribute(bpy.types.Operator):
 #     bl_idname = "mesh.attribute_conditioned_remove"

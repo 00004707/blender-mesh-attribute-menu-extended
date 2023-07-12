@@ -40,18 +40,17 @@ else:
 # idk how to use pointers here, this might have helped, if possible at all
 
 
-# TODO overwrite on creating attributes from data option
-# TODO get val under selected
+# TODO Feature to overwrite when creating attributes from data
+# TODO Get value under active domain in gui
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
-# TODO add to current SM
-# TODO To vertex group index assignment with static weight value 
-# TODO Batch name formatting by user input
-# TODO Add shape key if there is none, in from object data.
-# TODO boolean from visible
+# TODO Add to current sculpt mask option
+# TODO "To vertex group index" to mesh data option, with single weight float value or value from another float attribute (?) 
+# TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
 # TODO ConditionedRemoveAttribute
 # TODO Search for attribute
 # TODO Convert multiple attributes at once etc.
+# TODO to visible does not work as expected when selecting one vertex
 
 # ------------------------------------------
 # registers
@@ -67,6 +66,7 @@ classes = [data.MAME_PropValues,
            ops.CopyAttributeToSelected,
            ops.DeSelectDomainWithAttributeZeroValue,
            ops.SelectDomainWithAttributeZeroValue,
+           ops.AttributeResolveNameCollisions,
            etc.AddonPreferences
            ]
 

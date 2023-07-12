@@ -147,10 +147,13 @@ def set_attribute_values(attribute, value, on_indexes = []):
     # for each mode
     if len(on_indexes) == 0:
         prop_name = get_attrib_value_propname(attribute)
-        
+        if etc.verbose_mode:
+            print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
+
         # create storage
         if type(value) is list:
             if len(value) != len(attribute.data):
+                print(f"INPUT DATA INVALID LEN {len(value)} EXPECTED {len(attribute.data)} VALUES:\n{value}")
                 raise etc.MeshDataWriteException("set_attribute_values", "Invalid input value data length. Perhaps you passed the single dimenstion list for vectors?")
             storage = value
         else:
