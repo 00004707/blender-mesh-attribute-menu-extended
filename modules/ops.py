@@ -934,10 +934,12 @@ class ConvertToMeshData(bpy.types.Operator):
         if self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
             row.prop(self, "attrib_name", text="Name")
         
+        if self.data_target in ['TO_SPLIT_NORMALS']:
+            row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
         if self.data_target in ['TO_SPLIT_NORMALS'] and not obj.data.use_auto_smooth:
             row.prop(self, 'enable_auto_smooth')
             row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
-
+        
         # Show conversion options if data type or domain of attribute is not compatible
         if not domain_compatible or not data_type_compatible:
             

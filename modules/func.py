@@ -288,7 +288,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                         bm.verts[vertindex].hide = state
 
                     for edge in bm.verts[vertindex].link_edges:
-                        if state:
+                        if state == selection:
                             if all(vert.index in indexes for vert in edge.verts):
                                 if selection:
                                     edge.select = state
@@ -302,7 +302,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                                     edge.hide = state
 
                     for face in bm.verts[vertindex].link_faces:
-                        if state:
+                        if state == selection:
                             if all(vert.index in indexes for vert in face.verts):
                                 if selection:
                                     face.select = state
@@ -329,7 +329,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                             vert.hide = state
                 
                     for face in bm.edges[edgeindex].link_faces:
-                        if state:
+                        if state == selection:
                             if all(edge.index in indexes for edge in face.edges):
                                 if selection:
                                     face.select = state
