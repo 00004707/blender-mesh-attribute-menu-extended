@@ -41,18 +41,17 @@ def get_attrib_value_propname(attribute):
     else:
         return "value"
 
-def get_attrib_values(attribute):
+def get_attrib_values(attribute, obj):
     """
     Simply gets attribute values, for every index
     # Returns a list of same type variables as attribute data type
 
     """
-
     value_attrib_name = get_attrib_value_propname(attribute)
     dt = attribute.data_type
 
     if etc.verbose_mode:
-        print(f"Getting {attribute.name} values from prop: {value_attrib_name}, data type = {dt}" )
+        print(f"Getting {attribute.name} values from prop: {value_attrib_name}, data type = {dt}, prop = {value_attrib_name}, len = {len(attribute.data)}" )
 
     
     if dt == "FLOAT":
@@ -211,7 +210,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print(f"Setting value: {value}")
 
     if etc.verbose_mode:
-        a_vals = get_attrib_values(attribute)
+        a_vals = get_attrib_values(attribute, obj)
         print(f"Pre-set values: {str(a_vals)}")
 
 
@@ -221,7 +220,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
 
     
     if etc.verbose_mode:
-        a_vals = get_attrib_values(attribute)
+        a_vals = get_attrib_values(attribute, obj)
         print(f"Post-set values: {str(a_vals)}")
 
     return True
@@ -870,7 +869,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
     
     """
 
-    a_vals = get_attrib_values(src_attrib)
+    a_vals = get_attrib_values(src_attrib, obj)
     if etc.verbose_mode:
         print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
     

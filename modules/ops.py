@@ -544,7 +544,7 @@ class DuplicateAttribute(bpy.types.Operator):
 
         new_attrib = obj.data.attributes.new(name=src_attrib.name, type=src_attrib.data_type, domain=src_attrib.domain)
 
-        func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib))
+        func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib, obj))
         
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
@@ -630,7 +630,7 @@ class InvertAttribute(bpy.types.Operator):
         # else:
         prop_name = func.get_attrib_value_propname(src_attrib)
         
-        storage = func.get_attrib_values(src_attrib)
+        storage = func.get_attrib_values(src_attrib, obj)
 
         # create storage
         # if src_attrib.domain == 'POINT':
@@ -872,12 +872,14 @@ class ConvertToMeshData(bpy.types.Operator):
         attrib_to_convert = src_attrib
         if not domain_compatible or not data_type_compatible:
             if etc.verbose_mode:
-                print(f"Conversion required! Source: {src_attrib.data_type} in  {src_attrib.domain}. Target: {self.convert_to_domain} in {data_target_data_type}")
+                print(f"Conversion required! Source: {src_attrib.data_type} in  {src_attrib.domain}, len {len(src_attrib.data)}. Target: {self.convert_to_domain} in {data_target_data_type}")
             new_attrib = obj.data.attributes.new(name=src_attrib.name + " SK", type=src_attrib.data_type, domain=src_attrib.domain)
             new_attrib_name = new_attrib.name
             if etc.verbose_mode:
                 print(f"Created temporary attribute {new_attrib_name}")
-            func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib))
+            
+            src_attrib = obj.data.attributes[src_attrib_name] # After the new attribute has been created, reference is invalid
+            func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib, obj))
             func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', self.convert_to_domain, data_target_data_type)
             attrib_to_convert = obj.data.attributes[new_attrib_name]
             attribute_to_convert_name = new_attrib_name
@@ -1017,7 +1019,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
         src_attrib_name = obj.data.attributes.active.name
         bpy.ops.object.mode_set(mode='OBJECT')
         src_attrib = obj.data.attributes[src_attrib_name] # !important
-        a_vals = func.get_attrib_values(src_attrib)
+        a_vals = func.get_attrib_values(src_attrib, obj)
 
         # get size of the source attribute domain
         source_size = self.get_attribute_data_length(obj, src_attrib)
