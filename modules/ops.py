@@ -927,6 +927,9 @@ class ConvertToMeshData(bpy.types.Operator):
         if self.data_target in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
             row.prop(self, 'apply_to_first_shape_key')
 
+        if self.data_target in ['TO_VERTEX_GROUP']:
+            row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
+
         if self.data_target in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
             row.prop(self, 'create_shape_key_if_not_present')
 

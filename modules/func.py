@@ -1004,7 +1004,7 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         
         
     elif data_target == "TO_VERTEX_GROUP":
-        name = get_safe_attrib_name(obj, src_attrib_name, 'Group')
+        name = get_safe_attrib_name(obj, src_attrib_name + " Group", 'Group')
         vg = obj.vertex_groups.new(name=name if kwargs["vertex_group_name"] == '' else kwargs["vertex_group_name"])
         for vert in obj.data.vertices:
             weight = a_vals[vert.index]
