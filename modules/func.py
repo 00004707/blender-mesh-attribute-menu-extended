@@ -1105,7 +1105,7 @@ def get_face_maps_enum(self, context):
     obj = bpy.context.active_object
 
     # case: no data
-    if not len(obj.face_maps):
+    if not hasattr(obj, 'face_maps') or not len(obj.face_maps):
         return [("NULL", "NO FACE MAPS", "")]
 
 
