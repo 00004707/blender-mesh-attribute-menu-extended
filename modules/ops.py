@@ -559,17 +559,9 @@ class InvertAttribute(bpy.types.Operator):
     bl_description = "Invert Active Attribute Value"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def invert_attrib_mode_enum(self, context):
-        items=[
-                ("MULTIPLY_MINUS_ONE", "Multiply by -1", ""),
-                ("ADD_TO_MINUS_ONE", "Add to -1", ""),
-                ("SUBTRACT_FROM_ONE", "Subtract from 1", ""),
-            ]
-        return items
-
     def invert_attrib_color_mode_enum(self, context):
         # reverse
-        return func.invert_attrib_mode_enum(self, context)[::-1]
+        return func.get_attribute_invert_modes(self, context)[::-1]
 
     edit_mode_selected_only: bpy.props.BoolProperty(
         name="Selected Only",
@@ -586,7 +578,7 @@ class InvertAttribute(bpy.types.Operator):
     invert_mode: bpy.props.EnumProperty(
         name="Invert Mode",
         description="Select an option",
-        items=invert_attrib_mode_enum
+        items=func.get_attribute_invert_modes
     )
 
     color_invert_mode: bpy.props.EnumProperty(
@@ -663,16 +655,16 @@ class InvertAttribute(bpy.types.Operator):
             storage = [not v if not self.edit_mode_selected_only or i in selected else v for i, v in enumerate(storage)]
         
         # vectors get them as a single list
-        elif src_attrib.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR']:
+        elif src_attrib.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']:
             storage = [val for vec in storage for val in vec]
             src_attrib.data.foreach_get(prop_name, storage)
 
         # invert modes for vectors and float
-        if src_attrib.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR']:
+        if src_attrib.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']:
             invert_mode = self.color_invert_mode if src_attrib.data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] else self.invert_mode
 
             #ah vectors, yes
-            skip = len(func.get_attrib_default_value(src_attrib))
+            skip = len(func.get_attrib_default_value(src_attrib)) if not src_attrib.data_type == 'FLOAT' else 1
             if invert_mode == "MULTIPLY_MINUS_ONE":
                 storage = [v * -1 if not self.edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)]
             elif invert_mode == "SUBTRACT_FROM_ONE":
@@ -680,16 +672,17 @@ class InvertAttribute(bpy.types.Operator):
             elif invert_mode == "ADD_TO_MINUS_ONE":
                 storage = [-1+v if not self.edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)] 
         
-        # using foreach set seems more convenient in this case
-        src_attrib.data.foreach_set(prop_name, storage)
+        func.set_attribute_values(src_attrib, storage, flat_list=True)
         
         obj.data.update()
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
     
+    multiple_invert_modes_datatypes = ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']
+
     def invoke(self, context, event):
-        if context.active_object.data.attributes.active.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR'] or context.active_object.mode == 'EDIT':
+        if context.active_object.data.attributes.active.data_type in self.multiple_invert_modes_datatypes or context.active_object.mode == 'EDIT':
             # display props
             return context.window_manager.invoke_props_dialog(self)
         else:
@@ -700,8 +693,8 @@ class InvertAttribute(bpy.types.Operator):
         obj = context.active_object
 
         # invert mode for float and vectors
-        if obj.data.attributes.active.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR']:
-            prop = "invert_mode" if context.active_object.data.attributes.active.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2'] else "color_invert_mode"
+        if obj.data.attributes.active.data_type in self.multiple_invert_modes_datatypes:
+            prop = "invert_mode" if context.active_object.data.attributes.active.data_type not in ['FLOAT_COLOR', 'BYTE_COLOR'] else "color_invert_mode"
             row.prop(self, prop, text="Invert Mode")
         
         # selected only

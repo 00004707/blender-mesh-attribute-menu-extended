@@ -136,7 +136,7 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
 
     return attribute_name
    
-def set_attribute_values(attribute, value, on_indexes = []):
+def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
     """
     Sets values to attribute. Accepts both list and single value
     If the count of values is lesser than target indexes count, it will repeat
@@ -150,16 +150,18 @@ def set_attribute_values(attribute, value, on_indexes = []):
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
 
         # create storage
-        if type(value) is list:
+        if flat_list:
+            storage = value
+        elif type(value) is list:
             if len(value) != len(attribute.data):
                 print(f"INPUT DATA INVALID LEN {len(value)} EXPECTED {len(attribute.data)} VALUES:\n{value}")
-                raise etc.MeshDataWriteException("set_attribute_values", "Invalid input value data length. Perhaps you passed the single dimenstion list for vectors?")
+                raise etc.MeshDataWriteException("set_attribute_values", "Invalid input value data length.")
             storage = value
         else:
             storage = [value] * len(attribute.data)
 
         # convert to single dimension list if of vector type
-        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
+        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION'] and not flat_list:
             storage = [val for vec in storage for val in vec]
         
         storage = list(storage)
@@ -1326,3 +1328,10 @@ def conditional_selection_poll(self, context):
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
                 and get_is_attribute_valid(context.active_object.data.attributes.active.name))
+
+def get_attribute_invert_modes(self, context):
+    return [
+                ("MULTIPLY_MINUS_ONE", "Multiply by -1", ""),
+                ("ADD_TO_MINUS_ONE", "Add to -1", ""),
+                ("SUBTRACT_FROM_ONE", "Subtract from 1", ""),
+            ]

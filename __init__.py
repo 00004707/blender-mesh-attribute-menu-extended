@@ -50,7 +50,6 @@ else:
 # TODO ConditionedRemoveAttribute
 # TODO Search for attribute
 # TODO Convert multiple attributes at once etc.
-# TODO to visible does not work as expected when selecting one vertex
 
 # ------------------------------------------
 # registers
