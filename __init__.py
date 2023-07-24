@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 3, 0),
+    "version": (0, 3, 1),
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
@@ -48,7 +48,6 @@ else:
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
 # TODO ConditionedRemoveAttribute
-# TODO Search for attribute
 # TODO Convert multiple attributes at once etc.
 
 # ------------------------------------------

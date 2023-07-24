@@ -1324,7 +1324,8 @@ def conditional_selection_poll(self, context):
     """
     poll function of any operator that calls conditional selection
     """
-    return (context.active_object.mode == 'EDIT' 
+    return (context.active_object
+                and context.active_object.mode == 'EDIT' 
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
                 and get_is_attribute_valid(context.active_object.data.attributes.active.name))

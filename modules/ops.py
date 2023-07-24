@@ -26,7 +26,8 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return (context.active_object.mode == 'EDIT' 
+        return (context.active_object
+                and context.active_object.mode == 'EDIT' 
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
                 and func.get_is_attribute_valid(context.active_object.data.attributes.active.name))
@@ -991,6 +992,9 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
+        if not context.active_object:
+            return False
+        
         active_attrib = context.active_object.data.attributes.active
         selected_more_than_one_obj = len(context.selected_objects) > 1 
         valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
@@ -1847,6 +1851,9 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
+        if not context.active_object:
+            return False
+        
         valid_object_types = context.active_object.type == 'MESH'
         valid_attributes = len(context.active_object.data.attributes)
         if not valid_object_types:
@@ -1904,37 +1911,6 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
 #     bl_idname = "mesh.attribute_conditioned_remove"
 #     bl_label = "Remove by Condition"
 #     bl_description = "Removes attributes by condition"
-#     bl_options = {'REGISTER', 'UNDO'}
-
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         return False
-
-#     def execute(self, context):
-#         return 
-
-# TODO
-# class AttributeFind(bpy.types.Operator):
-#     bl_idname = "mesh.attribute_find"
-#     bl_label = "Find Attribute"
-#     bl_description = "Finds an attribute"
-#     bl_options = {'REGISTER', 'UNDO'}
-
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         return False
-
-#     def execute(self, context):
-#         return 
-
-# TODO
-# add grouping by type
-# class AttributesSort(bpy.types.Operator):
-#     bl_idname = "mesh.attributes_sort"
-#     bl_label = "Sort Attributes"
-#     bl_description = "Sorts attributes alphabetically"
 #     bl_options = {'REGISTER', 'UNDO'}
 
 #     @classmethod
