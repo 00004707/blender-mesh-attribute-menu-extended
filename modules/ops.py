@@ -1888,7 +1888,9 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
         failed = 0
         enumerate(obj.data.attributes)
         for i, a in enumerate(obj.data.attributes):
-            print(f"{a} {i}")
+            if etc.verbose_mode:
+                print(f"{a} {i}")
+                
             if obj.data.attributes[i].name in restricted_names:
                 if (not func.get_is_attribute_valid(obj.data.attributes[i].name) 
                     or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER') #ignore uvmaps, they're auto renamed

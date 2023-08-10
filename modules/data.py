@@ -759,7 +759,7 @@ object_data_targets = {
             domains_supported=['FACE'],
             data_type='BOOLEAN',
             min_blender_ver=None,
-            unsupported_from_blender_ver=None,
+            unsupported_from_blender_ver=(4,0),
         ),
 
     "TO_SCULPT_MODE_FACE_SETS": ObjectDataTarget(
@@ -789,7 +789,7 @@ object_data_targets = {
             domains_supported=['FACE'],
             data_type='INT',
             min_blender_ver=None,
-            unsupported_from_blender_ver=None,
+            unsupported_from_blender_ver=(4,0),
         ),    
 }
 

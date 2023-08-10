@@ -47,6 +47,7 @@ else:
 # TODO "To vertex group index" to mesh data option, with single weight float value or value from another float attribute (?) 
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
+# TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute
 # TODO Convert multiple attributes at once etc.
 
