@@ -546,6 +546,7 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     * fm_index              face map index
     * sel_mat               selected material
     * mat_index             material index
+    * uvmap_index           uvmap index
     """
     if etc.verbose_mode:
         print(f"get_mesh_data_kwargs: {kwargs}")
@@ -861,6 +862,19 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     elif data_type == "CORNER_VERTEX_INDEX":
         return get_simple_domain_attrib_val(source_domain, "vertex_index") 
     
+    # -----------------------------
+    # SPECIAL ATTRIBS START
+
+    # SELECTED VERTS IN UV EDITOR
+    elif data_type == "SELECTED_VERTICES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        return [vs.value for vs in obj.data.attributes[f".vs.{uvmap_name}"].data]
+    
+    # SELECTED EDGES IN UV EDITOR
+    elif data_type == "SELECTED_EDGES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        return [es.value for es in obj.data.attributes[f".es.{uvmap_name}"].data]
+    
     else:
         raise etc.MeshDataReadException("get_mesh_data", f"Invalid domain data type ({data_type}) or this data is not available on this domain ({source_domain})")
 
@@ -882,6 +896,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         * to_vgindex_weight         float
         * to_vgindex_weight_mode    enum - STATIC, ATTRIBUTE
         * to_vgindex_src_attrib     attribute reference
+        * uvmap_index               integer
     
     """
     a_vals = get_attrib_values(src_attrib, obj)
@@ -1067,6 +1082,20 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             obj.data.normals_split_custom_set_from_vertices([[vec[0],vec[1],vec[2]] for vec in a_vals])
         elif src_attrib.domain == 'CORNER':
             obj.data.normals_split_custom_set([[vec[0],vec[1],vec[2]] for vec in a_vals])
+
+    # special
+
+    elif data_target == "TO_SELECTED_VERTICES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+
+        for i, val in enumerate(a_vals):
+            obj.data.attributes[f'.vs.{uvmap_name}'].data[i].value = val
+
+    elif data_target == "TO_SELECTED_EDGES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+
+        for i, val in enumerate(a_vals):
+            obj.data.attributes[f'.es.{uvmap_name}'].data[i].value = val
 
     else:
         raise etc.MeshDataWriteException("set_mesh_data", f"Can't find {data_target} to set")
@@ -1383,3 +1412,24 @@ def get_float_int_attributes(self, context):
         return [inv_data_entry]
     
     return enum_entries
+
+def get_uvmaps_enum(self, context):
+    """
+    Gets all UVMaps of an active object
+
+    Index can be 'NULL' if invalid
+    (INDEX NAME DESC)
+    """
+
+    items = []
+    obj = context.active_object
+
+    # case: no data
+    if not len(obj.data.uv_layers):
+        return [("NULL", "NO UVMAPS", "")]
+
+
+    for i, uvmap in enumerate(obj.data.uv_layers):
+        items.append((str(i), uvmap.name, f"Use {uvmap.name} UVMap"))
+
+    return items

@@ -152,6 +152,12 @@ class CreateAttribFromData(bpy.types.Operator):
         description="Select an option",
         items=func.get_shape_keys_enum
     )
+
+    enum_uv_domain_selecton_source: bpy.props.EnumProperty(
+        name="From UVMap",
+        description="Select an option",
+        items=func.get_uvmaps_enum
+    )
     
     # Converter props
 
@@ -302,7 +308,8 @@ class CreateAttribFromData(bpy.types.Operator):
                                 shape_key_offset_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source)][1] if self.enum_shape_keys_offset_source != 'NULL' else None, 
                                 vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
                                 material=func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
-                                material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None) 
+                                material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None,
+                                uvmap=func.get_uvmaps_enum(self, context)[int(self.enum_uv_domain_selecton_source)][1] if self.enum_uv_domain_selecton_source != 'NULL' else None) 
             else:
                 name = self.attrib_name
             name = func.get_safe_attrib_name(obj, name) # naming the same way as vertex group will crash blender.
@@ -315,7 +322,8 @@ class CreateAttribFromData(bpy.types.Operator):
                                         sk_offset_index=self.enum_shape_keys_offset_source,
                                         fm_index=self.enum_face_maps,
                                         sel_mat=self.enum_materials,
-                                        mat_index=self.enum_material_slots)
+                                        mat_index=self.enum_material_slots,
+                                        uvmap_index=self.enum_uv_domain_selecton_source)
             if etc.verbose_mode:
                 print(f"Creating attribute from data: {obj_data}")
             func.set_attribute_values(attrib, obj_data)
@@ -507,7 +515,12 @@ class CreateAttribFromData(bpy.types.Operator):
         # vertex groups
         if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.batch_convert_enabled:
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
+        
+        # UVMap domain selection
+        if self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR"]:
+            row.prop(self, "enum_uv_domain_selecton_source", text="UV Map")
             
+
         # convert all of type to attrib
         if batch_convert_support:
             row.prop(self, "batch_convert_enabled", text="Batch Convert To Attributes")
@@ -833,6 +846,13 @@ class ConvertToMeshData(bpy.types.Operator):
         description="Select an option",
         items=func.get_float_int_attributes
     )
+    
+
+    to_uvmap_domain_selection: bpy.props.EnumProperty(
+        name="UVMap",
+        description="Select an option",
+        items=func.get_uvmaps_enum
+    )
 
 
     @classmethod
@@ -872,6 +892,10 @@ class ConvertToMeshData(bpy.types.Operator):
 
         elif self.data_target == "TO_VERTEX_GROUP_INDEX" and self.to_vgindex_weight_mode == 'ATTRIBUTE' and self.to_vgindex_source_attribute =='NULL':
             self.report({'ERROR'}, "Invalid source weights attribute. Nothing done")
+            input_invalid = True
+        
+        elif self.data_target in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"] and not len(obj.data.uv_layers):
+            self.report({'ERROR'}, "No UVMaps. Nothing done")
             input_invalid = True
 
         if input_invalid:
@@ -947,7 +971,8 @@ class ConvertToMeshData(bpy.types.Operator):
                            apply_to_first_shape_key=self.apply_to_first_shape_key,
                            to_vgindex_weight=self.to_vgindex_weight,
                            to_vgindex_weight_mode=self.to_vgindex_weight_mode,
-                           to_vgindex_src_attrib=vg_weight_attrib)
+                           to_vgindex_src_attrib=vg_weight_attrib,
+                           uvmap_index=self.to_uvmap_domain_selection)
         
         #post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
@@ -986,24 +1011,24 @@ class ConvertToMeshData(bpy.types.Operator):
         if self.data_target in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
             row.prop(self, 'apply_to_first_shape_key')
 
-        if self.data_target in ['TO_VERTEX_GROUP']:
+        elif self.data_target in ['TO_VERTEX_GROUP']:
             row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
 
-        if self.data_target in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
+        elif self.data_target in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
             row.prop(self, 'create_shape_key_if_not_present')
 
         # Custom name for face maps and vertex groups
-        if self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
+        elif self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
             row.prop(self, "attrib_name", text="Name")
         
-        if self.data_target in ['TO_SPLIT_NORMALS']:
+        elif self.data_target in ['TO_SPLIT_NORMALS']:
             row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
 
             if not obj.data.use_auto_smooth:
                 row.prop(self, 'enable_auto_smooth')
                 row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
         
-        if self.data_target in ['TO_VERTEX_GROUP_INDEX']:
+        elif self.data_target in ['TO_VERTEX_GROUP_INDEX']:
             row.prop(self, 'to_vgindex_weight_mode', text="Mode")
             if self.to_vgindex_weight_mode == "ATTRIBUTE":
                 row.prop(self, 'to_vgindex_source_attribute', text='Attribute')
@@ -1018,10 +1043,12 @@ class ConvertToMeshData(bpy.types.Operator):
                             row.label(icon='ERROR', text=f"Weights Attribute should be stored in Vertex domain")
                         row.label(icon='ERROR', text=f"This might not yield good results")
                     
-
             else:
                 row.prop(self, 'to_vgindex_weight')
 
+
+        elif self.data_target in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
+            row.prop(self, 'to_uvmap_domain_selection', text="UVMap")
             
 
             
@@ -1084,7 +1111,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
         active_attrib = context.active_object.data.attributes.active
         selected_more_than_one_obj = len(context.selected_objects) > 1 
         valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
-        valid_attribute = func.get_is_attribute_valid(active_attrib.name)
+        valid_attribute = func.get_is_attribute_valid(active_attrib.name) if active_attrib else False
         if not active_attrib:
             self.poll_message_set("No active attribute")
         elif not selected_more_than_one_obj:

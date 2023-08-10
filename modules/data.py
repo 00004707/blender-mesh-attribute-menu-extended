@@ -566,6 +566,38 @@ object_data_sources = {
         valid_data_sources = ['MESH']
     ),
 
+    # "INSERT_SEPARATOR_SPECIAL": None,
+
+    # # SPECIAL
+    
+    # data len = = loops for both, idk how to proceed with this 
+
+    # "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
+    #     enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if enhanced_enum_titles else "Selected UV Vertices (UV Editor)",
+    #     enum_gui_description="Create boolean vertex attribute from selected vertices in UV Editor",
+    #     attribute_auto_name="Selected {uvmap} UV Vertices",
+    #     attribute_domain_on_default='POINT',
+    #     domains_supported=['POINT'],
+    #     data_type='BOOLEAN',
+    #     min_blender_ver=None,
+    #     unsupported_from_blender_ver=None,
+    #     batch_convert_support=False,
+    #     valid_data_sources = ['MESH']
+    # ),
+
+    # "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
+    #     enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if enhanced_enum_titles else "Selected UV Edges (UV Editor)",
+    #     enum_gui_description="Create boolean edge attribute from selected edges in UV Editor",
+    #     attribute_auto_name="Selected {uvmap} UV Edges",
+    #     attribute_domain_on_default='EDGE',
+    #     domains_supported=['EDGE'],
+    #     data_type='BOOLEAN',
+    #     min_blender_ver=None,
+    #     unsupported_from_blender_ver=None,
+    #     batch_convert_support=False,
+    #     valid_data_sources = ['MESH']
+    # ),
+
 }
 
 # Defines an object data target, like position, seams or other
@@ -629,7 +661,7 @@ object_data_targets = {
         ),
 
     # # VERTEX EDGE
-    "INSERT_NEWLINE_VE": None,  
+    "INSERT_SEPARATOR_VE": None,  
 
     
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
@@ -666,7 +698,7 @@ object_data_targets = {
         ),
 
     # VERTEX
-    "INSERT_SEPARATOR_V": None, 
+    "INSERT_NEWLINE_V": None, 
 
     "TO_POSITION": ObjectDataTarget(
             enum_gui_friendly_name="To Position ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Position",
@@ -718,7 +750,7 @@ object_data_targets = {
         ),
 
     # EDGE
-    "INSERT_NEWLINE_E": None, 
+    "INSERT_SEPARATOR_E": None, 
 
     "TO_SEAM": ObjectDataTarget(
             enum_gui_friendly_name="To Seams ⁻ ᵉᵈᵍᵉ" if enhanced_enum_titles else "To Seams",
@@ -749,7 +781,7 @@ object_data_targets = {
         ),
 
     # FACE
-    "INSERT_SEPARATOR_F": None, 
+    "INSERT_NEWLINE_F": None, 
 
     "TO_FACE_SHADE_SMOOTH": ObjectDataTarget(
             enum_gui_friendly_name="To Face Shade Smooth ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Face Shade Smooth",
@@ -800,6 +832,29 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
         ),    
+
+    # # SPECIAL
+    # "INSERT_SEPARATOR_SPECIAL": None, 
+
+    # "TO_SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
+    #         enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if enhanced_enum_titles else "Selected UV Vertices (UV Editor)",
+    #         enum_gui_description="Convert this attribute to selected vertices in UV Editor Panel",
+    #         domains_supported=['POINT'],
+    #         data_type='BOOLEAN',
+    #         min_blender_ver=None,
+    #         unsupported_from_blender_ver=None,
+    #     ),    
+    
+    # "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
+    #         enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if enhanced_enum_titles else "Selected UV Edges (UV Editor)",
+    #         enum_gui_description="Convert this attribute to selected edges in UV Editor Panel",
+    #         domains_supported=['EDGE'],
+    #         data_type='BOOLEAN',
+    #         min_blender_ver=None,
+    #         unsupported_from_blender_ver=None,
+    #     ),    
+
+
 }
 
 AttributeDataType = namedtuple("AttributeDataType", [
