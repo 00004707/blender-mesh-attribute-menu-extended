@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 3, 1),
+    "version": (0, 3, 2),
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
@@ -44,12 +44,16 @@ else:
 # TODO Get value under active domain in gui
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
 # TODO Add to current sculpt mask option
-# TODO "To vertex group index" to mesh data option, with single weight float value or value from another float attribute (?) 
+# TODO invert sm value when converting
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
 # TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute
 # TODO Convert multiple attributes at once etc.
+# TODO quickly create named attribute node from active attribute
+# TODO add buttons in vertex group and shape key menus
+# TODO toggleable quick menus
+# TODO BETTER GUI
 
 # ------------------------------------------
 # registers

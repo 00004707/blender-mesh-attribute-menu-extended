@@ -816,6 +816,24 @@ class ConvertToMeshData(bpy.types.Operator):
                                                description="Custom split normals are visible only when Auto Smooth is enabled", 
                                                default=True)
     
+    to_vgindex_weight: bpy.props.FloatProperty(name='Weight Value',
+                                                          description="Weight value to apply to vertex group at index defined in this attribute",
+                                                          default=1.0
+                                                          )
+    
+    to_vgindex_weight_mode: bpy.props.EnumProperty(
+        name="Weighting mode",
+        description="Select an option",
+        items=[("STATIC", "Use float value to weight", "Use predefined float value to weight vertices"),
+               ("ATTRIBUTE", "Use float attribute to weight", "Use float attribute to weight vertices")]
+    )
+    
+    to_vgindex_source_attribute: bpy.props.EnumProperty(
+        name="Float Attribute",
+        description="Select an option",
+        items=func.get_float_int_attributes
+    )
+
 
     @classmethod
     def poll(self, context):
@@ -847,6 +865,14 @@ class ConvertToMeshData(bpy.types.Operator):
         elif self.data_target == "TO_MATERIAL_INDEX" and not len(obj.material_slots):
             self.report({'ERROR'}, "No material slots. Nothing done")
             input_invalid = True
+        
+        elif self.data_target == "TO_VERTEX_GROUP_INDEX" and not len(obj.vertex_groups):
+            self.report({'ERROR'}, "No vertex groups. Nothing done")
+            input_invalid = True
+
+        elif self.data_target == "TO_VERTEX_GROUP_INDEX" and self.to_vgindex_weight_mode == 'ATTRIBUTE' and self.to_vgindex_source_attribute =='NULL':
+            self.report({'ERROR'}, "Invalid source weights attribute. Nothing done")
+            input_invalid = True
 
         if input_invalid:
             bpy.ops.object.mode_set(mode=current_mode)
@@ -860,38 +886,75 @@ class ConvertToMeshData(bpy.types.Operator):
                 print("Creating basis shape key...")
 
         # Convert if needed, use copy
+
+        def create_temp_converted_attrib(convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
+                """
+                Returns name of temporary converted attribute. (not reference to avoid various issues)
+                """
+
+                convert_from = obj.data.attributes[convert_from_name]
+                if etc.verbose_mode:
+                    print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain} in {data_target_data_type}")
+                new_attrib = obj.data.attributes.new(name=convert_from.name + " " + name_suffix, type=convert_from.data_type, domain=convert_from.domain)
+                new_attrib_name = new_attrib.name
+                if etc.verbose_mode:
+                    print(f"Created temporary attribute {new_attrib_name}")
+                
+                convert_from = obj.data.attributes[convert_from_name] # After the new attribute has been created, reference is invalid
+                func.set_attribute_values(new_attrib, func.get_attrib_values(convert_from, obj))
+                func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', target_domain, target_data_type)
+                if etc.verbose_mode:
+                    print(f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}")
+                return new_attrib_name
+
         domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
         data_type_compatible = src_attrib_data_type == data_target_data_type
         
         attrib_to_convert = src_attrib
+
         if not domain_compatible or not data_type_compatible:
-            if etc.verbose_mode:
-                print(f"Conversion required! Source: {src_attrib.data_type} in  {src_attrib.domain}, len {len(src_attrib.data)}. Target: {self.convert_to_domain} in {data_target_data_type}")
-            new_attrib = obj.data.attributes.new(name=src_attrib.name + " SK", type=src_attrib.data_type, domain=src_attrib.domain)
-            new_attrib_name = new_attrib.name
-            if etc.verbose_mode:
-                print(f"Created temporary attribute {new_attrib_name}")
-            
-            src_attrib = obj.data.attributes[src_attrib_name] # After the new attribute has been created, reference is invalid
-            func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib, obj))
-            func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', self.convert_to_domain, data_target_data_type)
-            attrib_to_convert = obj.data.attributes[new_attrib_name]
-            attribute_to_convert_name = new_attrib_name
+            attribute_to_convert_name = create_temp_converted_attrib(src_attrib.name, "temp", self.convert_to_domain, data_target_data_type)
+            attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
+        else:
+            attribute_to_convert_name = src_attrib_name
+        
+        # If target is vertex group index, with attribute weight, make sure the weight attribute is float
+        used_conveted_vgweight_attrib = False
+        if self.to_vgindex_weight_mode == 'ATTRIBUTE':
+            vg_weight_attrib = obj.data.attributes[self.to_vgindex_source_attribute]
+            if vg_weight_attrib.data_type != 'FLOAT' or vg_weight_attrib.domain != 'POINT':
+                if etc.verbose_mode:
+                    print(f"Source attribute for weights ({vg_weight_attrib.name}) is is not correct type, converting...")
+
+                vg_weight_attrib_name = create_temp_converted_attrib(vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
+                vg_weight_attrib =  obj.data.attributes[vg_weight_attrib_name]
+                used_conveted_vgweight_attrib = True
+        else:
+            vg_weight_attrib = None
 
         if etc.verbose_mode:
-            print(f"Converting {attrib_to_convert.name} to {self.data_target}")
+            print(f"attribute -> data: {attrib_to_convert.name} -> {self.data_target}")
         
+        # Welp, new attribute might be added in vgweight convert and the reference to attrib_to_convert is gone...
+        attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
+
         # Set mesh data
         func.set_mesh_data(obj, self.data_target, 
                            attrib_to_convert, 
                            face_map_name=self.attrib_name, 
                            vertex_group_name=self.attrib_name, 
                            enable_auto_smooth=self.enable_auto_smooth, 
-                           apply_to_first_shape_key=self.apply_to_first_shape_key)
+                           apply_to_first_shape_key=self.apply_to_first_shape_key,
+                           to_vgindex_weight=self.to_vgindex_weight,
+                           to_vgindex_weight_mode=self.to_vgindex_weight_mode,
+                           to_vgindex_src_attrib=vg_weight_attrib)
         
         #post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
             obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
+
+        if used_conveted_vgweight_attrib:
+             obj.data.attributes.remove(obj.data.attributes[vg_weight_attrib_name])
 
         # remove if user enabled
         if self.delete_if_converted:
@@ -935,10 +998,33 @@ class ConvertToMeshData(bpy.types.Operator):
         
         if self.data_target in ['TO_SPLIT_NORMALS']:
             row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
-        if self.data_target in ['TO_SPLIT_NORMALS'] and not obj.data.use_auto_smooth:
-            row.prop(self, 'enable_auto_smooth')
-            row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
+
+            if not obj.data.use_auto_smooth:
+                row.prop(self, 'enable_auto_smooth')
+                row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
         
+        if self.data_target in ['TO_VERTEX_GROUP_INDEX']:
+            row.prop(self, 'to_vgindex_weight_mode', text="Mode")
+            if self.to_vgindex_weight_mode == "ATTRIBUTE":
+                row.prop(self, 'to_vgindex_source_attribute', text='Attribute')
+
+                # inform user if the weights attribute is invalid
+                if self.to_vgindex_source_attribute != "NULL":
+                    src_weight_attrib = obj.data.attributes[self.to_vgindex_source_attribute]
+                    if src_weight_attrib.data_type  != 'FLOAT' or src_weight_attrib.domain  != 'POINT':
+                        if src_weight_attrib.data_type  != 'FLOAT':
+                            row.label(icon='ERROR', text=f"Weights Attribute values should be of Float data type")
+                        if src_weight_attrib.domain  != 'POINT':
+                            row.label(icon='ERROR', text=f"Weights Attribute should be stored in Vertex domain")
+                        row.label(icon='ERROR', text=f"This might not yield good results")
+                    
+
+            else:
+                row.prop(self, 'to_vgindex_weight')
+
+            
+
+            
         # Show conversion options if data type or domain of attribute is not compatible
         if not domain_compatible or not data_type_compatible:
             

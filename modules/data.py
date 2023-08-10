@@ -382,7 +382,7 @@ object_data_sources = {
 
 
     "FACE_VERTS": ObjectDataSource(
-        enum_gui_friendly_name="Vertices Indexes in a Face ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "Vertices Indexes in a Face",
+        enum_gui_friendly_name="All Vertex Indexes in a Face ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "Vertices Indexes in a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of vertices of a face",
         attribute_auto_name="Face Vertex Indexes",
         attribute_domain_on_default='FACE',
@@ -395,7 +395,7 @@ object_data_sources = {
     ),
 
     "FACE_CORNER_INDEXES": ObjectDataSource(
-        enum_gui_friendly_name="Corner Indexes of a Face ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "Corner Indexes of a Face",
+        enum_gui_friendly_name="All Corner Indexes of a Face ⁻ ᶠᵃᶜᵉ" if enhanced_enum_titles else "Corner Indexes of a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of face corners of a face",
         attribute_auto_name="Corner Indexes of a Face",
         attribute_domain_on_default='FACE',
@@ -704,6 +704,15 @@ object_data_targets = {
             
             domains_supported=['POINT'],
             data_type='FLOAT_VECTOR',
+            min_blender_ver=None,
+            unsupported_from_blender_ver=None,
+        ),
+
+    "TO_VERTEX_GROUP_INDEX": ObjectDataTarget(
+            enum_gui_friendly_name="To Vertex Group Index ⁻ ᵛᵉʳᵗᵉˣ" if enhanced_enum_titles else "To Vertex Group Index",
+            enum_gui_description="Convert this attribute to vertex group index for use with armatures",
+            domains_supported=['POINT'],
+            data_type='INT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
         ),

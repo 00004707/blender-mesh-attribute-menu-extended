@@ -46,53 +46,56 @@ def get_attrib_values(attribute, obj):
     Simply gets attribute values, for every index
     # Returns a list of same type variables as attribute data type
 
+    :param attribute: reference to attribute 
+    :param obj: reference to object
+
     """
-    value_attrib_name = get_attrib_value_propname(attribute)
+    value_attrib_propname = get_attrib_value_propname(attribute)
     dt = attribute.data_type
 
     if etc.verbose_mode:
-        print(f"Getting {attribute.name} values from prop: {value_attrib_name}, data type = {dt}, prop = {value_attrib_name}, len = {len(attribute.data)}" )
+        print(f"Getting {attribute.name} values: data type = {dt} ({attribute.data_type}), prop = {value_attrib_propname}, len = {len(attribute.data)}" )
 
     
     if dt == "FLOAT":
         a_vals = [0.0] * len(attribute.data)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return a_vals
     elif dt == "INT":
         a_vals = [0] * len(attribute.data)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return a_vals
     elif dt == "FLOAT_VECTOR":
         a_vals = [0.0] * (len(attribute.data) * 3) # why not Vector()? 
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1], a_vals[i+2]) for i in range(0, len(a_vals), 3)]
     elif dt == "FLOAT_COLOR":
         a_vals = [0.0] * (len(attribute.data) * 4)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1], a_vals[i+2], a_vals[i+3]) for i in range(0, len(a_vals), 4)]
     elif dt == "BYTE_COLOR":
         a_vals = [0.0] * (len(attribute.data) * 4)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1], a_vals[i+2], a_vals[i+3]) for i in range(0, len(a_vals), 4)]
     elif dt == "BOOLEAN":
         a_vals = [False] * len(attribute.data)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return a_vals
     elif dt == "FLOAT2":
         a_vals = [0.0] * (len(attribute.data) * 2)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1]) for i in range(0, len(a_vals), 2)]
     elif dt == "INT32_2D":
         a_vals = [0] * (len(attribute.data) * 2)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1]) for i in range(0, len(a_vals), 2)]
     elif dt == "QUATERNION":
         a_vals = [0.0] * (len(attribute.data) * 4)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1], a_vals[i+2], a_vals[i+3]) for i in range(0, len(a_vals), 4)]
     elif dt == "INT8":
         a_vals = [0] * len(attribute.data)
-        attribute.data.foreach_get(value_attrib_name, a_vals)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
         return a_vals
     elif dt == "STRING":
         # Foreach set get does not support strings.
@@ -101,7 +104,7 @@ def get_attrib_values(attribute, obj):
             a_vals.append(entry.value)
         return a_vals
     else:
-        return False
+        return None
 
 def get_attrib_default_value(attribute):
     "returns zero value for given datatype"
@@ -861,16 +864,26 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     else:
         raise etc.MeshDataReadException("get_mesh_data", f"Invalid domain data type ({data_type}) or this data is not available on this domain ({source_domain})")
 
-def set_mesh_data(obj, data_target, src_attrib, **kwargs):
+def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     """
-    kwargs (if applicable)
-    face_map_name           Name of the face map to create
-    vertex_group_name       Name of the vertex group to create
-    enable_auto_smooth      bool
-    apply_to_first_shape_key    bool
+    :param data_target: string name from data.py
+    :param src_attrib: reference to the attribute
+
+    :return: status boolean
+
+    :param \**kwargs: 
+     (If applicable)
+    
+    :Keyword Arguments:
+        * face_map_name             Name of the face map to create
+        * vertex_group_name         Name of the vertex group to create
+        * enable_auto_smooth        bool
+        * apply_to_first_shape_key  bool
+        * to_vgindex_weight         float
+        * to_vgindex_weight_mode    enum - STATIC, ATTRIBUTE
+        * to_vgindex_src_attrib     attribute reference
     
     """
-
     a_vals = get_attrib_values(src_attrib, obj)
     if etc.verbose_mode:
         print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
@@ -932,6 +945,25 @@ def set_mesh_data(obj, data_target, src_attrib, **kwargs):
         
     
     # INTEGER
+
+    # -- VERTEX
+
+    elif data_target == "TO_VERTEX_GROUP_INDEX":
+    
+        # clamp to max index
+        max_index_input = max(a_vals)
+        max_index_target = len(obj.vertex_groups) - 1
+        max_index = min([max_index_input, max_index_target])
+        
+        if kwargs["to_vgindex_weight_mode"] == 'STATIC':
+            #lazy set the weight to static value
+            for i, val in enumerate(a_vals):
+                obj.vertex_groups[min([max_index, val])].add([i], kwargs['to_vgindex_weight'], 'REPLACE')
+        
+        # or use attrib
+        elif kwargs["to_vgindex_weight_mode"] == 'ATTRIBUTE':
+            for i, val in enumerate(a_vals):
+                obj.vertex_groups[min([max_index, val])].add([i], kwargs['to_vgindex_src_attrib'].data[i].value, 'REPLACE')
 
     # -- FACE ONLY
     elif data_target == "TO_SCULPT_MODE_FACE_SETS":
@@ -1336,3 +1368,18 @@ def get_attribute_invert_modes(self, context):
                 ("ADD_TO_MINUS_ONE", "Add to -1", ""),
                 ("SUBTRACT_FROM_ONE", "Subtract from 1", ""),
             ]
+
+def get_float_int_attributes(self, context):
+    obj = context.active_object
+
+    enum_entries = []
+    inv_data_entry = ("NULL", "No valid attribues", "This list should contain all Integer and Float Attributes store in Vertices")
+
+    for attrib in obj.data.attributes:
+        if attrib.domain == 'POINT' and attrib.data_type in ['INT', 'FLOAT']:
+            enum_entries.append((attrib.name, attrib.name, f"Use {attrib.name} as a source attribute"))
+    
+    if not len(enum_entries):
+        return [inv_data_entry]
+    
+    return enum_entries
