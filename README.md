@@ -5,6 +5,7 @@
 
 [Take me to the downloads](https://github.com/00004707/blender-mesh-attribute-menu-extended/releases/)
 
+[How to install and how to use it?](https://github.com/00004707/blender-mesh-attribute-menu-extended/wiki)
 
 ## Examples 
 
