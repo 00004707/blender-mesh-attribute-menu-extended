@@ -24,7 +24,8 @@ ObjectDataSource = namedtuple("MeshDataSource", [
     "min_blender_ver",
     "unsupported_from_blender_ver",
     "batch_convert_support",
-    "valid_data_sources" # futureproofing for other object types
+    "valid_data_sources", # futureproofing for other object types
+    "icon"
 ])
 
 # Contains object data sources
@@ -46,7 +47,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     # ON VERTEX EDGE FACE
@@ -62,7 +64,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "HIDE_OFF"
     ),
 
     "POSITION": ObjectDataSource(
@@ -75,7 +78,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "GIZMO"
     ),
     
     # ON VERTEX FACE
@@ -91,7 +95,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "NORMALS_FACE"
     ),
 
     # QUICK BOOLEANS
@@ -107,7 +112,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "RESTRICT_SELECT_OFF"
     ),
 
     "NOT_SELECTED": ObjectDataSource(
@@ -120,7 +126,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "RESTRICT_SELECT_ON"
     ),
     
     # VERTEX ONLY
@@ -136,7 +143,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MOD_MASK"
     ),
 
     "VERT_MEAN_BEVEL": ObjectDataSource(
@@ -149,7 +157,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MOD_BEVEL"
     ),
 
     "VERT_MEAN_CREASE": ObjectDataSource(
@@ -162,7 +171,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINCURVE"
     ),
 
     "VERT_FROM_VERTEX_GROUP": ObjectDataSource(
@@ -175,7 +185,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "GROUP_VERTEX"
     ),
 
     "VERT_IS_IN_VERTEX_GROUP": ObjectDataSource(
@@ -188,7 +199,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "GROUP_VERTEX"
     ),
 
     "VERT_SHAPE_KEY_POSITION": ObjectDataSource(
@@ -201,7 +213,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "SHAPEKEY_DATA"
     ),
 
     "VERT_SHAPE_KEY_POSITION_OFFSET": ObjectDataSource(
@@ -214,7 +227,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "SHAPEKEY_DATA"
     ),
 
     # EDGE ONLY
@@ -230,7 +244,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "OUTLINER_DATA_EMPTY"
     ),
 
     "EDGE_BEVEL_WEIGHT": ObjectDataSource(
@@ -243,7 +258,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MOD_BEVEL"
     ),
 
     "EDGE_CREASE": ObjectDataSource(
@@ -256,7 +272,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINCURVE"
     ),
 
     "EDGE_SHARP": ObjectDataSource(
@@ -269,7 +286,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "SHARPCURVE"
     ),
 
     "EDGE_FREESTYLE_MARK": ObjectDataSource(
@@ -282,7 +300,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "OUTLINER_OB_EMPTY"
     ),
 
     "EDGE_IS_LOOSE": ObjectDataSource(
@@ -295,7 +314,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MOD_EDGESPLIT"
     ),
 
     "EDGE_VERTICES": ObjectDataSource(
@@ -308,7 +328,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "VERTEXSEL"
     ),
 
     # FACE ONLY
@@ -324,7 +345,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "FACE_MAPS"
     ),
 
     "FACE_USE_SMOOTH": ObjectDataSource(
@@ -337,7 +359,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "SMOOTHCURVE"
     ),
 
     "FACE_AREA": ObjectDataSource(
@@ -350,7 +373,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "SNAP_FACE"
     ),
 
     "FACE_MATERIAL_INDEX": ObjectDataSource(
@@ -363,7 +387,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MATERIAL"
     ),
 
     # "FACE_MATERIAL_SLOT_INDEX": ObjectDataSource(
@@ -376,7 +401,8 @@ object_data_sources = {
     #     min_blender_ver=None,
     #     unsupported_from_blender_ver=None,
     #     batch_convert_support=False,
-    #     valid_data_sources = ['MESH']
+    #     valid_data_sources = ['MESH'],
+    #     icon= ""
     # ),
 
 
@@ -391,7 +417,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     "FACE_CORNER_INDEXES": ObjectDataSource(
@@ -404,7 +431,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     "FACE_CORNER_TOTAL": ObjectDataSource(
@@ -417,7 +445,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= ""
     ),
 
     "FACE_CORNER_START_INDEX": ObjectDataSource(
@@ -430,7 +459,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     "FACE_FROM_FACE_MAP": ObjectDataSource(
@@ -443,7 +473,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=(4,0),
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "FACE_MAPS"
     ),
 
     "FACE_MAP_INDEX": ObjectDataSource(
@@ -456,7 +487,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=(4,0),
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     "FACE_IS_MATERIAL_ASSIGNED": ObjectDataSource(
@@ -469,7 +501,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MATERIAL"
     ),
 
     "FACE_IS_MATERIAL_SLOT_ASSIGNED": ObjectDataSource(
@@ -482,7 +515,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MATERIAL"
     ),
 
     # FACE CORNER ONLY
@@ -498,7 +532,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "MOD_NORMALEDIT"
     ),
 
     "CORNER_TANGENT": ObjectDataSource(
@@ -511,7 +546,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
     ),
 
     "CORNER_BITANGENT": ObjectDataSource(
@@ -524,7 +560,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
     ),
 
     "CORNER_BITANGENT_SIGN": ObjectDataSource(
@@ -537,7 +574,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
     ),
 
     "CORNER_EDGE_INDEX": ObjectDataSource(
@@ -550,7 +588,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     "CORNER_VERTEX_INDEX": ObjectDataSource(
@@ -563,7 +602,8 @@ object_data_sources = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH']
+        valid_data_sources = ['MESH'],
+        icon= "LINENUMBERS_ON"
     ),
 
     # "INSERT_SEPARATOR_SPECIAL": None,
@@ -582,7 +622,8 @@ object_data_sources = {
     #     min_blender_ver=None,
     #     unsupported_from_blender_ver=None,
     #     batch_convert_support=False,
-    #     valid_data_sources = ['MESH']
+    #     valid_data_sources = ['MESH'],
+    #   icon= ""
     # ),
 
     # "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
@@ -595,7 +636,8 @@ object_data_sources = {
     #     min_blender_ver=None,
     #     unsupported_from_blender_ver=None,
     #     batch_convert_support=False,
-    #     valid_data_sources = ['MESH']
+    #     valid_data_sources = ['MESH'],
+    #   icon= ""
     # ),
 
 }
@@ -608,6 +650,7 @@ ObjectDataTarget = namedtuple("MeshDataSource", [
     "data_type",
     "min_blender_ver",
     "unsupported_from_blender_ver",
+    "icon"
 ])
 
 # Contains object data sources
@@ -621,14 +664,15 @@ object_data_targets = {
 
     #POINT EDGE FACE
     "TO_VISIBLE": ObjectDataTarget(
-        enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Visible In Edit Mode",
-        enum_gui_description="Convert this attribute to visible in edit mode",
-        
-        domains_supported=['POINT', 'EDGE', 'FACE'],
-        data_type='BOOLEAN',
-        min_blender_ver=None,
-        unsupported_from_blender_ver=None,
-    ),
+            enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Visible In Edit Mode",
+            enum_gui_description="Convert this attribute to visible in edit mode",
+            
+            domains_supported=['POINT', 'EDGE', 'FACE'],
+            data_type='BOOLEAN',
+            min_blender_ver=None,
+            unsupported_from_blender_ver=None,
+            icon="HIDE_OFF",
+        ),
 
     "TO_HIDDEN": ObjectDataTarget(
             enum_gui_friendly_name="To Hidden In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if enhanced_enum_titles else "To Hidden In Edit Mode",
@@ -638,6 +682,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="HIDE_ON",
         ),
 
     "TO_SELECTED": ObjectDataTarget(
@@ -648,6 +693,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="RESTRICT_SELECT_OFF",
         ),
 
     "TO_NOT_SELECTED": ObjectDataTarget(
@@ -658,6 +704,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="RESTRICT_SELECT_ON",
         ),
 
     # # VERTEX EDGE
@@ -672,6 +719,7 @@ object_data_targets = {
             data_type='FLOAT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="MOD_BEVEL",
         ),
 
     "TO_MEAN_CREASE": ObjectDataTarget(
@@ -682,6 +730,7 @@ object_data_targets = {
             data_type='FLOAT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="LINCURVE",
         ),
 
     # VERTEX CORNER
@@ -695,6 +744,7 @@ object_data_targets = {
             data_type='FLOAT_VECTOR',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="MOD_NORMALEDIT",
         ),
 
     # VERTEX
@@ -708,6 +758,7 @@ object_data_targets = {
             data_type='FLOAT_VECTOR',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="GIZMO",
         ),
 
     "TO_SCULPT_MODE_MASK": ObjectDataTarget(
@@ -718,6 +769,7 @@ object_data_targets = {
             data_type='FLOAT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="MOD_MASK",
         ),
 
     "TO_VERTEX_GROUP": ObjectDataTarget(
@@ -728,6 +780,7 @@ object_data_targets = {
             data_type='FLOAT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="GROUP_VERTEX",
         ),
         
     "TO_SHAPE_KEY": ObjectDataTarget(
@@ -738,6 +791,7 @@ object_data_targets = {
             data_type='FLOAT_VECTOR',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="SHAPEKEY_DATA",
         ),
 
     "TO_VERTEX_GROUP_INDEX": ObjectDataTarget(
@@ -747,6 +801,7 @@ object_data_targets = {
             data_type='INT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="GROUP_VERTEX",
         ),
 
     # EDGE
@@ -759,6 +814,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="EMPTY_DATA",
         ),
 
     "TO_SHARP": ObjectDataTarget(
@@ -768,6 +824,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="SHARPCURVE",
         ),
 
     "TO_FREESTYLE_MARK": ObjectDataTarget(
@@ -778,6 +835,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="OUTLINER_OB_EMPTY",
         ),
 
     # FACE
@@ -791,6 +849,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="SMOOTHCURVE",
         ),
 
     "TO_FACE_MAP": ObjectDataTarget(
@@ -801,6 +860,7 @@ object_data_targets = {
             data_type='BOOLEAN',
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
+            icon="FACE_MAPS",
         ),
 
     "TO_SCULPT_MODE_FACE_SETS": ObjectDataTarget(
@@ -811,6 +871,7 @@ object_data_targets = {
             data_type='INT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="UV_FACESEL",
         ),
 
     "TO_MATERIAL_INDEX": ObjectDataTarget(
@@ -821,6 +882,7 @@ object_data_targets = {
             data_type='INT',
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
+            icon="MATERIAL",
         ),
 
     "TO_FACE_MAP_INDEX": ObjectDataTarget(
@@ -831,7 +893,8 @@ object_data_targets = {
             data_type='INT',
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
-        ),    
+            icon="FACE_MAPS",
+        ),  
 
     # # SPECIAL
     # "INSERT_SEPARATOR_SPECIAL": None, 
@@ -843,6 +906,7 @@ object_data_targets = {
     #         data_type='BOOLEAN',
     #         min_blender_ver=None,
     #         unsupported_from_blender_ver=None,
+    #         icon="",
     #     ),    
     
     # "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
@@ -852,6 +916,7 @@ object_data_targets = {
     #         data_type='BOOLEAN',
     #         min_blender_ver=None,
     #         unsupported_from_blender_ver=None,
+    #         icon="",
     #     ),    
 
 

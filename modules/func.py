@@ -1282,22 +1282,42 @@ def get_natively_supported_domains_enum(self, context):
 
         return items
 
+def get_mesh_data_enum_default_icon(data_item):
+    # set the default icon based on supported domains, if none is set
+    if data_item.icon == "":
+        domains = data_item.domains_supported
+        if len(domains) > 1:
+            icon = "MATCUBE"
+        elif domains[0] == "POINT":
+            icon = "VERTEXSEL"
+        elif domains[0] == "EDGE":
+            icon = "EDGESEL"
+        elif domains[0] == "FACE":
+            icon = "FACESEL"
+        elif domains[0] == "CORNER":
+            icon = "SNAP_PERPENDICULAR"
+    else:
+        icon = data_item.icon
+    return icon
+
+
 def get_source_data_enum(self, context):
     """
     Gets source data enum entries 
     """
     e = []
-    for item in data.object_data_sources:
+    for i, item in enumerate(data.object_data_sources):
         if "INSERT_SEPARATOR" in item:
             e.append((None))
         elif "INSERT_NEWLINE" in item:
-             e.append(("","","","",0))
+             e.append(("","","","",i))
         else:
             minver = data.object_data_sources[item].min_blender_ver
             unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
-            
+
             if get_blender_support(minver, unsupported_from): 
-                e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description))
+                icon = get_mesh_data_enum_default_icon(data.object_data_sources[item])
+                e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description, icon, i))
     return e
 
 def get_source_data_enum_without_separators(self, context):
@@ -1322,15 +1342,18 @@ def get_target_data_enum(self, context):
     inv_data_entry = ("NULL", "NO CONVERTABLE DATA", "")
 
 
-    for entry in data.object_data_targets:
+    for i, entry in enumerate(data.object_data_targets):
         if "INSERT_SEPARATOR" in entry:
             items.append((None))
         elif "INSERT_NEWLINE" in entry:
-            items.append(("","","","",0))
+            items.append(("","","","",i))
         else:
+            icon = get_mesh_data_enum_default_icon(data.object_data_targets[entry])
             item = (entry,
                     data.object_data_targets[entry].enum_gui_friendly_name, 
-                    data.object_data_targets[entry].enum_gui_description
+                    data.object_data_targets[entry].enum_gui_description,
+                    icon,
+                    i
                     )
             items.append(item)
 
