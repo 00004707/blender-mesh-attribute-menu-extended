@@ -1167,7 +1167,7 @@ def get_face_maps_enum(self, context):
 
     # case: no data
     if not hasattr(obj, 'face_maps') or not len(obj.face_maps):
-        return [("NULL", "NO FACE MAPS", "")]
+        return [("NULL", "[!] No face maps", "")]
 
 
     for face_map in obj.face_maps:
@@ -1187,7 +1187,7 @@ def get_material_slots_enum(self, context):
 
     # case: no data
     if not len(obj.material_slots):
-        return [("NULL", "NO MATERIAL SLOTS", "")]
+        return [("NULL", "[!] No material slots", "")]
 
     for i, material_slot in enumerate(obj.material_slots):
         if material_slot is not None:
@@ -1208,7 +1208,7 @@ def get_materials_enum(self, context):
 
     # case: no data
     if not len(bpy.data.materials):
-        return [("NULL", "NO MATERIALS", "")]
+        return [("NULL", "[!] No materials", "")]
 
 
     for i, material in enumerate(bpy.data.materials):
@@ -1230,7 +1230,7 @@ def get_vertex_groups_enum(self, context):
 
     # case: no data
     if not len(obj.vertex_groups):
-        return [("NULL", "NO VERTEX GROUPS", "")]
+        return [("NULL", "[!] No Vertex Groups", "")]
 
     for vg in obj.vertex_groups:
         items.append((str(vg.index), vg.name, f"Use {vg.name} vertex group"))
@@ -1250,7 +1250,7 @@ def get_shape_keys_enum(self, context):
 
     # case: no data
     if obj.data.shape_keys is None:
-        return [("NULL", "NO SHAPE KEYS", "")]
+        return [("NULL", "[!] No Shape Keys", "")]
 
     for i, sk in enumerate(obj.data.shape_keys.key_blocks):
         items.append((str(i), sk.name, f"Use {sk.name} shape key"))
@@ -1339,7 +1339,7 @@ def get_target_data_enum(self, context):
     items = []
     obj = context.active_object
     active_attrib = obj.data.attributes.active
-    inv_data_entry = ("NULL", "NO CONVERTABLE DATA", "")
+    inv_data_entry = ("NULL", "[!] No Convertable Data", "")
 
 
     for i, entry in enumerate(data.object_data_targets):
@@ -1425,7 +1425,7 @@ def get_float_int_attributes(self, context):
     obj = context.active_object
 
     enum_entries = []
-    inv_data_entry = ("NULL", "No valid attribues", "This list should contain all Integer and Float Attributes store in Vertices")
+    inv_data_entry = ("NULL", "[!] No valid attribues", "This list should contain all Integer and Float Attributes store in Vertices")
 
     for attrib in obj.data.attributes:
         if attrib.domain == 'POINT' and attrib.data_type in ['INT', 'FLOAT']:
