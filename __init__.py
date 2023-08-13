@@ -41,7 +41,6 @@ else:
 # TODO Get value under active domain in gui
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
 # TODO Add to current sculpt mask option
-# TODO invert sm value when converting
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute

@@ -902,6 +902,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         * to_vgindex_weight_mode    enum - STATIC, ATTRIBUTE
         * to_vgindex_src_attrib     attribute reference
         * uvmap_index               integer
+        * invert_sculpt_mask        boolean, 1-clamped sculpt mask val
     
     """
     a_vals = get_attrib_values(src_attrib, obj)
@@ -1053,6 +1054,9 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             src_attrib = obj.data.attributes[src_attrib_name] # !important
         
         for i, val in enumerate(a_vals):
+            val = min(max(val, 0.0), 1.0)
+            if kwargs['invert_sculpt_mask']:
+                val = 1.0 - val
             obj.data.vertex_paint_masks[0].data[i].value = val
         
         

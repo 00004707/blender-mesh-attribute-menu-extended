@@ -882,6 +882,10 @@ class ConvertToMeshData(bpy.types.Operator):
         items=func.get_uvmaps_enum
     )
 
+    b_invert_sculpt_mode_mask: bpy.props.BoolProperty(name="Invert Sculpt Mode Mask",
+                                               description="Subtracts mask value from 1.0. The value is clamped in 0.0 to 1.0 values.", 
+                                               default=False)
+
 
     @classmethod
     def poll(self, context):
@@ -1000,7 +1004,8 @@ class ConvertToMeshData(bpy.types.Operator):
                            to_vgindex_weight=self.to_vgindex_weight,
                            to_vgindex_weight_mode=self.to_vgindex_weight_mode,
                            to_vgindex_src_attrib=vg_weight_attrib,
-                           uvmap_index=self.to_uvmap_domain_selection)
+                           uvmap_index=self.to_uvmap_domain_selection,
+                           invert_sculpt_mask=self.b_invert_sculpt_mode_mask)
         
         #post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
@@ -1078,7 +1083,8 @@ class ConvertToMeshData(bpy.types.Operator):
         elif self.data_target in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
             row.prop(self, 'to_uvmap_domain_selection', text="UVMap")
             
-
+        elif self.data_target == 'TO_SCULPT_MODE_MASK':
+            row.prop(self, "b_invert_sculpt_mode_mask", toggle=True)
             
         # Show conversion options if data type or domain of attribute is not compatible
         if not domain_compatible or not data_type_compatible:
