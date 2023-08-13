@@ -1325,11 +1325,16 @@ def get_source_data_enum_without_separators(self, context):
     Gets source data enum entries without separators and newlines
     """
     e = []
-    for item in data.object_data_sources:
+    for i, item in enumerate(data.object_data_sources):
         if "INSERT_SEPARATOR" in item or "INSERT_NEWLINE" in item:
             continue
         else:
-            e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description))
+            minver = data.object_data_sources[item].min_blender_ver
+            unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
+
+            if get_blender_support(minver, unsupported_from): 
+                icon = get_mesh_data_enum_default_icon(data.object_data_sources[item])
+                e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description, icon, i))
     return e
 
 def get_target_data_enum(self, context):
@@ -1348,14 +1353,18 @@ def get_target_data_enum(self, context):
         elif "INSERT_NEWLINE" in entry:
             items.append(("","","","",i))
         else:
-            icon = get_mesh_data_enum_default_icon(data.object_data_targets[entry])
-            item = (entry,
-                    data.object_data_targets[entry].enum_gui_friendly_name, 
-                    data.object_data_targets[entry].enum_gui_description,
-                    icon,
-                    i
-                    )
-            items.append(item)
+            minver = data.object_data_targets[entry].min_blender_ver
+            unsupported_from = data.object_data_targets[entry].unsupported_from_blender_ver
+
+            if get_blender_support(minver, unsupported_from): 
+                icon = get_mesh_data_enum_default_icon(data.object_data_targets[entry])
+                item = (entry,
+                        data.object_data_targets[entry].enum_gui_friendly_name, 
+                        data.object_data_targets[entry].enum_gui_description,
+                        icon,
+                        i
+                        )
+                items.append(item)
 
     # this should not happen but since it is here...
     if not len(items):
