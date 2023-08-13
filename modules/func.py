@@ -53,7 +53,7 @@ def get_attrib_values(attribute, obj):
     value_attrib_propname = get_attrib_value_propname(attribute)
     dt = attribute.data_type
 
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"Getting {attribute.name} values: data type = {dt} ({attribute.data_type}), prop = {value_attrib_propname}, len = {len(attribute.data)}" )
 
     
@@ -149,7 +149,7 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
     # for each mode
     if len(on_indexes) == 0:
         prop_name = get_attrib_value_propname(attribute)
-        if etc.verbose_mode:
+        if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
 
         # create storage
@@ -197,7 +197,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     active_attrib_name = attribute.name # !important to get the name not the reference
     active_attrib = obj.data.attributes[active_attrib_name]
     
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print( f"Working on {active_attrib_name} attribute" )
 
     # Get selection in edit mode, on attribute domain
@@ -209,12 +209,12 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     
     active_attrib = obj.data.attributes[active_attrib_name] # !important get_mesh_selected_by_domain function might toggle modes, and change reference, setting again
 
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"Attribute data length: {len(active_attrib.data)}")
         print(f"Selected domains: [{len(selected_el)} total] - {selected_el}")
         print(f"Setting value: {value}")
 
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         a_vals = get_attrib_values(attribute, obj)
         print(f"Pre-set values: {str(a_vals)}")
 
@@ -224,14 +224,14 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     set_attribute_values(active_attrib, value, selected_el)
 
     
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         a_vals = get_attrib_values(attribute, obj)
         print(f"Post-set values: {str(a_vals)}")
 
     return True
 
 def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
-        if etc.verbose_mode:
+        if is_verbose_mode_enabled():
             print(f"Converting attribute {attrib_name}")
         # Auto convert to different data type, if enabled in gui
         attrib = obj.data.attributes[attrib_name]
@@ -242,7 +242,7 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
             atrr_index = obj.data.attributes.keys().index(attrib_name)
             obj.data.attributes.active_index = atrr_index
 
-            if etc.verbose_mode:
+            if is_verbose_mode_enabled():
                 print(f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}")
             bpy.ops.geometry.attribute_convert(mode=mode, domain=domain, data_type=data_type)
         else:
@@ -274,7 +274,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
     Selection and visibility works a bit differently than other attributes
     Those require setting the state of faces, edges and vertices separately too
     """
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}")
 
     bm = bmesh.new()
@@ -387,7 +387,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             
             # get edges that are connected to vertex assinged to this corner
             edges = bm.verts[loop.vertex_index].link_edges
-            if etc.verbose_mode:
+            if is_verbose_mode_enabled():
                 print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
                 print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
             
@@ -397,7 +397,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                     edge_indexes_to_select.append(edge.index)
         
         bm.free()
-        if etc.verbose_mode:
+        if is_verbose_mode_enabled():
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
@@ -472,7 +472,7 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
         # input is 1 dimensional list with values, do not pass vectors, pass individual values
         
         indexes = []
-        if etc.verbose_mode:
+        if is_verbose_mode_enabled():
             print(f"Get filtered indexes with settings:\n{condition} to {compare_value}, case sensitive {case_sensitive_string} \non dataset {source_data}")
 
         #booleans
@@ -531,7 +531,7 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
                 elif condition == "ENDS_WITH" and value.endswitch(cmp): #endswith
                     indexes.append(i)
 
-        if etc.verbose_mode:
+        if is_verbose_mode_enabled():
             print(f"Filtered indexes: {indexes}")
         return indexes
 
@@ -548,7 +548,7 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     * mat_index             material index
     * uvmap_index           uvmap index
     """
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"get_mesh_data_kwargs: {kwargs}")
 
     def get_simple_domain_attrib_val(domain, attribute_name):
@@ -568,7 +568,7 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
         except Exception as e:
             raise etc.MeshDataReadException("get_simple_domain_attrib_val", f"Failed to get {attribute_name} from {domain} \n {e}")
     
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"Reading {data_type} mesh data on {source_domain}...")
 
     # DOMAIN INDEX
@@ -900,7 +900,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     
     """
     a_vals = get_attrib_values(src_attrib, obj)
-    if etc.verbose_mode:
+    if is_verbose_mode_enabled():
         print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
     
     src_attrib_name = src_attrib.name
@@ -1148,9 +1148,6 @@ def get_friendly_data_type_name(data_type_raw):
     else:
         return data_type_raw
 
-def get_blender_support(minver, minver_unsupported):
-    return (minver is None or bpy.app.version >= minver) and (minver_unsupported is None or bpy.app.version < minver_unsupported)
-
 # Data enums
 # --------------------------------------------
 
@@ -1266,7 +1263,7 @@ def get_natively_supported_domains_enum(self, context):
         items = []
         domains_supported = data.object_data_sources[self.domain_data_type].domains_supported
 
-        # if etc.verbose_mode:
+        # if is_verbose_mode_enabled():
         #     print(f"{self.domain_data_type} supports {domains_supported} domains")
         
         #items.append(("DEFAULT", "Default", "Use default domain for data type"))
@@ -1301,6 +1298,20 @@ def get_mesh_data_enum_default_icon(data_item):
     return icon
 
 
+def get_enhanced_enum_title_name(item):
+    name = item.enum_gui_friendly_name
+    # if etc.get_enhanced_enum_titles_enabled():
+    #     name += ' ⁻' 
+    #     if 'POINT' in item.domains_supported:
+    #         name.append(' ᵛᵉʳᵗᵉˣ')
+    #     if 'EDGE' in item.domains_supported:
+    #         name += ' ᵉᵈᵍᵉ'
+    #     if 'FACE' in item.domains_supported:
+    #         name += ' ᶠᵃᶜᵉ'
+    #     if 'CORNER' in item.domains_supported:
+    #         name += ' ᶜᵒʳⁿᵉʳ'
+    return name
+
 def get_source_data_enum(self, context):
     """
     Gets source data enum entries 
@@ -1315,9 +1326,11 @@ def get_source_data_enum(self, context):
             minver = data.object_data_sources[item].min_blender_ver
             unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
 
-            if get_blender_support(minver, unsupported_from): 
+            name = get_enhanced_enum_title_name(data.object_data_sources[item])
+            
+            if etc.get_blender_support(minver, unsupported_from): 
                 icon = get_mesh_data_enum_default_icon(data.object_data_sources[item])
-                e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description, icon, i))
+                e.append((item, name, data.object_data_sources[item].enum_gui_description, icon, i))
     return e
 
 def get_source_data_enum_without_separators(self, context):
@@ -1331,10 +1344,12 @@ def get_source_data_enum_without_separators(self, context):
         else:
             minver = data.object_data_sources[item].min_blender_ver
             unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
+            
+            name = get_enhanced_enum_title_name(data.object_data_sources[item])
 
-            if get_blender_support(minver, unsupported_from): 
+            if etc.get_blender_support(minver, unsupported_from): 
                 icon = get_mesh_data_enum_default_icon(data.object_data_sources[item])
-                e.append((item, data.object_data_sources[item].enum_gui_friendly_name, data.object_data_sources[item].enum_gui_description, icon, i))
+                e.append((item, name, data.object_data_sources[item].enum_gui_description, icon, i))
     return e
 
 def get_target_data_enum(self, context):
@@ -1356,7 +1371,7 @@ def get_target_data_enum(self, context):
             minver = data.object_data_targets[entry].min_blender_ver
             unsupported_from = data.object_data_targets[entry].unsupported_from_blender_ver
 
-            if get_blender_support(minver, unsupported_from): 
+            if etc.get_blender_support(minver, unsupported_from): 
                 icon = get_mesh_data_enum_default_icon(data.object_data_targets[entry])
                 item = (entry,
                         data.object_data_targets[entry].enum_gui_friendly_name, 
@@ -1399,7 +1414,7 @@ def get_attribute_data_types_enum(self,context):
     """
     l = []  
     for item in data.attribute_data_types:
-        if get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
+        if etc.get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
             l.append((item, data.attribute_data_types[item].friendly_name, ""))
     return l
 
@@ -1409,7 +1424,7 @@ def get_attribute_domains_enum(self, context):
     """
     l = []
     for item in data.attribute_domains:
-        if get_blender_support(data.attribute_domains[item].min_blender_ver, data.attribute_domains[item].unsupported_from_blender_ver):
+        if etc.get_blender_support(data.attribute_domains[item].min_blender_ver, data.attribute_domains[item].unsupported_from_blender_ver):
             l.append((item, data.attribute_domains[item].friendly_name, ""))
     return l
 
@@ -1465,3 +1480,6 @@ def get_uvmaps_enum(self, context):
         items.append((str(i), uvmap.name, f"Use {uvmap.name} UVMap"))
 
     return items
+
+def is_verbose_mode_enabled():
+    return etc.get_preferences_attrib('verbose_mode')

@@ -1,0 +1,92 @@
+import bpy
+from . import ops
+from . import func
+
+# Operators
+# ----------------------------
+
+class MAMETestAll(bpy.types.Operator):
+    """
+    DEBUG TEST EVERYTHING (TESTS)
+    """
+    bl_idname = "mame.tester"
+    bl_label = "mame test"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        # bpy.ops.mesh.primitive_monkey_add()
+        # obj = context.active_object
+        excs = []
+        for source_data in [el[0] for el in func.get_source_data_enum_without_separators(self, context)]:
+            for target_domain in ['POINT','EDGE','FACE','CORNER']:
+                # for convert_domain in func.get_attribute_domains_enum(self, context):
+                #     for convert_dt in func.get_attribute_data_types_enum(self, context):
+                    
+                    
+                        bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT',
+                                                                attrib_name='',
+                                                                domain_data_type=source_data)
+                                                                #target_attrib_domain=target_domain)#,
+                    
+        if excs:
+            raise Exception(excs)   
+        
+                                # batch_convert_enabled= True,
+                                # auto_convert = True,
+                                # enum_attrib_converter_mode='GENERIC')
+                                # enum_attrib_converter_domain=convert_domain,
+                                # enum_attrib_converter_datatype=convert_dt)
+    
+    # enum_face_maps=''
+    # enum_material_slots: bpy.props.EnumProperty(
+    # enum_materials: bpy.props.EnumProperty(
+    # enum_vertex_groups: bpy.props.EnumProperty(
+    # enum_shape_keys: bpy.props.EnumProperty(
+    # enum_shape_keys_offset_source: bpy.props.EnumProperty(
+
+ 
+                            
+
+        return {'FINISHED'}
+        for domain in func.get_target_compatible_domains(self, context):
+            for data_target in func.get_target_data_enum(self, context):
+                bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT',
+                                                            append_to_current=False,
+                                                            apply_to_first_shape_key=True,
+                                                            delete_if_converted=False,
+                                                            data_target=data_target,
+                                                            attrib_name="",
+                                                            convert_to_domain=domain,
+                                                            enable_auto_smooth=True)
+                                                
+
+        return {'FINISHED'}
+
+
+    @classmethod
+    def poll(self, context):
+        return True
+
+class MAMECreateAllAttributes(bpy.types.Operator):
+    """
+    TEST ALL ATTRIBUTES
+    """
+    bl_idname = "mame.create_all_attribs"
+    bl_label = "attrib test"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        for domain in ['POINT', 'EDGE','FACE','CORNER']:
+            for data_type in ['INT','INT8','FLOAT','FLOAT_VECTOR','FLOAT2','FLOAT_COLOR','BYTE_COLOR','BOOLEAN','STRING', 'INT32_2D', 'QUATERNION']:
+                bpy.context.active_object.data.attributes.new(f"{domain} {data_type}", data_type, domain)
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        return True
+    
+# Utility
+# ----------------------------
+

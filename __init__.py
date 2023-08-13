@@ -1,19 +1,17 @@
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 3, 2),
+    "version": (0, 4, 0),
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
     "warning": "",
-    "doc_url": "",
+    "doc_url": "https://github.com/00004707/blender-mesh-attribute-menu-extended",
     "category": "Interface",
+    "support": "COMMUNITY",
+    "tracker_url": "https://github.com/00004707/blender-mesh-attribute-menu-extended/issues",
 }
 
-import random
-from mathutils import Vector
-
-import sys
 import importlib
 
 # reload for developing fix
@@ -29,6 +27,7 @@ else:
     from .modules import data
     from .modules import gui
     from .modules import ops
+    from .modules import debug
     #print("loaded")
 
 # Important notes 
@@ -39,8 +38,6 @@ else:
 # the best way to handle those is by NAME, most and foremost, and then by index, secondly, if setting by name fails
 # idk how to use pointers here, this might have helped, if possible at all
 
-
-# TODO Feature to overwrite when creating attributes from data
 # TODO Get value under active domain in gui
 # TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
 # TODO Add to current sculpt mask option
@@ -58,28 +55,30 @@ else:
 # ------------------------------------------
 # registers
 
-classes = [data.MAME_PropValues, 
-           ops.CreateAttribFromData, 
-           ops.AssignActiveAttribValueToSelection, 
-           ops.ConditionalSelection, 
-           ops.DuplicateAttribute, 
-           ops.InvertAttribute, 
-           ops.RemoveAllAttribute, 
-           ops.ConvertToMeshData, 
-           ops.CopyAttributeToSelected,
-           ops.DeSelectDomainWithAttributeZeroValue,
-           ops.SelectDomainWithAttributeZeroValue,
-           ops.AttributeResolveNameCollisions,
-           etc.AddonPreferences
+classes = [etc.AddonPreferences,
+            data.MAME_PropValues, 
+            ops.CreateAttribFromData, 
+            ops.AssignActiveAttribValueToSelection, 
+            ops.ConditionalSelection, 
+            ops.DuplicateAttribute, 
+            ops.InvertAttribute, 
+            ops.RemoveAllAttribute, 
+            ops.ConvertToMeshData, 
+            ops.CopyAttributeToSelected,
+            ops.DeSelectDomainWithAttributeZeroValue,
+            ops.SelectDomainWithAttributeZeroValue,
+            ops.AttributeResolveNameCollisions,
            ]
 
-if etc.enable_debug_tester:
-    classes.append(ops.MAMETestAll)
+# dbg
+classes += [debug.MAMETestAll, 
+            debug.MAMECreateAllAttributes
+            ]
 
 def register():
     
     for c in classes:
-        if etc.verbose_mode:
+        if func.is_verbose_mode_enabled():
             print(f"Registering class {c}")
         bpy.utils.register_class(c)
 
