@@ -39,7 +39,6 @@ else:
 # idk how to use pointers here, this might have helped, if possible at all
 
 # TODO Get value under active domain in gui
-# TODO invert: INT8 = -128 <-> 127, same for int likely, clamp to fit in limits
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute
@@ -47,7 +46,6 @@ else:
 # TODO quickly create named attribute node from active attribute
 # TODO add buttons in vertex group and shape key menus
 # TODO toggleable quick menus
-# TODO BETTER GUI
 
 # ------------------------------------------
 # registers

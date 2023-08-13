@@ -1047,7 +1047,7 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_string: bpy.props.StringProperty(name="String Value", default="")
     val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
     val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
+    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=-128, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if etc.get_blender_support(attribute_data_types['INT32_2D'].min_blender_ver, attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
