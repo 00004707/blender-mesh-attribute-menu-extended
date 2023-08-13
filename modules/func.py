@@ -903,6 +903,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         * to_vgindex_src_attrib     attribute reference
         * uvmap_index               integer
         * invert_sculpt_mask        boolean, 1-clamped sculpt mask val
+        * expand_sculpt_mask_mode   enum REPLACE EXPAND SUBTRACT
     
     """
     a_vals = get_attrib_values(src_attrib, obj)
@@ -1055,9 +1056,18 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         
         for i, val in enumerate(a_vals):
             val = min(max(val, 0.0), 1.0)
+
+            # Invert the values if enabled
             if kwargs['invert_sculpt_mask']:
                 val = 1.0 - val
-            obj.data.vertex_paint_masks[0].data[i].value = val
+
+            # Apply different value depending on the mode (auto clamped then)
+            if kwargs['expand_sculpt_mask_mode'] == 'REPLACE':
+                obj.data.vertex_paint_masks[0].data[i].value = val
+            elif kwargs['expand_sculpt_mask_mode'] == 'EXPAND':
+                obj.data.vertex_paint_masks[0].data[i].value += val
+            elif kwargs['expand_sculpt_mask_mode'] == 'SUBTRACT':
+                obj.data.vertex_paint_masks[0].data[i].value -= val
         
         
     elif data_target == "TO_VERTEX_GROUP":

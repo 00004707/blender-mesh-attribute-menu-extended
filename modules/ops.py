@@ -887,6 +887,14 @@ class ConvertToMeshData(bpy.types.Operator):
                                                default=False)
 
 
+    enum_expand_sculpt_mask_mode: bpy.props.EnumProperty(
+        name="Expand Mask Mode",
+        description="Select an option",
+        items=[("REPLACE", "Replace", "Replaces current mask to values from attribute"),
+               ("EXPAND", "Expand", "Adds the values to current sculpt mask"),
+               ("SUBTRACT", "Subtract", "Removes the values from current sculpt mask")]
+    )
+
     @classmethod
     def poll(self, context):
         self.poll_message_set("No active attribute")    
@@ -1005,7 +1013,8 @@ class ConvertToMeshData(bpy.types.Operator):
                            to_vgindex_weight_mode=self.to_vgindex_weight_mode,
                            to_vgindex_src_attrib=vg_weight_attrib,
                            uvmap_index=self.to_uvmap_domain_selection,
-                           invert_sculpt_mask=self.b_invert_sculpt_mode_mask)
+                           invert_sculpt_mask=self.b_invert_sculpt_mode_mask,
+                           expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode)
         
         #post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
@@ -1084,7 +1093,8 @@ class ConvertToMeshData(bpy.types.Operator):
             row.prop(self, 'to_uvmap_domain_selection', text="UVMap")
             
         elif self.data_target == 'TO_SCULPT_MODE_MASK':
-            row.prop(self, "b_invert_sculpt_mode_mask", toggle=True)
+            row.prop(self, "b_invert_sculpt_mode_mask")
+            row.prop(self, "enum_expand_sculpt_mask_mode", text='Mode')
             
         # Show conversion options if data type or domain of attribute is not compatible
         if not domain_compatible or not data_type_compatible:
