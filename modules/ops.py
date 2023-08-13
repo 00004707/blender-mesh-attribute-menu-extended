@@ -1803,7 +1803,7 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
     bl_idname = "mesh.attribute_zero_value_select"
     bl_label = "Select Domain With Zero Value of Current Attribute"
-    bl_description = "Select attribute with zero value"
+    bl_description = "Select attribute with non-zero value"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -1861,7 +1861,7 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
     bl_idname = "mesh.attribute_zero_value_deselect"
     bl_label = "Deselect Domain With Zero Value of Current Attribute"
-    bl_description = "Deselect attribute with zero value"
+    bl_description = "Deselect attribute with non-zero value"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
