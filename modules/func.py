@@ -862,6 +862,11 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     elif data_type == "CORNER_VERTEX_INDEX":
         return get_simple_domain_attrib_val(source_domain, "vertex_index") 
     
+    # UVMAP
+    elif data_type == "UVMAP":
+        return [map.uv for map in obj.data.uv_layers[int(kwargs['uvmap_index'])].data]
+    
+
     # -----------------------------
     # SPECIAL ATTRIBS START
 
@@ -1082,6 +1087,13 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             obj.data.normals_split_custom_set_from_vertices([[vec[0],vec[1],vec[2]] for vec in a_vals])
         elif src_attrib.domain == 'CORNER':
             obj.data.normals_split_custom_set([[vec[0],vec[1],vec[2]] for vec in a_vals])
+    
+    # VECTOR2D (FLOAT2)
+
+    elif data_target == "TO_UVMAP":
+        obj.data.uv_layers.new(name=src_attrib_name)
+        for i, val in enumerate(a_vals):
+            obj.data.uv_layers[int(kwargs['uvmap_index'])].data[i].uv = (val[0], val[1])
 
     # special
 

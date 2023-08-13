@@ -43,7 +43,6 @@ else:
 # TODO Add to current sculpt mask option
 # TODO invert sm value when converting
 # TODO Custom names with {format} accessible via gui by user when batch converting attributes
-# TODO Attribute 2 UVMap & from UVMap for 3.4,3.3 users.
 # TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute
 # TODO Convert multiple attributes at once etc.

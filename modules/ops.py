@@ -156,7 +156,7 @@ class CreateAttribFromData(bpy.types.Operator):
         items=func.get_shape_keys_enum
     )
 
-    enum_uv_domain_selecton_source: bpy.props.EnumProperty(
+    enum_uvmaps: bpy.props.EnumProperty(
         name="From UVMap",
         description="Select an option",
         items=func.get_uvmaps_enum
@@ -257,6 +257,13 @@ class CreateAttribFromData(bpy.types.Operator):
                     self.report({'ERROR'}, f"No vertex groups. Nothing done")
                 return False
 
+        # UVMaps
+        if self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']: 
+            if self.enum_uvmaps == 'NULL':
+                self.report({'ERROR'}, f"No UVMap selected. Nothing done")
+                return False
+
+
         # invalid domain enum for multiple choices
         if len(data.object_data_sources[self.domain_data_type].domains_supported) > 1 and self.target_attrib_domain == '':
             self.report({'ERROR'}, f"Invalid source domain. Nothing done")
@@ -311,7 +318,7 @@ class CreateAttribFromData(bpy.types.Operator):
                                 vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
                                 material=func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
                                 material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None,
-                                uvmap=func.get_uvmaps_enum(self, context)[int(self.enum_uv_domain_selecton_source)][1] if self.enum_uv_domain_selecton_source != 'NULL' else None) 
+                                uvmap=func.get_uvmaps_enum(self, context)[int(self.enum_uvmaps)][1] if self.enum_uvmaps != 'NULL' else None) 
             else:
                 name = self.attrib_name
             
@@ -331,7 +338,7 @@ class CreateAttribFromData(bpy.types.Operator):
                                         fm_index=self.enum_face_maps,
                                         sel_mat=self.enum_materials,
                                         mat_index=self.enum_material_slots,
-                                        uvmap_index=self.enum_uv_domain_selecton_source)
+                                        uvmap_index=self.enum_uvmaps)
             if func.is_verbose_mode_enabled():
                 print(f"Creating attribute from data: {obj_data}")
             
@@ -534,9 +541,9 @@ class CreateAttribFromData(bpy.types.Operator):
         elif self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.batch_convert_enabled:
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
         
-        # UVMap domain selection
-        elif self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR"]:
-            row.prop(self, "enum_uv_domain_selecton_source", text="UV Map")
+        # UVMap domain selection, or from UVMap for legacy blender versions
+        elif self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']:
+            row.prop(self, "enum_uvmaps", text="UV Map")
 
         # convert all of type to attrib
         if batch_convert_support:
@@ -1965,7 +1972,7 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                 
             if obj.data.attributes[i].name in restricted_names:
                 if (not func.get_is_attribute_valid(obj.data.attributes[i].name) 
-                    or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER') #ignore uvmaps, they're auto renamed
+                    or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER' and bpy.app.version >= (3,5,0)) #ignore uvmaps, they're auto renamed if bl > 3,5
                     or (obj.data.attributes[i].data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] and obj.data.attributes[i].domain in ['POINT', 'CORNER'])): # same for color attribs
                     failed += 1
                 else:

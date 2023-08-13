@@ -600,6 +600,19 @@ object_data_sources = {
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON"
     ),
+    "UVMAP": ObjectDataSource(
+        enum_gui_friendly_name="UVMap ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "UVMap",
+        enum_gui_description="Create Vector2D UVMap attribute from selected UVMap",
+        attribute_auto_name="UVMap",
+        attribute_domain_on_default='CORNER',
+        domains_supported=['CORNER'],
+        data_type='FLOAT2',
+        min_blender_ver=None,
+        unsupported_from_blender_ver=(3,5),
+        batch_convert_support=False,
+        valid_data_sources = ['MESH'],
+        icon= "UV"
+    ),
 
     # "INSERT_SEPARATOR_SPECIAL": None,
 
@@ -889,6 +902,20 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
             icon="FACE_MAPS",
+        ),  
+
+    # CORNER
+    "INSERT_SEPARATOR_FC": None, 
+
+    "TO_UVMAP": ObjectDataTarget(
+            enum_gui_friendly_name="To UVMap ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "To UVMap",
+            enum_gui_description="Convert this attribute to UVMap",
+            
+            domains_supported=['CORNER'],
+            data_type='FLOAT2',
+            min_blender_ver=None,
+            unsupported_from_blender_ver=(3,5),
+            icon="UV",
         ),  
 
     # # SPECIAL
