@@ -39,7 +39,6 @@ else:
 # idk how to use pointers here, this might have helped, if possible at all
 
 # TODO Get value under active domain in gui
-# TODO Custom names with {format} accessible via gui by user when batch converting attributes
 # TODO Selected verts and edges in uvmap -> .vs.uvmap and vice versa
 # TODO ConditionedRemoveAttribute
 # TODO Convert multiple attributes at once etc.

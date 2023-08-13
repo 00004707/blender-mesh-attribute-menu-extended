@@ -29,7 +29,7 @@ ObjectDataSource = namedtuple("MeshDataSource", [
 # "INSERT_NEWLINE_": None,           will add a new column in enum menu
 #
 # Formattable string values:
-# face_map shape_key domain vertex_group material material_slot shape_key_offset_from
+# face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from
 object_data_sources = {
     # ON ALL DOMAINS
     "INDEX": ObjectDataSource(
@@ -215,7 +215,7 @@ object_data_sources = {
     "VERT_SHAPE_KEY_POSITION_OFFSET": ObjectDataSource(
         enum_gui_friendly_name="Position Offset from Shape Key ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Position Offset from Shape Key",
         enum_gui_description="Create float vector attribute from shape key vertex position offset from other shape key",
-        attribute_auto_name="Position Offset from {shape_key_offset_from} to {shape_key}",
+        attribute_auto_name="Position Offset from {shape_key} to {shape_key_to}",
         attribute_domain_on_default='POINT',
         domains_supported=['POINT'],
         data_type='FLOAT_VECTOR',

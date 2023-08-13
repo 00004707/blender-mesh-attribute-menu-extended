@@ -699,7 +699,7 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
         offset_to = [vert_shape.co for vert_shape in offset_sk.data]
         
         for vert in obj.data.vertices:
-            offset_from[vert.index] = offset_from[vert.index] - offset_to[vert.index]
+            offset_from[vert.index] = offset_to[vert.index] - offset_from[vert.index]
         return offset_from
 
 

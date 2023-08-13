@@ -110,13 +110,27 @@ class CreateAttribFromData(bpy.types.Operator):
         default=False)
     
     # used for batch shape key offset attribute creation
-    batch_convert_sk_offset_src_toggle: bpy.props.BoolProperty(
+    batch_convert_sk_offset_target_toggle: bpy.props.BoolProperty(
         name="Set \"Offset to\" instead of \"Offset From\"", 
         description="", 
         default=False)
     
     b_overwrite: bpy.props.BoolProperty(name="Overwrite", description="Overwrites the attribute if exists", default=False)
     
+    name_format_desc = """ Replaces wildcards with predefined names. using {uvmap} will replace it with current UVMap name.
+• {domain} - Domain name
+• {face_map} - Face map name
+• {shape_key} - Shape key name, or name of the shape key that the offset is calculated to
+• {shape_key_to} - Name of the shape key that the offset is calculated to
+• {shape_key_from} - Name of the shape key that the offset is calculated from
+• {vertex_group} - Vertex Group name
+• {material} - Material name
+• {material_slot} - Material slot index
+• {uvmap} - UVMap name
+• {index} - (Batch only) index of the processed element
+"""
+
+    b_enable_name_formatting: bpy.props.BoolProperty(name="Enable Name Formatting (hover for info)", description=name_format_desc, default=True)
 
     # Data selectors
 
@@ -150,7 +164,7 @@ class CreateAttribFromData(bpy.types.Operator):
         items=func.get_shape_keys_enum
     )
 
-    enum_shape_keys_offset_source: bpy.props.EnumProperty(
+    enum_shape_keys_offset_target: bpy.props.EnumProperty(
         name="Offset from",
         description="Select an option",
         items=func.get_shape_keys_enum
@@ -231,11 +245,11 @@ class CreateAttribFromData(bpy.types.Operator):
         if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
             if self.batch_convert_enabled:
-                if not self.batch_convert_sk_offset_src_toggle and self.enum_shape_keys_offset_source == 'NULL':
-                        self.report({'ERROR'}, f"Source shape key to get offset from is invalid. Nothing done")
+                if not self.batch_convert_sk_offset_target_toggle and self.enum_shape_keys_offset_target == 'NULL':
+                        self.report({'ERROR'}, f"Source shape key to get offset target is invalid. Nothing done")
                         return False
 
-                if self.batch_convert_sk_offset_src_toggle and self.enum_shape_keys == 'NULL':
+                if self.batch_convert_sk_offset_target_toggle and self.enum_shape_keys == 'NULL':
                     self.report({'ERROR'}, f"Target shape key to get offset from is invalid. Nothing done")
                     return False
                 
@@ -306,21 +320,26 @@ class CreateAttribFromData(bpy.types.Operator):
         # [Batch mode off] Single assignment to single attribute
         if not data.object_data_sources[self.domain_data_type].batch_convert_support or not self.batch_convert_enabled:
             
-            # Automatic name formatting
-            if self.attrib_name == "":
-                name = data.object_data_sources[self.domain_data_type].attribute_auto_name
-
+            def format_name(name:str):
                 # this is dirty but it already gets the right data so...
-                name = name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                return name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
                                 face_map=func.get_face_maps_enum(self, context)[int(self.enum_face_maps)][1] if self.enum_face_maps != 'NULL' else None,
                                 shape_key=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
-                                shape_key_offset_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source)][1] if self.enum_shape_keys_offset_source != 'NULL' else None, 
+                                shape_key_to=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_target)][1] if self.enum_shape_keys_offset_target != 'NULL' else None, 
+                                shape_key_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
                                 vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
                                 material=func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
                                 material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None,
                                 uvmap=func.get_uvmaps_enum(self, context)[int(self.enum_uvmaps)][1] if self.enum_uvmaps != 'NULL' else None) 
+            
+            # Automatic name formatting
+            if self.attrib_name == "":
+                name = data.object_data_sources[self.domain_data_type].attribute_auto_name
+                name = format_name(name)
             else:
                 name = self.attrib_name
+                if self.b_enable_name_formatting:
+                    name = format_name(name)
             
             name = func.get_safe_attrib_name(obj, name) # naming the same way as vertex group will crash blender
 
@@ -334,7 +353,7 @@ class CreateAttribFromData(bpy.types.Operator):
                                         self.target_attrib_domain, 
                                         vg_index=self.enum_vertex_groups,
                                         sk_index=self.enum_shape_keys,
-                                        sk_offset_index=self.enum_shape_keys_offset_source,
+                                        sk_offset_index=self.enum_shape_keys_offset_target,
                                         fm_index=self.enum_face_maps,
                                         sel_mat=self.enum_materials,
                                         mat_index=self.enum_material_slots,
@@ -361,7 +380,7 @@ class CreateAttribFromData(bpy.types.Operator):
         # "FACE_IS_MATERIAL_SLOT_ASSIGNED", 
         # "FACE_FROM_FACE_MAP"
         else:
-            for element in func.get_all_mesh_data_ids_of_type(obj, self.domain_data_type):
+            for element_index, element in enumerate(func.get_all_mesh_data_ids_of_type(obj, self.domain_data_type)):
                 
                 if func.is_verbose_mode_enabled():
                     print(f"Batch converting #{element}")
@@ -369,7 +388,7 @@ class CreateAttribFromData(bpy.types.Operator):
                 vertex_group_name = None
                 vg_index = None
                 shape_key = None
-                shape_key_offset_from = None
+                shape_key_to = None
                 sk_index = None
                 sk_offset_index = None
                 material = None
@@ -398,18 +417,19 @@ class CreateAttribFromData(bpy.types.Operator):
                 elif self.domain_data_type == 'VERT_SHAPE_KEY_POSITION_OFFSET':
 
                     # case: user wants to set offset from
-                    if self.batch_convert_sk_offset_src_toggle:
-                        shape_key = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_source)][1]
-                        shape_key_offset_from = func.get_shape_keys_enum(self, context)[element][1]
-                        sk_index = self.enum_shape_keys
-                        sk_offset_index = element
+                    if self.batch_convert_sk_offset_target_toggle:
+                        shape_key = func.get_shape_keys_enum(self, context)[element][1]
+                        shape_key_to = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1]
+                        sk_index = element
+                        sk_offset_index = self.enum_shape_keys_offset_target
 
                     # case: user wants to set offset to
                     else:
-                        shape_key = func.get_shape_keys_enum(self, context)[element][1]
-                        shape_key_offset_from = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1]
-                        sk_index = element
-                        sk_offset_index = self.enum_shape_keys_offset_source
+                        shape_key = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_target)][1]
+                        shape_key_to = func.get_shape_keys_enum(self, context)[element][1]
+                        sk_index = self.enum_shape_keys
+                        sk_offset_index = element
+                        
 
                     if func.is_verbose_mode_enabled():
                         print(f"Source is shape key offset, \n FROM: {func.get_shape_keys_enum(self, context)[element]} \n TO: {func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)]}")
@@ -432,18 +452,26 @@ class CreateAttribFromData(bpy.types.Operator):
                     face_map = func.get_face_maps_enum(self, context)[element][1]
                     fm_index = element
 
+                def format_name_batch(xname:str):
+                    return xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                                    face_map=face_map,
+                                    shape_key=shape_key, 
+                                    shape_key_to=shape_key_to,
+                                    shape_key_from=shape_key, 
+                                    vertex_group=vertex_group_name, 
+                                    material=material, 
+                                    material_slot=material_slot,
+                                    index=element_index) 
+
                 # Create formatted attribute name
                 if self.attrib_name == "":
                     xname = data.object_data_sources[self.domain_data_type].attribute_auto_name
-                    xname = xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
-                                    face_map=face_map,
-                                    shape_key=shape_key, 
-                                    shape_key_offset_from=shape_key_offset_from, 
-                                    vertex_group=vertex_group_name, 
-                                    material=material, 
-                                    material_slot=material_slot) 
+                    xname = format_name_batch(xname)
                 else:
                     xname = self.attrib_name
+                    if self.b_enable_name_formatting:
+                        xname = format_name_batch(xname)
+
 
                 # Grab safe name for Vertex Groups to avoid blender crashing and possibly other cases in the future
                 xname = func.get_safe_attrib_name(obj, xname) 
@@ -523,15 +551,15 @@ class CreateAttribFromData(bpy.types.Operator):
             # Shape key "Offset From" and  "Offset To" selectors
             if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
-                if not self.batch_convert_enabled or (not self.batch_convert_sk_offset_src_toggle):
-                    row.prop(self, "enum_shape_keys_offset_source", text="Offset from")
-
-                if not self.batch_convert_enabled or self.batch_convert_sk_offset_src_toggle:
-                    row.prop(self, "enum_shape_keys", text="Offset To")
+                if not self.batch_convert_enabled or (not self.batch_convert_sk_offset_target_toggle):
+                    row.prop(self, "enum_shape_keys", text="Offset from")
+                    
+                if not self.batch_convert_enabled or self.batch_convert_sk_offset_target_toggle:
+                    row.prop(self, "enum_shape_keys_offset_target", text="Offset to")
                 
                 # Batch convert toggle mode either to create multiple "offset from" attributes or mulitple "offset to" attributes
                 if self.batch_convert_enabled:
-                    row.prop(self, "batch_convert_sk_offset_src_toggle", text="Set \"Offset to\" instead of \"Offset From\"")
+                    row.prop(self, "batch_convert_sk_offset_target_toggle", text="Set \"Offset to\" instead of \"Offset From\"")
 
             # Simple shape key vertex position to attribute mode
             if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION":
@@ -551,7 +579,8 @@ class CreateAttribFromData(bpy.types.Operator):
 
         # Overwrite toggle
         row.prop(self, "b_overwrite", text="Overwrite if exists")
-
+        row.prop(self, "b_enable_name_formatting")
+        
         # Automatic conversion to another type, toggleable
         row.prop(self, "auto_convert", text="Convert Attribute After Creation")
         if self.auto_convert:
