@@ -1,6 +1,19 @@
 
-# ------------------------------------------
-# gui
+"""
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+"""
+
+"""
+gui
+
+Everything related to user interface.
+
+"""
  
 import bpy 
 from . import func
@@ -8,9 +21,12 @@ from . import data
 from . import etc
 from . import debug
 
+# Properties Panel
+# -----------------------------------------
+
 def attribute_assign_panel(self, context):
     """
-    Buttons underneath the attributes list
+    Buttons underneath the attributes list in Attributes Menu located in Properties Panel
     """
 
     layout = self.layout
@@ -18,6 +34,8 @@ def attribute_assign_panel(self, context):
     ob = context.active_object
 
     if ( ob and ob.type == 'MESH'):
+
+        # Edit mode menu
         if ( ob.mode == 'EDIT' and ob.data.attributes.active):
 
             if etc.get_preferences_attrib('attribute_assign_menu'):
@@ -128,6 +146,7 @@ def attribute_context_menu_extension(self, context):
     """
     Extra entries in ^ menu
     """
+
     self.layout.operator_context = "INVOKE_DEFAULT"
     if etc.get_preferences_attrib('add_set_attribute'):
         self.layout.operator('mesh.attribute_set')
@@ -137,17 +156,9 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_invert', icon='UV_ISLANDSEL')
     self.layout.operator('mesh.attribute_copy', icon='COPYDOWN')
     self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
-    # self.layout.operator('mesh.attribute_find', icon='VIEWZOOM')
-    # self.layout.operator('mesh.attributes_sort', icon='SEQ_HISTOGRAM')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
 
-def shape_keys_context_menu_extension(self, context):
-    """
-    Extra entries in ^ shape keys menu 
-    """
-
-    self.layout.operator_context = "INVOKE_DEFAULT"
     
 

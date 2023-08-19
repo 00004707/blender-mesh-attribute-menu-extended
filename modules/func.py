@@ -1,7 +1,16 @@
-""" 
+"""
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+"""
 
-All functions
+"""
+func
 
+Function definitions 
 """
 
 import bpy 
@@ -10,12 +19,20 @@ import math
 from . import etc
 from . import data
 
-# ------------------------------------------
+
 # Attribute related
+# ------------------------------------------
+
+# get
 
 def get_is_attribute_valid(attrib_name):
-    """
-    Ignore non-editable, hidden or other invalid attributes.
+    """Checks for non-editable, hidden or other invalid attributes.
+
+    Args:
+        attrib_name (string): Name of the attribute
+
+    Returns:
+        boolean: True if the attribute is valid to edit
     """
     forbidden_attribs = ['position', 'sharp_face', '.sculpt_face_set', 'edge_creases', 'material_index']
     forbidden_attrib_prefixes = ['.' #technically the dot will negate all of below, but still
@@ -28,12 +45,19 @@ def get_is_attribute_valid(attrib_name):
 
 def get_valid_attributes(object):
     """
-    Gets all valid editable attributes
+    Gets all valid editable attributes (REWORK)
     """
     return [a for a in object.data.attributes if get_is_attribute_valid(a.name)]
 
 def get_attrib_value_propname(attribute):
-    # Different data type has different attribute name when using foreach_get/set
+    """Gets the property name of attribute value. Some values are stored in .vector others in .value etc.
+
+    Args:
+        attribute (Reference): Attribute reference variable
+
+    Returns:
+        string: Attribute property name
+    """
     if attribute.data_type in ["FLOAT_VECTOR", "FLOAT2"]:
         return "vector"
     elif attribute.data_type in ["FLOAT_COLOR", "BYTE_COLOR"]:
@@ -42,14 +66,19 @@ def get_attrib_value_propname(attribute):
         return "value"
 
 def get_attrib_values(attribute, obj):
-    """
-    Simply gets attribute values, for every index
-    # Returns a list of same type variables as attribute data type
+    """Reads all attribute values using foreach_get
 
-    :param attribute: reference to attribute 
-    :param obj: reference to object
+    Args:
+        attribute (Reference): Attribute reference variable
+        obj (Reference): Reference to an 3D object that stores that attribute
 
+    Raises:
+        etc.MeshDataReadException: If source data type is not implemented
+        
+    Returns:
+        list: Attribute values, data type unchanged
     """
+
     value_attrib_propname = get_attrib_value_propname(attribute)
     dt = attribute.data_type
 
@@ -104,10 +133,20 @@ def get_attrib_values(attribute, obj):
             a_vals.append(entry.value)
         return a_vals
     else:
-        return None
+        raise etc.MeshDataReadException('get_attrib_values', f"Data type {dt} is unsupported.")
 
 def get_attrib_default_value(attribute):
-    "returns zero value for given datatype"
+    """Returns the zero value for attribute data type. Does not return a list with the length of the attribute data!
+
+    Args:
+        attribute (Reference): Reference to the attribute
+    
+    Raises:
+        etc.MeshDataReadException: If source data type is not implemented
+
+    Returns:
+        Variable type: The default value for single attribute value
+    """
     dt = attribute.data_type
     if dt == "FLOAT":
         return 0.0 
@@ -131,22 +170,46 @@ def get_attrib_default_value(attribute):
         return (1.0, 0.0, 0.0, 0.0)
     elif dt == "INT8":
         return 0 
+    else:
+        raise etc.MeshDataReadException('get_attrib_default_value', f"Data type {dt} is unsupported.")
 
 def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
-    """Naming the attribute the same name as vertex group will crash blender. Possibly there are other scenarios"""
+    """Gets safe attribute name to avoid crashes in some instances.
+    ie. Naming attribute the same name as Vertex Group can crash blender.
+
+    Args:
+        obj (Reference): 3D Object reference
+        attribute_name (str): Name of the attribute to check
+        suffix (str, optional): The suffix to add to the name if the name is not safe. Defaults to "Attribute".
+
+    Returns:
+        str: Safe attribute name
+    """
     while(attribute_name in obj.vertex_groups.keys()):
             attribute_name += " " + suffix
 
     return attribute_name
-   
+
+# set
+
 def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
+    """Sets attribute values. Accepts both lists and single values.
+    WARNING: OBJECT MODE REQUIRED
+
+    Args:
+        attribute (Reference): Reference to the attribute
+        value (list or value): The value or values to set
+        on_indexes (list, optional): Indexes to set the value on. Defaults to [].
+        flat_list (bool, optional): Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
+
+    Raises:
+        etc.MeshDataWriteException: On failure
+
+    Returns:
+        Nothing 
     """
-    Sets values to attribute. Accepts both list and single value
-    If the count of values is lesser than target indexes count, it will repeat
     
-    REQUIRED OBJECT MODE
-    """
-    # for each mode
+    # Set all values mode
     if len(on_indexes) == 0:
         prop_name = get_attrib_value_propname(attribute)
         if is_verbose_mode_enabled():
@@ -185,16 +248,22 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
             else:
                 setattr(attribute.data[i], prop, value) 
 
-    return True
-
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
-    """
-    Sets a single value to attribute, limited to selection in edit mode
-    
-    REQUIRED OBJECT MODE
+    """Assigns a single value to all selected domain in edit mode.
+
+    Args:
+        context (Reference): Blender context referene
+        obj (Reference): 3D Object Reference
+        attribute (Reference): Attribute reference
+        value (Variable type): The value to set
+        face_corner_spill (bool, optional): Enable spilling the value to nearby face corners. Defaults to False.
+
+    Returns:
+        bool: Success status
     """
 
-    active_attrib_name = attribute.name # !important to get the name not the reference
+    # Store active attribute name (and test it) !important
+    active_attrib_name = attribute.name 
     active_attrib = obj.data.attributes[active_attrib_name]
     
     if is_verbose_mode_enabled():
@@ -207,7 +276,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         self.report({'ERROR'}, "Invalid selection or no selection")
         return False
     
-    active_attrib = obj.data.attributes[active_attrib_name] # !important get_mesh_selected_by_domain function might toggle modes, and change reference, setting again
+    active_attrib = obj.data.attributes[active_attrib_name] # !important get_mesh_selected_by_domain changes the reference
 
     if is_verbose_mode_enabled():
         print(f"Attribute data length: {len(active_attrib.data)}")
@@ -230,179 +299,70 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
 
     return True
 
-def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
-        if is_verbose_mode_enabled():
-            print(f"Converting attribute {attrib_name}")
-        # Auto convert to different data type, if enabled in gui
-        attrib = obj.data.attributes[attrib_name]
-        if attrib is not None:
-            # There is some issue with this below
-            #obj.data.attributes.active = attrib
-            # Will have to use active_index instead. There are hidden attributes, and when setting .active if fails! 
-            atrr_index = obj.data.attributes.keys().index(attrib_name)
-            obj.data.attributes.active_index = atrr_index
+def set_active_attribute(obj, attribute_name):
+    """Sets active attribute and avoids the bug that might set the invalid attribute as active
 
-            if is_verbose_mode_enabled():
-                print(f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}")
-            bpy.ops.geometry.attribute_convert(mode=mode, domain=domain, data_type=data_type)
-        else:
-            raise etc.MeshDataWriteException('convert_attribute', f"{attrib_name} attribute is None?")
+    Args:
+        obj (Reference): Object Reference
+        attribute_name (str): Attribute name
+    """
+
+    
+    # There is some issue with this below
+    #obj.data.attributes.active = attrib
+    # Will have to use active_index instead. There are hidden attributes, and when setting .active it fails! 
+    atrr_index = obj.data.attributes.keys().index(attribute_name)
+    obj.data.attributes.active_index = atrr_index
+
+def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
+    """Converts attribute to different type
+
+    Args:
+        obj (Reference): 3D Object Reference
+        attrib_name (str): Name of the attribute
+        mode (enum str): See data.convert_attribute_modes
+        domain (enum str): See data.attribute_domains
+        data_type (enum str): See data.attribute_data_types
+
+    Raises:
+        etc.MeshDataWriteException: On failure
+    """
+
+    if is_verbose_mode_enabled():
+        print(f"Converting attribute {attrib_name}")
+    
+    # Auto convert to different data type, if enabled in gui
+    attrib = obj.data.attributes[attrib_name]
+    
+    if attrib is not None:
+        set_active_attribute(obj, attrib_name)
+
+        if is_verbose_mode_enabled():
+            print(f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}")
+
+        bpy.ops.geometry.attribute_convert(mode=mode, domain=domain, data_type=data_type)
+    else:
+        raise etc.MeshDataWriteException('convert_attribute', f"{attrib_name} attribute is None?")
 
 # ------------------------------------------
 # Mesh related
 
-def set_domain_attribute_values(obj, attribute_name:str, domain:str, values: list):
-    """
-    Sets values of attribute stored in domain like: edges[0].use_sharp 
-    """
-
-    if domain == 'POINT':
-        for i, vert in enumerate(obj.data.vertices):
-            setattr(vert, attribute_name, values[i])
-    elif domain == 'EDGE':
-        for i, edge in enumerate(obj.data.edges):
-            setattr(edge, attribute_name, values[i])
-    elif domain == 'FACE':
-        for i, face in enumerate(obj.data.polygons):
-            setattr(face, attribute_name, values[i])
-    elif domain == 'CORNER':
-        for i, loop in enumerate(obj.data.loops):
-            setattr(loop, attribute_name, values[i])
-
-def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = True, selection = True):
-    """
-    Selection and visibility works a bit differently than other attributes
-    Those require setting the state of faces, edges and vertices separately too
-    """
-    if is_verbose_mode_enabled():
-        print(f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}")
-
-    bm = bmesh.new()
-    bm.from_mesh(obj.data)
-    bm.verts.ensure_lookup_table()
-    bm.edges.ensure_lookup_table()
-    bm.faces.ensure_lookup_table()
-    if domain != 'CORNER':
-        try:
-            if domain == 'POINT':
-                for vertindex in indexes:
-                    if selection:
-                        bm.verts[vertindex].select = state
-                    else:
-                        bm.verts[vertindex].hide = state
-
-                    for edge in bm.verts[vertindex].link_edges:
-                        if state == selection:
-                            if all(vert.index in indexes for vert in edge.verts):
-                                if selection:
-                                    edge.select = state
-                                else:
-                                    edge.hide = state
-                        else:
-                            if any(vert.index in indexes for vert in edge.verts):
-                                if selection:
-                                    edge.select = state
-                                else:
-                                    edge.hide = state
-
-                    for face in bm.verts[vertindex].link_faces:
-                        if state == selection:
-                            if all(vert.index in indexes for vert in face.verts):
-                                if selection:
-                                    face.select = state
-                                else:
-                                    face.hide = state
-                        else:
-                            if any(vert.index in indexes for vert in face.verts):
-                                if selection:
-                                    face.select = state
-                                else:
-                                    face.hide = state
-
-            elif domain == 'EDGE':
-                for edgeindex in indexes:
-                    if selection:
-                        bm.edges[edgeindex].select = state
-                    else:
-                        bm.edges[edgeindex].hide = state
-
-                    for vert in bm.edges[edgeindex].verts:
-                        if selection:
-                            vert.select = state
-                        else:
-                            vert.hide = state
-                
-                    for face in bm.edges[edgeindex].link_faces:
-                        if state == selection:
-                            if all(edge.index in indexes for edge in face.edges):
-                                if selection:
-                                    face.select = state
-                                else:
-                                    face.hide = state
-                        else:
-                            if any(edge.index in indexes for edge in face.edges):
-                                if selection:
-                                    face.select = state
-                                else:
-                                    face.hide = state
-                    
-            elif domain == 'FACE':
-                for faceindex in indexes:
-                    if selection:
-                        bm.faces[faceindex].select = state
-                    else:
-                        bm.faces[faceindex].hide = state
-
-                    for vert in bm.faces[faceindex].verts:
-                        if selection:
-                            vert.select = state
-                        else:
-                            vert.hide = state
-                    
-                    for edge in bm.faces[faceindex].edges:
-                        if selection:
-                            edge.select = state
-                        else:
-                            edge.hide = state
-            
-            bm.to_mesh(obj.data)
-            bm.free()
-        except Exception as e:
-            # clear bmesh on exception to avoid extra problems
-            bm.to_mesh(obj.data)
-            bm.free()
-            raise Exception(e)
-
-    else:
-        edge_indexes_to_select = []
-
-        for cornerindex in indexes:
-            loop = obj.data.loops[cornerindex]
-
-            # get the face index that has this corner
-            faceindex = -1
-            for face in bm.faces:
-                if cornerindex in [loop.index for loop in face.loops]:
-                    faceindex = face.index
-            
-            # get edges that are connected to vertex assinged to this corner
-            edges = bm.verts[loop.vertex_index].link_edges
-            if is_verbose_mode_enabled():
-                print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
-                print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
-            
-            # get edges that are in face index of this corner
-            for edge in edges:
-                if edge in bm.faces[faceindex].edges:
-                    edge_indexes_to_select.append(edge.index)
-        
-        bm.free()
-        if is_verbose_mode_enabled():
-            print(f"Filtered edges of the corner are {edge_indexes_to_select}")
-        set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
+# get
 
 def get_mesh_selected_by_domain(obj, domain, spill=False):
-    # get the selected vertices/edges/faces/face corner
+    """Gets the references to selected domain entries in edit mode. (Vertices, edges, faces or Face Corners)
+
+    Args:
+        obj (Reference): 3D Object Reference
+        domain (str): Mesh Domain
+        spill (bool, optional): Enables selection spilling to nearby face corners from selected verts/faces/edges. Defaults to False.
+
+    Raises:
+        etc.MeshDataReadException: _description_
+
+    Returns:
+        _type_: _description_
+    """
 
     if domain == 'POINT': 
         return [v for v in obj.data.vertices if v.select]
@@ -464,92 +424,113 @@ def get_mesh_selected_by_domain(obj, domain, spill=False):
                 
                 return result
     
-    return False
+    else:
+        raise etc.MeshDataReadException('get_mesh_selected_by_domain', f'The {domain} domain is not supported')
 
 def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_value, case_sensitive_string = False):
-        # Returns a list of indexes of source data entries that meet the input condition compared to compare_value
-        
-        # input is 1 dimensional list with values, do not pass vectors, pass individual values
-        
-        indexes = []
-        if is_verbose_mode_enabled():
-            print(f"Get filtered indexes with settings:\n{condition} to {compare_value}, case sensitive {case_sensitive_string} \non dataset {source_data}")
+    """Gets indexes of the list that store values that meet selected condition
 
-        #booleans
-        if type(source_data[0]) is bool:
-            for i, data in enumerate(source_data):
-                if condition == "EQ" and data == compare_value:
-                    indexes.append(i)
+    Currently only one dimensional lists are supported.
 
-                elif condition == "NEQ" and data != compare_value:
-                    indexes.append(i)
+    Args:
+        source_data (list): The list with data
+        condition (str): The condition to check
+        compare_value (variable): The value to check the condition with
+        case_sensitive_string (bool, optional): Whether the strings should be compared with case sensitivity or not. Defaults to False.
 
-        # numeric values & floats invididual vals
-        elif type(source_data[0]) in [int, float]:
-            for i, data in enumerate(source_data):
-                if condition == "EQ" and data == compare_value: #equal
-                    indexes.append(i)
+    Returns:
+        list: _Indexes of the list that meet the criteria
+    """
+        # todo flatten the list or handle vectors somehow
+        # there has to be an easier way, what the hell is this
 
-                elif condition == "NEQ" and data != compare_value: # not equal
-                    indexes.append(i)
+    indexes = []
+    if is_verbose_mode_enabled():
+        print(f"Get filtered indexes with settings:\n{condition} to {compare_value}, case sensitive {case_sensitive_string} \non dataset {source_data}")
 
-                elif condition == "EQORGR" and data >= compare_value: # >=
-                    indexes.append(i)
+    #booleans
+    if type(source_data[0]) is bool:
+        for i, data in enumerate(source_data):
+            if condition == "EQ" and data == compare_value:
+                indexes.append(i)
 
-                elif condition == "EQORLS" and data <= compare_value: # <=
-                    indexes.append(i)
+            elif condition == "NEQ" and data != compare_value:
+                indexes.append(i)
 
-                elif condition == "GR" and data > compare_value: # >
-                    indexes.append(i)
+    # numeric values & floats invididual vals
+    elif type(source_data[0]) in [int, float]:
+        for i, data in enumerate(source_data):
+            if condition == "EQ" and data == compare_value: #equal
+                indexes.append(i)
 
-                elif condition == "LS" and data < compare_value: # <
-                    indexes.append(i)
-        
-        # strings
-        elif type(source_data[0]) == str:
-            for i, data in enumerate(source_data):
-                    
-                # case sensitive toggle
-                if not case_sensitive_string:
-                    value = data.upper()
-                    cmp = compare_value.upper()
-                else:
-                    value = data
+            elif condition == "NEQ" and data != compare_value: # not equal
+                indexes.append(i)
+
+            elif condition == "EQORGR" and data >= compare_value: # >=
+                indexes.append(i)
+
+            elif condition == "EQORLS" and data <= compare_value: # <=
+                indexes.append(i)
+
+            elif condition == "GR" and data > compare_value: # >
+                indexes.append(i)
+
+            elif condition == "LS" and data < compare_value: # <
+                indexes.append(i)
+    
+    # strings
+    elif type(source_data[0]) == str:
+        for i, data in enumerate(source_data):
                 
-                if condition == "EQ" and value == cmp: #equal
-                    indexes.append(i)
+            # case sensitive toggle
+            if not case_sensitive_string:
+                value = data.upper()
+                cmp = compare_value.upper()
+            else:
+                value = data
+            
+            if condition == "EQ" and value == cmp: #equal
+                indexes.append(i)
 
-                elif condition == "NEQ" and value != cmp: #not equal
-                    indexes.append(i)
-                
-                elif condition == "CONTAINS" and cmp in value: # contains
-                    indexes.append(i)
-                
-                elif condition == "STARTS_WITH" and value.startswith(cmp): #equal
-                    indexes.append(i)
+            elif condition == "NEQ" and value != cmp: #not equal
+                indexes.append(i)
+            
+            elif condition == "CONTAINS" and cmp in value: # contains
+                indexes.append(i)
+            
+            elif condition == "STARTS_WITH" and value.startswith(cmp): #equal
+                indexes.append(i)
 
-                elif condition == "ENDS_WITH" and value.endswitch(cmp): #endswith
-                    indexes.append(i)
+            elif condition == "ENDS_WITH" and value.endswitch(cmp): #endswith
+                indexes.append(i)
 
-        if is_verbose_mode_enabled():
-            print(f"Filtered indexes: {indexes}")
-        return indexes
+    if is_verbose_mode_enabled():
+        print(f"Filtered indexes: {indexes}")
+    return indexes
 
 def get_mesh_data(obj, data_type, source_domain, **kwargs):
+    """Gets all data from mesh.
+
+    Args:
+        obj (Reference): Object Reference
+        data_type (str): The data type to fetch. See data.object_data_sources
+        source_domain (str): The domain to take this data from
+
+        kwargs: (if applicable)
+        * vg_index              index of vertex group [id]
+        * sk_index              index of shape key [id]
+        * vg_offset_index       index of vertex group and the vertex group to offset from [id1, id2]
+        * fm_index              face map index
+        * sel_mat               selected material
+        * mat_index             material index
+        * uvmap_index           uvmap index
+
+    Raises:
+        etc.MeshDataReadException: on failure if selected data type does not exist
+
+    Returns:
+        list: _All values. Might conatain tuples or multi level lists.
     """
-    Gets all mesh data of given type
-    Returns raw data (vector, bool float integer) read from each domain in a list
-    kwargs: (if applicable)
-    * vg_index              index of vertex group [id]
-    * sk_index              index of shape key [id]
-    * vg_offset_index       index of vertex group and the vertex group to offset from [id1, id2]
-    * fm_index              face map index
-    * sel_mat               selected material
-    * mat_index             material index
-    * uvmap_index           uvmap index
-    """
-    if is_verbose_mode_enabled():
-        print(f"get_mesh_data_kwargs: {kwargs}")
 
     def get_simple_domain_attrib_val(domain, attribute_name):
         """
@@ -568,6 +549,9 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
         except Exception as e:
             raise etc.MeshDataReadException("get_simple_domain_attrib_val", f"Failed to get {attribute_name} from {domain} \n {e}")
     
+    if is_verbose_mode_enabled():
+        print(f"get_mesh_data_kwargs: {kwargs}")
+
     if is_verbose_mode_enabled():
         print(f"Reading {data_type} mesh data on {source_domain}...")
 
@@ -883,17 +867,181 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     else:
         raise etc.MeshDataReadException("get_mesh_data", f"Invalid domain data type ({data_type}) or this data is not available on this domain ({source_domain})")
 
-def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
+# set
+
+def set_domain_attribute_values(obj, attribute_name:str, domain:str, values: list):
+    """Sets values of attribute stored in domain like: edges[0].use_sharp 
+
+    Args:
+        obj (Reference): 3D Object Reference
+        attribute_name (str): Name of the attribute
+        domain (str): Attribute Domain
+        values (list): Values to set 
     """
-    :param data_target: string name from data.py
-    :param src_attrib: reference to the attribute
 
-    :return: status boolean
+    if domain == 'POINT':
+        for i, vert in enumerate(obj.data.vertices):
+            setattr(vert, attribute_name, values[i])
+    elif domain == 'EDGE':
+        for i, edge in enumerate(obj.data.edges):
+            setattr(edge, attribute_name, values[i])
+    elif domain == 'FACE':
+        for i, face in enumerate(obj.data.polygons):
+            setattr(face, attribute_name, values[i])
+    elif domain == 'CORNER':
+        for i, loop in enumerate(obj.data.loops):
+            setattr(loop, attribute_name, values[i])
 
-    :param \**kwargs: 
-     (If applicable)
-    
-    :Keyword Arguments:
+def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = True, selection = True):
+    """Sets the selection on visibility in edit mode.
+    Those require setting the state of faces, edges and vertices separately.
+
+    Args:
+        obj (Reference ): 3D Object Reference
+        domain (str): Domain - POINT EDGE FACE CORNER
+        indexes (list): Domain indexes to set the state
+        state (bool, optional): The state of visibility or selection. Defaults to True.
+        selection (bool, optional): Whether toggle selection or visibility. Defaults to True.
+
+    Raises:
+        Exception: On failure, re-raises the exception and clears bmesh
+    """
+    if is_verbose_mode_enabled():
+        print(f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}")
+
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.verts.ensure_lookup_table()
+    bm.edges.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    if domain != 'CORNER':
+        try:
+            if domain == 'POINT':
+                for vertindex in indexes:
+                    if selection:
+                        bm.verts[vertindex].select = state
+                    else:
+                        bm.verts[vertindex].hide = state
+
+                    for edge in bm.verts[vertindex].link_edges:
+                        if state == selection:
+                            if all(vert.index in indexes for vert in edge.verts):
+                                if selection:
+                                    edge.select = state
+                                else:
+                                    edge.hide = state
+                        else:
+                            if any(vert.index in indexes for vert in edge.verts):
+                                if selection:
+                                    edge.select = state
+                                else:
+                                    edge.hide = state
+
+                    for face in bm.verts[vertindex].link_faces:
+                        if state == selection:
+                            if all(vert.index in indexes for vert in face.verts):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                        else:
+                            if any(vert.index in indexes for vert in face.verts):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+
+            elif domain == 'EDGE':
+                for edgeindex in indexes:
+                    if selection:
+                        bm.edges[edgeindex].select = state
+                    else:
+                        bm.edges[edgeindex].hide = state
+
+                    for vert in bm.edges[edgeindex].verts:
+                        if selection:
+                            vert.select = state
+                        else:
+                            vert.hide = state
+                
+                    for face in bm.edges[edgeindex].link_faces:
+                        if state == selection:
+                            if all(edge.index in indexes for edge in face.edges):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                        else:
+                            if any(edge.index in indexes for edge in face.edges):
+                                if selection:
+                                    face.select = state
+                                else:
+                                    face.hide = state
+                    
+            elif domain == 'FACE':
+                for faceindex in indexes:
+                    if selection:
+                        bm.faces[faceindex].select = state
+                    else:
+                        bm.faces[faceindex].hide = state
+
+                    for vert in bm.faces[faceindex].verts:
+                        if selection:
+                            vert.select = state
+                        else:
+                            vert.hide = state
+                    
+                    for edge in bm.faces[faceindex].edges:
+                        if selection:
+                            edge.select = state
+                        else:
+                            edge.hide = state
+            
+            bm.to_mesh(obj.data)
+            bm.free()
+        except Exception as e:
+            # clear bmesh on exception to avoid extra problems
+            bm.to_mesh(obj.data)
+            bm.free()
+            raise Exception(e)
+
+    else:
+        edge_indexes_to_select = []
+
+        for cornerindex in indexes:
+            loop = obj.data.loops[cornerindex]
+
+            # get the face index that has this corner
+            faceindex = -1
+            for face in bm.faces:
+                if cornerindex in [loop.index for loop in face.loops]:
+                    faceindex = face.index
+            
+            # get edges that are connected to vertex assinged to this corner
+            edges = bm.verts[loop.vertex_index].link_edges
+            if is_verbose_mode_enabled():
+                print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
+                print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
+            
+            # get edges that are in face index of this corner
+            for edge in edges:
+                if edge in bm.faces[faceindex].edges:
+                    edge_indexes_to_select.append(edge.index)
+        
+        bm.free()
+        if is_verbose_mode_enabled():
+            print(f"Filtered edges of the corner are {edge_indexes_to_select}")
+        set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
+
+def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
+    """Sets mesh data from selected attribute
+
+    Args:
+        obj (Reference): 3D Object Reference
+        data_target (str): See data.object_data_targets
+        src_attrib (Reference): Attribute reference
+        
+        kwargs: (If applicable)
         * face_map_name             Name of the face map to create
         * vertex_group_name         Name of the vertex group to create
         * enable_auto_smooth        bool
@@ -904,8 +1052,14 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         * uvmap_index               integer
         * invert_sculpt_mask        boolean, 1-clamped sculpt mask val
         * expand_sculpt_mask_mode   enum REPLACE EXPAND SUBTRACT
-    
+
+    Raises:
+        etc.MeshDataWriteException: On failure if selected data target is not supported
+
+    Returns:
+        Nothing
     """
+    
     a_vals = get_attrib_values(src_attrib, obj)
     if is_verbose_mode_enabled():
         print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
@@ -1125,12 +1279,20 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
 
     else:
         raise etc.MeshDataWriteException("set_mesh_data", f"Can't find {data_target} to set")
-    return True
-        
+          
 def get_all_mesh_data_ids_of_type(obj,data_type):
-    """
-    Gets each unique indentifiers (index) for data type to iterate on to, and to then evaluate every case
-    Does not check for invalid input or invalid data
+    """Gets all indexes of iterable mesh data. Used in batch converting of attributes
+    * Vertex Groups
+    * Shape Keys
+    * Face Maps
+    * Material Slots
+
+    Args:
+        obj (Reference): 3D Object Reference
+        data_type (str): Namedtuple entry names, see data.object_data_sources
+
+    Returns:
+        list: of all indexes
     """
 
     if data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]:   
@@ -1160,7 +1322,16 @@ def fill_foreachset_val_with_vector(iterable_domain, storage, dimension:int=2, v
         return storage
 
 def get_friendly_domain_name(domain_name_raw, plural=False):
-    "Convert internal name for domain into friendly user name found in other GUI elements inside of blender"
+    """Converts internal domain name to friendly name to be used in UI
+    eg. CORNER to Face Corners
+
+    Args:
+        domain_name_raw (str): Domain name
+        plural (bool, optional): Return plural string. Defaults to False.
+
+    Returns:
+        str: Friendly string
+    """
     if domain_name_raw == 'POINT':
         return "Vertex" if not plural else "Vertices"
     elif domain_name_raw == 'CORNER':
@@ -1169,6 +1340,14 @@ def get_friendly_domain_name(domain_name_raw, plural=False):
         return domain_name_raw.lower().capitalize() if not plural else domain_name_raw.lower().capitalize() + "s"
 
 def get_friendly_data_type_name(data_type_raw):
+    """Gets friendly name for attribute data types, to use it in GUI
+    eg. INT8 -> 8-bit Integer. See data.attribute_data_types
+    Args:
+        data_type_raw (str): Data type
+
+    Returns:
+        str: Friendly string
+    """
     if data_type_raw in data.attribute_data_types:
         return data.attribute_data_types[data_type_raw].friendly_name
     else:
@@ -1177,12 +1356,19 @@ def get_friendly_data_type_name(data_type_raw):
 # Data enums
 # --------------------------------------------
 
+# individual mesh data enums
 def get_face_maps_enum(self, context):
-    """
-    Gets all face maps from active object to enum
-    Index can be "NULL" if invalid.
+    """Gets all face maps as an enum entries.
+    
+    Can be 'NULL' if there is none.
 
-    (INDEX NAME DESC)
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
     """
 
     items = []
@@ -1199,11 +1385,17 @@ def get_face_maps_enum(self, context):
     return items
 
 def get_material_slots_enum(self, context):
-    """
-    Gets an enum entries for material slots in active object 
+    """Gets all material slots in active object as an enum entries.
+    
+    Can be 'NULL' if there is none.
 
-    Index can be 'NULL' if invalid
-    (INDEX NAME DESC)
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
     """
     items = []
     obj = bpy.context.active_object
@@ -1220,11 +1412,17 @@ def get_material_slots_enum(self, context):
     return items
 
 def get_materials_enum(self, context):
-    """
-    Gets all materials in the .blend file to a single enum
+    """Gets all materials stored in blend file as an enum entries.
+    
+    Can be 'NULL' if there is none.
 
-    Index can be 'NULL' if invalid
-    (INDEX NAME DESC)
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
     """
 
     items = []
@@ -1241,11 +1439,17 @@ def get_materials_enum(self, context):
     return items
 
 def get_vertex_groups_enum(self, context):
-    """
-    Gets all vertex groups of current object to enum values
+    """Gets all vertex groups of active object as an enum entries.
     
-    Index can be 'NULL' if invalid
-    (INDEX NAME DESC)
+    Can be 'NULL' if there is none.
+
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
     """
 
     items = []
@@ -1261,11 +1465,17 @@ def get_vertex_groups_enum(self, context):
     return items
 
 def get_shape_keys_enum(self, context):
-    """
-    Gets all shape keys of active object to enum entries
+    """Gets all shape keys of active object as an enum entries.
+    
+    Can be 'NULL' if there is none.
 
-    Index can be 'NULL' if invalid
-    (INDEX NAME DESC)
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
     """
 
     items = []
@@ -1278,34 +1488,70 @@ def get_shape_keys_enum(self, context):
     for i, sk in enumerate(obj.data.shape_keys.key_blocks):
         items.append((str(i), sk.name, f"Use {sk.name} shape key"))
 
-    #items.append(("CURRENT", "Current Vertex Positions", f"Vertex Positions as you see them now"))
     return items
 
+def get_uvmaps_enum(self, context):
+    """Gets all UVMaps of active object as an enum entries.
+    
+    Can be 'NULL' if there is none.
+
+    List entries will be tuples formatted as (INDEX NAME DESC)
+
+    Args:
+        context (Reference): Blender Context Reference
+
+    Returns:
+        list: List of tuples to be used as enum values
+    """
+
+    items = []
+    obj = context.active_object
+
+    # case: no data
+    if not len(obj.data.uv_layers):
+        return [("NULL", "NO UVMAPS", "")]
+
+
+    for i, uvmap in enumerate(obj.data.uv_layers):
+        items.append((str(i), uvmap.name, f"Use {uvmap.name} UVMap"))
+
+    return items
+
+# extra gui enums
+
 def get_natively_supported_domains_enum(self, context):
-        """
-        Returns a list of compatible domains from enum selection in self.domain_data_type, for reading or writing mesh data from object
-        SELF HAS TO HAVE self.domain_data_type enum
-        """
-        items = []
-        domains_supported = data.object_data_sources[self.domain_data_type].domains_supported
+    """
+    Returns a list of compatible domains from enum selection in self.domain_data_type, for reading or writing mesh data from object
+    SELF HAS TO HAVE self.domain_data_type enum
+    """
+    items = []
+    domains_supported = data.object_data_sources[self.domain_data_type].domains_supported
 
-        # if is_verbose_mode_enabled():
-        #     print(f"{self.domain_data_type} supports {domains_supported} domains")
-        
-        #items.append(("DEFAULT", "Default", "Use default domain for data type"))
-        
-        if 'POINT' in domains_supported:
-            items.append(("POINT", "Vertex", "Use vertex domain for data type"))
-        if 'EDGE' in domains_supported:
-            items.append(("EDGE", "Edge", "Use edge domain for data type"))
-        if 'FACE' in domains_supported:
-            items.append(("FACE", "Face", "Use face domain for data type"))
-        if 'CORNER' in domains_supported:
-            items.append(("CORNER", "Face Corner", "Use face corner domain for data type"))
+    # if is_verbose_mode_enabled():
+    #     print(f"{self.domain_data_type} supports {domains_supported} domains")
+    
+    #items.append(("DEFAULT", "Default", "Use default domain for data type"))
+    
+    if 'POINT' in domains_supported:
+        items.append(("POINT", "Vertex", "Use vertex domain for data type"))
+    if 'EDGE' in domains_supported:
+        items.append(("EDGE", "Edge", "Use edge domain for data type"))
+    if 'FACE' in domains_supported:
+        items.append(("FACE", "Face", "Use face domain for data type"))
+    if 'CORNER' in domains_supported:
+        items.append(("CORNER", "Face Corner", "Use face corner domain for data type"))
 
-        return items
+    return items
 
 def get_mesh_data_enum_default_icon(data_item):
+    """Sets the enum entry icon. Fallbacks to default icon if none is set.
+
+    Args:
+        data_item (Reference): Reference to namedtuple from data.object_data_sources or data.object_data_targets
+
+    Returns:
+        str: The icon string
+    """
     # set the default icon based on supported domains, if none is set
     if data_item.icon == "":
         domains = data_item.domains_supported
@@ -1323,8 +1569,15 @@ def get_mesh_data_enum_default_icon(data_item):
         icon = data_item.icon
     return icon
 
-
 def get_enhanced_enum_title_name(item):
+    """Adds domain name using non-standard character set to enhance the enum previews
+
+    Args:
+        item (Reference): Reference to namedtuple from data.object_data_sources or data.object_data_targets
+
+    Returns:
+        _type_: _description_
+    """
     name = item.enum_gui_friendly_name
     # if etc.get_enhanced_enum_titles_enabled():
     #     name += ' ⁻' 
@@ -1339,8 +1592,13 @@ def get_enhanced_enum_title_name(item):
     return name
 
 def get_source_data_enum(self, context):
-    """
-    Gets source data enum entries 
+    """Gets enum entries for source data selection to create an attribute from. Contains separators and newlines.
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used as enum entries
     """
     e = []
     for i, item in enumerate(data.object_data_sources):
@@ -1360,8 +1618,13 @@ def get_source_data_enum(self, context):
     return e
 
 def get_source_data_enum_without_separators(self, context):
-    """
-    Gets source data enum entries without separators and newlines
+    """Gets enum entries for source data selection to create an attribute from. Does not contain separators.
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used as enum entries
     """
     e = []
     for i, item in enumerate(data.object_data_sources):
@@ -1379,8 +1642,13 @@ def get_source_data_enum_without_separators(self, context):
     return e
 
 def get_target_data_enum(self, context):
-    """
-    Gets data targets to show in gui
+    """Gets enum entries for target data to store data from attribute. Contains separators and newlines.
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used as enum entries
     """
     items = []
     obj = context.active_object
@@ -1407,18 +1675,25 @@ def get_target_data_enum(self, context):
                         )
                 items.append(item)
 
-    # this should not happen but since it is here...
+    # this should not happen but since it is already coded here...
     if not len(items):
         return [inv_data_entry]
     
     return items
 
 def get_target_compatible_domains(self, context):
+    """Gets all compatible domains for selected data type as enum entries. 
+
+    Example being mean bevel that can be stored either in edges or vertices.
+
+    [!] self object has to have data_target enum property.
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used in enum
     """
-    Gets compatible domains for selected data target, to store it in it
-    eg. vertex and edge mean bevel, which one?
-    """
-    # req: self.data_target
 
     domains_supported = data.object_data_targets[self.data_target].domains_supported
     items = []
@@ -1435,8 +1710,13 @@ def get_target_compatible_domains(self, context):
     return items
 
 def get_attribute_data_types_enum(self,context):
-    """
-    Gets attribute data types for this blender version
+    """Gets all attribute data types that are supported by current blender version as enum entries
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used in enum
     """
     l = []  
     for item in data.attribute_data_types:
@@ -1445,8 +1725,13 @@ def get_attribute_data_types_enum(self,context):
     return l
 
 def get_attribute_domains_enum(self, context):
-    """
-    Gets attribute domains for this blender version
+    """Gets all attribute domains that are supported by current blender version as enum entries
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used in enum
     """
     l = []
     for item in data.attribute_domains:
@@ -1454,22 +1739,37 @@ def get_attribute_domains_enum(self, context):
             l.append((item, data.attribute_domains[item].friendly_name, ""))
     return l
 
+def get_attribute_invert_modes(self, context):
+    """Returns a list of available modes to invert the attributes, as enum entries.
+    Currently it returns a simple list, but it might change in the future.
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used in enum
+    """
+    return [
+                ("MULTIPLY_MINUS_ONE", "Multiply by -1", ""),
+                ("ADD_TO_MINUS_ONE", "Add to -1", ""),
+                ("SUBTRACT_FROM_ONE", "Subtract from 1", ""),
+            ]
+
+def get_convert_attribute_modes_enum(self, context):
+    return [("GENERIC", "Generic", ""),
+               ("VERTEX_GROUP", "Vertex Group", ""),]
+
+# Other
+
 def conditional_selection_poll(self, context):
     """
-    poll function of any operator that calls conditional selection
+    poll function of any operator that calls for conditional selection
     """
     return (context.active_object
                 and context.active_object.mode == 'EDIT' 
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
                 and get_is_attribute_valid(context.active_object.data.attributes.active.name))
-
-def get_attribute_invert_modes(self, context):
-    return [
-                ("MULTIPLY_MINUS_ONE", "Multiply by -1", ""),
-                ("ADD_TO_MINUS_ONE", "Add to -1", ""),
-                ("SUBTRACT_FROM_ONE", "Subtract from 1", ""),
-            ]
 
 def get_float_int_attributes(self, context):
     obj = context.active_object
@@ -1486,26 +1786,10 @@ def get_float_int_attributes(self, context):
     
     return enum_entries
 
-def get_uvmaps_enum(self, context):
-    """
-    Gets all UVMaps of an active object
-
-    Index can be 'NULL' if invalid
-    (INDEX NAME DESC)
-    """
-
-    items = []
-    obj = context.active_object
-
-    # case: no data
-    if not len(obj.data.uv_layers):
-        return [("NULL", "NO UVMAPS", "")]
-
-
-    for i, uvmap in enumerate(obj.data.uv_layers):
-        items.append((str(i), uvmap.name, f"Use {uvmap.name} UVMap"))
-
-    return items
-
 def is_verbose_mode_enabled():
+    """Returns a boolean if the verbose logging to console is enabled
+
+    Returns:
+        bool
+    """
     return etc.get_preferences_attrib('verbose_mode')

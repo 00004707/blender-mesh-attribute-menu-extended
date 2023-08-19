@@ -1,6 +1,16 @@
 """
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+"""
+
+"""
 Data
 
+This file stores all tuples and classes related to enum entries and user data input storage for use in GUI
 
 """
 
@@ -24,14 +34,16 @@ ObjectDataSource = namedtuple("MeshDataSource", [
 ])
 
 # Contains object data sources
-#
-# "INSERT_SEPARATOR_": None,         will add a separator in enum menu
-# "INSERT_NEWLINE_": None,           will add a new column in enum menu
-#
-# Formattable string values:
-# face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from
 object_data_sources = {
+    # Special entries
+    #   "INSERT_SEPARATOR_": None,         will add a separator in enum menu
+    #   "INSERT_NEWLINE_": None,           will add a new column in enum menu
+    #
+    # Formattable string values:
+    #   face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from
+    
     # ON ALL DOMAINS
+    # --------------------------------------
     "INDEX": ObjectDataSource(
         enum_gui_friendly_name="Index ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ ᶜᵒʳⁿᵉʳ"  if etc.get_enhanced_enum_titles_enabled() else "Index",
         enum_gui_description="Create attribute from domain index",
@@ -47,6 +59,7 @@ object_data_sources = {
     ),
 
     # ON VERTEX EDGE FACE
+    # --------------------------------------
     "INSERT_SEPARATOR_VEF": None, 
     
     "VISIBLE": ObjectDataSource(
@@ -78,6 +91,7 @@ object_data_sources = {
     ),
     
     # ON VERTEX FACE
+    # --------------------------------------
     "INSERT_SEPARATOR_VF": None,
 
     "NORMAL": ObjectDataSource(
@@ -95,6 +109,7 @@ object_data_sources = {
     ),
 
     # QUICK BOOLEANS
+    # --------------------------------------
     "INSERT_SEPARATOR_QBOOL": None,
 
     "SELECTED": ObjectDataSource(
@@ -126,6 +141,7 @@ object_data_sources = {
     ),
     
     # VERTEX ONLY
+    # --------------------------------------
     "INSERT_NEWLINE_VERTEX": None,
 
     "SCULPT_MODE_MASK": ObjectDataSource(
@@ -227,6 +243,7 @@ object_data_sources = {
     ),
 
     # EDGE ONLY
+    # --------------------------------------
     "INSERT_NEWLINE_EDGE": None,
 
     "EDGE_SEAM": ObjectDataSource(
@@ -328,6 +345,7 @@ object_data_sources = {
     ),
 
     # FACE ONLY
+    # --------------------------------------
     "INSERT_NEWLINE_FACE": None,  
 
     "SCULPT_MODE_FACE_SETS": ObjectDataSource(
@@ -399,8 +417,6 @@ object_data_sources = {
     #     valid_data_sources = ['MESH'],
     #     icon= ""
     # ),
-
-
 
     "FACE_VERTS": ObjectDataSource(
         enum_gui_friendly_name="All Vertex Indexes in a Face ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Vertices Indexes in a Face",
@@ -515,6 +531,7 @@ object_data_sources = {
     ),
 
     # FACE CORNER ONLY
+    # --------------------------------------
     "INSERT_NEWLINE_FACE_CORNER": None,
     
     "SPLIT_NORMALS": ObjectDataSource(
@@ -617,8 +634,9 @@ object_data_sources = {
     # "INSERT_SEPARATOR_SPECIAL": None,
 
     # # SPECIAL
+    # --------------------------------------
     
-    # data len = = loops for both, idk how to proceed with this 
+    # data len == len(loops) for both, idk how to proceed with this 
 
     # "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
     #     enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Vertices (UV Editor)",
@@ -650,7 +668,7 @@ object_data_sources = {
 
 }
 
-# Defines an object data target, like position, seams or other
+# Defines an object data target
 ObjectDataTarget = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",
     "enum_gui_description",
@@ -662,15 +680,16 @@ ObjectDataTarget = namedtuple("MeshDataSource", [
 ])
 
 # Contains object data sources
-#
-# "INSERT_SEPARATOR_": None,         will add a separator in enum menu
-# "INSERT_NEWLINE_": None,           will add a new column in enum menu
-#
-# Formattable string values:
-# NONE, FORMAT DOES NOT PLAY NICE WITH ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ STRINGS
 object_data_targets = {
+    # Special Entries
+    #   "INSERT_SEPARATOR_": None,         will add a separator in enum menu
+    #   "INSERT_NEWLINE_": None,           will add a new column in enum menu
+    #
+    # Formattable string values:
+    #   NONE, FORMAT DOES NOT PLAY NICE WITH ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ STRINGS and spills out garbage
 
     #POINT EDGE FACE
+    # --------------------------------------
     "TO_VISIBLE": ObjectDataTarget(
             enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Visible In Edit Mode",
             enum_gui_description="Convert this attribute to visible in edit mode",
@@ -716,9 +735,9 @@ object_data_targets = {
         ),
 
     # # VERTEX EDGE
+    # --------------------------------------
     "INSERT_SEPARATOR_VE": None,  
 
-    
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
             enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Not Selected In Edit Mode",
             enum_gui_description="Convert this attribute to bevel weight",
@@ -742,6 +761,7 @@ object_data_targets = {
         ),
 
     # VERTEX CORNER
+    # --------------------------------------
     "INSERT_SEPARATOR_VC": None,  
 
     'TO_SPLIT_NORMALS': ObjectDataTarget(
@@ -756,6 +776,7 @@ object_data_targets = {
         ),
 
     # VERTEX
+    # --------------------------------------
     "INSERT_NEWLINE_V": None, 
 
     "TO_POSITION": ObjectDataTarget(
@@ -813,6 +834,7 @@ object_data_targets = {
         ),
 
     # EDGE
+    # --------------------------------------
     "INSERT_SEPARATOR_E": None, 
 
     "TO_SEAM": ObjectDataTarget(
@@ -847,6 +869,7 @@ object_data_targets = {
         ),
 
     # FACE
+    # --------------------------------------
     "INSERT_NEWLINE_F": None, 
 
     "TO_FACE_SHADE_SMOOTH": ObjectDataTarget(
@@ -905,6 +928,7 @@ object_data_targets = {
         ),  
 
     # CORNER
+    # --------------------------------------
     "INSERT_SEPARATOR_FC": None, 
 
     "TO_UVMAP": ObjectDataTarget(
@@ -919,6 +943,7 @@ object_data_targets = {
         ),  
 
     # # SPECIAL
+    # --------------------------------------
     # "INSERT_SEPARATOR_SPECIAL": None, 
 
     # "TO_SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
@@ -944,12 +969,14 @@ object_data_targets = {
 
 }
 
+# Define mesh data type entries
 AttributeDataType = namedtuple("AttributeDataType", [
     "friendly_name",
     "min_blender_ver",
     "unsupported_from_blender_ver",
 ])
 
+# Defines all supported mesh data types
 attribute_data_types = {
     "FLOAT": AttributeDataType(
         friendly_name="Float",
@@ -1008,12 +1035,14 @@ attribute_data_types = {
     ),
 }
 
+# Defines mesh domain entries
 AttributeDomain = namedtuple("AttributeDomain", [
     "friendly_name",
     "min_blender_ver",
     "unsupported_from_blender_ver",
 ])
 
+# Defines all mesh domains
 attribute_domains = {
     "POINT": AttributeDomain(
         friendly_name="Vertex",
@@ -1037,10 +1066,34 @@ attribute_domains = {
     ),
 }
 
+# Defines convert attribute modes
+ConvertAttributeMode = namedtuple("ConvertAttributeMode", [
+    "friendly_name",
+    "min_blender_ver",
+    "unsupported_from_blender_ver",
+])
+
+convert_attribute_modes = {
+    "GENERIC": AttributeDomain(
+        friendly_name="Generic",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "VERTEX_GROUP": AttributeDomain(
+        friendly_name="Vertex Group",
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+}
+
 class MAME_PropValues(bpy.types.PropertyGroup):
     """
-    All editable props in GUI
+    All input entries in GUI
     """
+
+    # Assign attribute value in edit mode entries
+    # -------------------------------------------------
+
     val_int: bpy.props.IntProperty(name="Integer Value", default=0)
     val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
     val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
@@ -1057,13 +1110,16 @@ class MAME_PropValues(bpy.types.PropertyGroup):
 
     face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
 
+    # Assign random value (not implemented, placeholder)
+    # -------------------------------------------------
+
     val_random_toggle: bpy.props.BoolProperty(name="Randomize", default=False)
     val_random_min_float:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
     val_random_max_float:bpy.props.FloatProperty(name="Float Random Max", default=1.0)
     val_random_min_int:bpy.props.IntProperty(name="Integer Random Min", default=0)
     val_random_max_int:bpy.props.IntProperty(name="Integer Random Max", default=100)
-    val_random_min_int8:bpy.props.IntProperty(name="8-Bit Integer Random Min", default=0, min=0, max=127)
-    val_random_max_int8:bpy.props.IntProperty(name="8-Bit Integer Random Max", default=127, min=0, max=127)
+    val_random_min_int8:bpy.props.IntProperty(name="8-Bit Integer Random Min", default=-128, min=-128, max=127)
+    val_random_max_int8:bpy.props.IntProperty(name="8-Bit Integer Random Max", default=127, min=-128, max=127)
     val_random_min_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0))
     val_random_max_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0))
     val_random_min_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Min", size=3, default=(0.0,0.0,0.0))

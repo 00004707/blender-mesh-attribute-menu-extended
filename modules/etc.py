@@ -1,22 +1,42 @@
+"""
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+"""
 
-# excs
-# ------------------------------------------
+"""
+etc
+
+Everything else. 
+The file must not create a circular import with anything
+
+"""
 
 import bpy
 
+# Constants
+# ------------------------------------------
 __addon_package_name__ = __package__.replace('.modules','')
 
-# will enable debug verbose logging to console
-verbose_mode = False
-enable_debug_tester = False
+# Exceptions
+# ------------------------------------------
 
 class MeshDataReadException(Exception):
+    """
+    Exception thrown when reading data from mesh has failed
+    """
     def __init__(self, function_name, message=""):
         self.function_name = function_name
         self.message = message
         super().__init__("[READ] " + self.function_name + ": " + self.message)
 
 class MeshDataWriteException(Exception):
+    """
+    Exception thrown when writing data to mesh has failed
+    """
     def __init__(self, function_name, message=""):
         self.function_name = function_name
         self.message = message
@@ -26,16 +46,38 @@ class MeshDataWriteException(Exception):
 # ------------------------------
 
 def get_preferences_attrib(name:str):
+    """Reads addon preferences variable
+
+    Args:
+        name (str): The name of the variable
+
+    Returns:
+        None: None
+    """
     prefs = bpy.context.preferences.addons[__addon_package_name__].preferences
     return getattr(prefs, name) if hasattr(prefs, name) else None
 
 def get_blender_support(minver, minver_unsupported):
+    """Used to check if blender version is supported for any feature. Use this instead of creating an if
+
+    Args:
+        minver (tuple): Version tuple eg. (3,0,0)
+        minver_unsupported (tuple): Version tuple eg. (3,0,0)
+
+    Returns:
+        Boolean: True if supported
+    """
     if get_preferences_attrib('disable_version_checks'):
         return True
     
     return (minver is None or bpy.app.version >= minver) and (minver_unsupported is None or bpy.app.version < minver_unsupported)
 
 def get_enhanced_enum_titles_enabled():
+    """Returns true if blender and user settings support enhanced enum titles that use non-standard character set
+
+    Returns:
+        boolean: True if supported
+    """
     return bool(bpy.app.version >= (3,3,0)) #and get_preferences_attrib('enhanced_enum_titles')
 
 
@@ -43,8 +85,15 @@ def get_enhanced_enum_titles_enabled():
 # Preferences
 
 class AddonPreferences(bpy.types.AddonPreferences):
+    """
+    Addon preferences definition
+    """
+
     bl_idname = __addon_package_name__
     
+    # User settings (variables)
+    # ------------------------------------------
+
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
@@ -53,7 +102,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
 
     attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
     add_set_attribute: bpy.props.BoolProperty(name="Add Set Attribute to Menu", description="Set Attribute operator in dropdown menu", default=True)
-
 
     extra_context_menu_vg: bpy.props.BoolProperty(name="Vertex Groups Menu", description="Adds extra operators to Vertex Group Menu", default=True)
     extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
@@ -67,7 +115,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
     extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
     extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
     extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=True)
-
 
     def draw(self, context):
         layout = self.layout

@@ -1,7 +1,19 @@
 
+"""
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with this program.
+If not, see <https://www.gnu.org/licenses/>.
+"""
 
-# ops
-# --------------------------------------------
+"""
+ops
+
+All operators
+
+"""
 
 import bpy 
 import colorsys
@@ -183,9 +195,7 @@ class CreateAttribFromData(bpy.types.Operator):
     enum_attrib_converter_mode:bpy.props.EnumProperty(
         name="Mode",
         description="Select an option",
-        items=[("GENERIC", "Generic", ""),
-               ("VERTEX_GROUP", "Vertex Group", ""),],
-        default="GENERIC",
+        items=func.get_convert_attribute_modes_enum,
     )
 
     enum_attrib_converter_domain:bpy.props.EnumProperty(
@@ -1965,8 +1975,6 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
     def poll(self, context):
         return func.conditional_selection_poll(self, context)
 
-
-
 class AttributeResolveNameCollisions(bpy.types.Operator):
     bl_idname = "mesh.attribute_resolve_name_collisions"
     bl_label = "Resolve name collisions"
@@ -2036,243 +2044,6 @@ class ReadValueFromActiveDomain(bpy.types.Operator):
     bl_idname = "mesh.attribute_read_value_from_active_domain"
     bl_label = "Sample from active domain"
     bl_description = "Reads the attribute value under active domain and sets it in GUI"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-#
-# Quick buttons
-#
-
-class QuickShapeKeyToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_shape_key"
-    bl_label = "Convert to Vertex Vector Attribute"
-    bl_description = "Converts active Shape Key to Vertex Vector Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickAllShapeKeyToAttributes(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_all_shape_keys"
-    bl_label = "Convert all to Vertex Vector Attributes"
-    bl_description = "Converts all Shape Keys to Vertex Vector Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-    
-class QuickShapeKeyOffsetToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_offset_from_shape_key"
-    bl_label = "Convert to Vertex Vector Attribute as offset"
-    bl_description = "Converts active Shape Key offset to Vertex Vector Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickAllShapeKeyToAttributes(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_offset_from_all_shape_keys"
-    bl_label = "Convert all to Vertex Vector Attributes as offsets"
-    bl_description = "Converts all Shape Keys offsets to Vertex Vector Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickVertexGroupToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_vertex_group"
-    bl_label = "Convert to Vertex Float Attribute"
-    bl_description = "Converts active vertex group to Vertex Float Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-    
-class QuickAllVertexGroupToAttributes(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_all_vertex_groups"
-    bl_label = "Convert all to Vertex Float Attributes"
-    bl_description = "Converts all vertex groups to Vertex Float Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickVertexGroupAssignmentToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_vertex_group_assignment"
-    bl_label = "Convert to Vertex Boolean Attribute from assignment"
-    bl_description = "Converts vertex group verte assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickUVMapToAttribute(bpy.types.Operator):
-    # this is for pre blender 3.5
-    bl_idname = "mesh.attribute_quick_from_uvmap"
-    bl_label = "Convert UVMap to Vector 2D Attribute"
-    bl_description = "Converts active UVMap to Vector 2D Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-    
-class QuickAllUVMapToAttributes(bpy.types.Operator):
-    # this is for pre blender 3.5
-    bl_idname = "mesh.attribute_quick_from_all_uvmaps"
-    bl_label = "Convert all UVMaps to Vector 2D Attributes"
-    bl_description = "Converts all UVMaps to Vector 2D Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickFaceMapAssignmentToAttribute(bpy.types.Operator):
-    # this is for pre blender 4.0
-    bl_idname = "mesh.attribute_quick_from_face_map"
-    bl_label = "Convert Face Map assignment to Boolean Face Attribute"
-    bl_description = "Convert assignment of active Face Map to Boolean Face Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-    
-class QuickFaceMapIndexToAttribute(bpy.types.Operator):
-    # this is for pre blender 4.0
-    bl_idname = "mesh.attribute_quick_from_face_map_index"
-    bl_label = "Convert Face Map index assignment to Integer Face Attribute"
-    bl_description = "Converts Face Map index assignment to Integer Face Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickSculptMaskToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_sculpt_mask"
-    bl_label = "Convert Sculpt Mask to Float Vertex Attribute"
-    bl_description = "Converts Sculpt Mask to Float Vertex Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickFaceSetsToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_face_sets"
-    bl_label = "Convert Face Sets to Integer Vertex Attribute"
-    bl_description = "Converts Face Sets to Integer Vertex Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-#
-# Quick nodes
-#
-
-class QuickNamedAttributeNodeGN(bpy.types.Operator):
-    bl_idname = "mesh.attribute_create_named_attribute_gn"
-    bl_label = "Create Named Attribute Node (Geometry Nodes)"
-    bl_description = "Creates a Named Attribute node in active geometry nodes editor"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickNamedAttributeNodeShader(bpy.types.Operator):
-    bl_idname = "mesh.attribute_create_named_attribute_shader"
-    bl_label = "Create Named Attribute Node (Shader)"
-    bl_description = "Creates a Named Attribute node in active shader editor"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
