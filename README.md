@@ -7,7 +7,7 @@
 
 [How to install and how to use it?](https://github.com/00004707/blender-mesh-attribute-menu-extended/wiki)
 
-_Note: You can press the "Code" button to download the latest unstable version. Use it if you like living on the edge (/s)._
+_Note: You can press the "Code" button to download the latest unstable version. It might have new features or not work at all._
 
 ## Examples 
 
