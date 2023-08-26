@@ -1205,10 +1205,10 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
                 if not "bevel_weight_vert" in obj.data.attributes:
                     obj.data.attributes.new("bevel_weight_vert", 'FLOAT', 'POINT')
                 set_attribute_values(obj.data.attributes["bevel_weight_vert"], a_vals)
-                
+
             elif src_attrib.domain == 'EDGE':
                 if not "bevel_weight_edge" in obj.data.attributes:
-                    obj.data.attributes.new("bevel_weight_edge", 'FLOAT', 'POINT')
+                    obj.data.attributes.new("bevel_weight_edge", 'FLOAT', 'EDGE')
                 set_attribute_values(obj.data.attributes["bevel_weight_edge"], a_vals)
         
     
@@ -1232,8 +1232,12 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
                 set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
                 
         elif src_attrib.domain == 'EDGE':
-            set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
-
+            if bpy.app.version < (4,0):
+                set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
+            else:
+                if not "edge_creases" in obj.data.attributes:
+                    obj.data.attributes.new("edge_creases", 'FLOAT', 'EDGE')
+                set_attribute_values(obj.data.attributes["edge_creases"], a_vals)
     # -- VERTEX
     elif data_target == "TO_SCULPT_MODE_MASK":
 
