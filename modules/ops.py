@@ -1007,14 +1007,14 @@ class ConvertToMeshData(bpy.types.Operator):
             bpy.ops.object.mode_set(mode=current_mode)
             return {'CANCELLED'}
 
-    def create_temp_converted_attrib(convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
+    def create_temp_converted_attrib(self, obj, convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
         """
         Copies the attribute and converts it to required type. Returns name of temporary converted attribute.
         """
 
         convert_from = obj.data.attributes[convert_from_name]
         if func.is_verbose_mode_enabled():
-            print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {data_target_data_type}")
+            print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {target_data_type}")
         
         new_attrib = obj.data.attributes.new(name=convert_from.name + " " + name_suffix, type=convert_from.data_type, domain=convert_from.domain)
         new_attrib_name = new_attrib.name
@@ -1066,7 +1066,7 @@ class ConvertToMeshData(bpy.types.Operator):
         attrib_to_convert = src_attrib
 
         if not domain_compatible or not data_type_compatible:
-            attribute_to_convert_name = self.create_temp_converted_attrib(src_attrib.name, "temp", self.convert_to_domain_enum, data_target_data_type)
+            attribute_to_convert_name = self.create_temp_converted_attrib(obj, src_attrib.name, "temp", self.convert_to_domain_enum, data_target_data_type)
             attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
         else:
             attribute_to_convert_name = src_attrib_name
@@ -1079,7 +1079,7 @@ class ConvertToMeshData(bpy.types.Operator):
                 if func.is_verbose_mode_enabled():
                     print(f"Source attribute for weights ({vg_weight_attrib.name}) is is not correct type, converting...")
 
-                vg_weight_attrib_name = self.create_temp_converted_attrib(vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
+                vg_weight_attrib_name = self.create_temp_converted_attrib(obj, vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
                 vg_weight_attrib =  obj.data.attributes[vg_weight_attrib_name]
                 used_conveted_vgweight_attrib = True
         else:

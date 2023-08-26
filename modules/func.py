@@ -1198,8 +1198,19 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
 
     # -- VERTEX + EDGE
     elif data_target == "TO_MEAN_BEVEL_WEIGHT":
-        set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
-
+        if hasattr(obj.data.vertices, 'bevel_weight'): # Works for edges too, as the api change happened for both at once.
+            set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
+        else:
+            if src_attrib.domain == 'POINT':
+                if not "bevel_weight_vert" in obj.data.attributes:
+                    obj.data.attributes.new("bevel_weight_vert", 'FLOAT', 'POINT')
+                set_attribute_values(obj.data.attributes["bevel_weight_vert"], a_vals)
+                
+            elif src_attrib.domain == 'EDGE':
+                if not "bevel_weight_edge" in obj.data.attributes:
+                    obj.data.attributes.new("bevel_weight_edge", 'FLOAT', 'POINT')
+                set_attribute_values(obj.data.attributes["bevel_weight_edge"], a_vals)
+        
     
     elif data_target == "TO_MEAN_CREASE":
         if src_attrib.domain == 'POINT':

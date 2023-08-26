@@ -783,7 +783,7 @@ object_data_targets = {
     "INSERT_SEPARATOR_VE": None,  
 
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
-            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Not Selected In Edit Mode",
+            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Mean Bevel Weight",
             enum_gui_description="Convert this attribute to bevel weight",
             
             domains_supported=['POINT', 'EDGE'],
