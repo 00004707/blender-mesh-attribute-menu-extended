@@ -78,7 +78,11 @@ def get_enhanced_enum_titles_enabled():
     Returns:
         boolean: True if supported
     """
-    return bool(bpy.app.version >= (3,3,0)) #and get_preferences_attrib('enhanced_enum_titles')
+    if bpy.app.version >= (3,3,0):
+        return get_preferences_attrib('enhanced_enum_titles')
+    else:
+        return False
+
 
 
 # ------------------------------------------
@@ -129,6 +133,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
         row.prop(self, 'add_set_attribute')
         row.label(text='Set Attribute operator in dropdown menu', icon='INFO')
 
+        if bpy.app.version >= (3,3,0):
+            row = box.row()
+            row.prop(self, 'enhanced_enum_titles')
+            row.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries', icon='INFO')
 
 
         # box = layout.box()

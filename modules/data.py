@@ -17,10 +17,12 @@ This file stores all tuples and classes related to enum entries and user data in
 import bpy
 from collections import namedtuple
 from . import etc
+from enum import Enum
 
 # Defines object data sourc,e
 ObjectDataSource = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",
+    "enum_gui_friendly_name_no_special_characters",
     "enum_gui_description",
     "attribute_auto_name",
     "attribute_domain_on_default",
@@ -45,7 +47,8 @@ object_data_sources = {
     # ON ALL DOMAINS
     # --------------------------------------
     "INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Index ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ ᶜᵒʳⁿᵉʳ"  if etc.get_enhanced_enum_titles_enabled() else "Index",
+        enum_gui_friendly_name="Index ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Index",
         enum_gui_description="Create attribute from domain index",
         attribute_auto_name="{domain} Index",
         attribute_domain_on_default='POINT',
@@ -63,7 +66,8 @@ object_data_sources = {
     "INSERT_SEPARATOR_VEF": None, 
     
     "VISIBLE": ObjectDataSource(
-        enum_gui_friendly_name="Visible ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Visible",
+        enum_gui_friendly_name="Visible ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Visible",
         enum_gui_description="Create boolean vertex attribute from domain visiblity",
         attribute_auto_name="Visible {domain}",
         attribute_domain_on_default='POINT',
@@ -77,7 +81,8 @@ object_data_sources = {
     ),
 
     "POSITION": ObjectDataSource(
-        enum_gui_friendly_name="Position ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Position",
+        enum_gui_friendly_name="Position ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Position",
         enum_gui_description="Create vertex attribute from domain position",
         attribute_auto_name="{domain} Position",
         attribute_domain_on_default='POINT',
@@ -95,7 +100,8 @@ object_data_sources = {
     "INSERT_SEPARATOR_VF": None,
 
     "NORMAL": ObjectDataSource(
-        enum_gui_friendly_name="Normal ⁻ ᵛᵉʳᵗᵉˣ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Normal",
+        enum_gui_friendly_name="Normal ⁻ ᵛᵉʳᵗᵉˣ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Normal",
         enum_gui_description="Create attribute from domain normals",
         attribute_auto_name="{domain} Normal",
         attribute_domain_on_default='POINT',
@@ -113,7 +119,8 @@ object_data_sources = {
     "INSERT_SEPARATOR_QBOOL": None,
 
     "SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Boolean From Selected",
+        enum_gui_friendly_name="Boolean From Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Boolean From Selected",
         enum_gui_description="Create boolean attribute from domain selection",
         attribute_auto_name="Selected {domain}",
         attribute_domain_on_default='POINT',
@@ -127,7 +134,8 @@ object_data_sources = {
     ),
 
     "NOT_SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Not Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Boolean From Not Selected",
+        enum_gui_friendly_name="Boolean From Not Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Boolean From Not Selected",
         enum_gui_description="Create boolean attribute from domain that is not selected",
         attribute_auto_name="Not selected {domain}",
         attribute_domain_on_default='POINT',
@@ -145,7 +153,8 @@ object_data_sources = {
     "INSERT_NEWLINE_VERTEX": None,
 
     "SCULPT_MODE_MASK": ObjectDataSource(
-        enum_gui_friendly_name="Sculpt mode mask ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Sculpt mode mask",
+        enum_gui_friendly_name="Sculpt mode mask ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Sculpt mode mask",
         enum_gui_description="Create float vertex attribute from masked vertices in sculpt mode",
         attribute_auto_name="Masked Vertices",
         attribute_domain_on_default='POINT',
@@ -159,7 +168,8 @@ object_data_sources = {
     ),
 
     "VERT_MEAN_BEVEL": ObjectDataSource(
-        enum_gui_friendly_name="Vertex Mean Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Vertex Mean Bevel Weight",
+        enum_gui_friendly_name="Vertex Mean Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Vertex Mean Bevel Weight",
         enum_gui_description="Create float vertex attribute from Mean Bevel Weight",
         attribute_auto_name="Vertex Mean Bevel",
         attribute_domain_on_default='POINT',
@@ -173,7 +183,8 @@ object_data_sources = {
     ),
 
     "VERT_MEAN_CREASE": ObjectDataSource(
-        enum_gui_friendly_name="Mean Vertex Crease ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Mean Vertex Crease",
+        enum_gui_friendly_name="Mean Vertex Crease ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Mean Vertex Crease",
         enum_gui_description="Create float vertex attribute from Mean Vertex Crease",
         attribute_auto_name="Vertex Mean Crease",
         attribute_domain_on_default='POINT',
@@ -187,7 +198,8 @@ object_data_sources = {
     ),
 
     "VERT_FROM_VERTEX_GROUP": ObjectDataSource(
-        enum_gui_friendly_name="From Vertex Group ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "From Vertex Group",
+        enum_gui_friendly_name="From Vertex Group ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="From Vertex Group",
         enum_gui_description="Create float vertex attribute from vertex group values",
         attribute_auto_name="{vertex_group} Vertex Weight",
         attribute_domain_on_default='POINT',
@@ -201,7 +213,8 @@ object_data_sources = {
     ),
 
     "VERT_IS_IN_VERTEX_GROUP": ObjectDataSource(
-        enum_gui_friendly_name="Is In Vertex Group ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Is In Vertex Group",
+        enum_gui_friendly_name="Is In Vertex Group ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Is In Vertex Group",
         enum_gui_description="Create boolean vertex attribute from vertex group assignment",
         attribute_auto_name="Vertex in {vertex_group}",
         attribute_domain_on_default='POINT',
@@ -215,7 +228,8 @@ object_data_sources = {
     ),
 
     "VERT_SHAPE_KEY_POSITION": ObjectDataSource(
-        enum_gui_friendly_name="Position from Shape Key ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Position from Shape Key",
+        enum_gui_friendly_name="Position from Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Position from Shape Key",
         enum_gui_description="Create float vector attribute from shape key vertex position",
         attribute_auto_name="Position from {shape_key}",
         attribute_domain_on_default='POINT',
@@ -229,7 +243,8 @@ object_data_sources = {
     ),
 
     "VERT_SHAPE_KEY_POSITION_OFFSET": ObjectDataSource(
-        enum_gui_friendly_name="Position Offset from Shape Key ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "Position Offset from Shape Key",
+        enum_gui_friendly_name="Position Offset from Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Position Offset from Shape Key",
         enum_gui_description="Create float vector attribute from shape key vertex position offset from other shape key",
         attribute_auto_name="Position Offset from {shape_key} to {shape_key_to}",
         attribute_domain_on_default='POINT',
@@ -247,7 +262,8 @@ object_data_sources = {
     "INSERT_NEWLINE_EDGE": None,
 
     "EDGE_SEAM": ObjectDataSource(
-        enum_gui_friendly_name="Edge Seam ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Seam",
+        enum_gui_friendly_name="Edge Seam ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Seam",
         enum_gui_description="Create boolean edge attribute from seams",
         attribute_auto_name="Edge Seam",
         attribute_domain_on_default='EDGE',
@@ -261,7 +277,8 @@ object_data_sources = {
     ),
 
     "EDGE_BEVEL_WEIGHT": ObjectDataSource(
-        enum_gui_friendly_name="Edge Bevel Weight ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Bevel Weight",
+        enum_gui_friendly_name="Edge Bevel Weight ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Bevel Weight",
         enum_gui_description="Create float edge attribute from Bevel Weight",
         attribute_auto_name="Edge Bevel Weight",
         attribute_domain_on_default='EDGE',
@@ -275,7 +292,8 @@ object_data_sources = {
     ),
 
     "EDGE_CREASE": ObjectDataSource(
-        enum_gui_friendly_name="Edge Crease ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Crease",
+        enum_gui_friendly_name="Edge Crease ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Crease",
         enum_gui_description="Create float edge attribute from Crease",
         attribute_auto_name="Edge Crease",
         attribute_domain_on_default='EDGE',
@@ -289,7 +307,8 @@ object_data_sources = {
     ),
 
     "EDGE_SHARP": ObjectDataSource(
-        enum_gui_friendly_name="Edge Sharp ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Sharp",
+        enum_gui_friendly_name="Edge Sharp ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Sharp",
         enum_gui_description="Create boolean edge attribute from Edge Sharp",
         attribute_auto_name="Edge Sharp",
         attribute_domain_on_default='EDGE',
@@ -303,7 +322,8 @@ object_data_sources = {
     ),
 
     "EDGE_FREESTYLE_MARK": ObjectDataSource(
-        enum_gui_friendly_name="Edge Freestyle Mark ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Freestyle Mark",
+        enum_gui_friendly_name="Edge Freestyle Mark ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Freestyle Mark",
         enum_gui_description="Create boolean edge attribute from Freestyle Mark",
         attribute_auto_name="Edge Freestyle Mark",
         attribute_domain_on_default='EDGE',
@@ -317,7 +337,8 @@ object_data_sources = {
     ),
 
     "EDGE_IS_LOOSE": ObjectDataSource(
-        enum_gui_friendly_name="Loose Edges ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Loose Edges",
+        enum_gui_friendly_name="Loose Edges ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Loose Edges",
         enum_gui_description="Create boolean edge attribute on loose edges",
         attribute_auto_name="Loose Edges",
         attribute_domain_on_default='EDGE',
@@ -331,7 +352,8 @@ object_data_sources = {
     ),
 
     "EDGE_VERTICES": ObjectDataSource(
-        enum_gui_friendly_name="Edge Vertices ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "Edge Vertices",
+        enum_gui_friendly_name="Edge Vertices ⁻ ᵉᵈᵍᵉ",
+        enum_gui_friendly_name_no_special_characters="Edge Vertices",
         enum_gui_description="Create 2D vector edge attribute with indexes of edge vertices",
         attribute_auto_name="Edge Vertex Indexes",
         attribute_domain_on_default='EDGE',
@@ -349,7 +371,8 @@ object_data_sources = {
     "INSERT_NEWLINE_FACE": None,  
 
     "SCULPT_MODE_FACE_SETS": ObjectDataSource(
-        enum_gui_friendly_name="Sculpt Mode Face Set Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Sculpt Mode Face Set Index",
+        enum_gui_friendly_name="Sculpt Mode Face Set Index ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Sculpt Mode Face Set Index",
         enum_gui_description="Create float face attribute from face sets in sculpt mode",
         attribute_auto_name="Sculpt Mode Face Set Index",
         attribute_domain_on_default='FACE',
@@ -363,7 +386,8 @@ object_data_sources = {
     ),
 
     "FACE_USE_SMOOTH": ObjectDataSource(
-        enum_gui_friendly_name="Face Use Smooth ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Face Use Smooth",
+        enum_gui_friendly_name="Face Use Smooth ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Face Use Smooth",
         enum_gui_description="Create boolean face attribute from smooth shading of a face",
         attribute_auto_name="Is Face Smooth Shaded",
         attribute_domain_on_default='FACE',
@@ -377,7 +401,8 @@ object_data_sources = {
     ),
 
     "FACE_AREA": ObjectDataSource(
-        enum_gui_friendly_name="Face Area ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Face Area",
+        enum_gui_friendly_name="Face Area ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Face Area",
         enum_gui_description="Create float face attribute from area of each face",
         attribute_auto_name="Face Area",
         attribute_domain_on_default='FACE',
@@ -391,7 +416,8 @@ object_data_sources = {
     ),
 
     "FACE_MATERIAL_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Material Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Material Index",
+        enum_gui_friendly_name="Material Index ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Material Index",
         enum_gui_description="Create integer face attribute from material index",
         attribute_auto_name="Face Material Index",
         attribute_domain_on_default='FACE',
@@ -406,7 +432,8 @@ object_data_sources = {
 
     # "FACE_MATERIAL_SLOT_INDEX": ObjectDataSource(
     #     enum_gui_friendly_name="Material Slot Index ⁻ ᶠᵃᶜᵉ",
-    #     enum_gui_description="Create integer face attribute from material slot index",
+    #     enum_gui_friendly_name_no_special_characters="",
+    #   enum_gui_description="Create integer face attribute from material slot index",
     #     attribute_auto_name="Face Material Slot Index",
     #     attribute_domain_on_default='FACE',
     #     domains_supported=['FACE'],
@@ -419,7 +446,8 @@ object_data_sources = {
     # ),
 
     "FACE_VERTS": ObjectDataSource(
-        enum_gui_friendly_name="All Vertex Indexes in a Face ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Vertices Indexes in a Face",
+        enum_gui_friendly_name="All Vertex Indexes in a Face ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Vertices Indexes in a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of vertices of a face",
         attribute_auto_name="Face Vertex Indexes",
         attribute_domain_on_default='FACE',
@@ -433,7 +461,8 @@ object_data_sources = {
     ),
 
     "FACE_CORNER_INDEXES": ObjectDataSource(
-        enum_gui_friendly_name="All Corner Indexes of a Face ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Corner Indexes of a Face",
+        enum_gui_friendly_name="All Corner Indexes of a Face ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Corner Indexes of a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of face corners of a face",
         attribute_auto_name="Corner Indexes of a Face",
         attribute_domain_on_default='FACE',
@@ -447,7 +476,8 @@ object_data_sources = {
     ),
 
     "FACE_CORNER_TOTAL": ObjectDataSource(
-        enum_gui_friendly_name="Corner Count in a Face ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Corner Count in a Face",
+        enum_gui_friendly_name="Corner Count in a Face ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Corner Count in a Face",
         enum_gui_description="Create integer face attribute from count of face corners in a face",
         attribute_auto_name="Corners Count in a Face",
         attribute_domain_on_default='FACE',
@@ -461,7 +491,8 @@ object_data_sources = {
     ),
 
     "FACE_CORNER_START_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Corner Start Index in a Face ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Corner Start Index in a Face",
+        enum_gui_friendly_name="Corner Start Index in a Face ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Corner Start Index in a Face",
         enum_gui_description="Create integer face attribute from lowest index from face corners in a face",
         attribute_auto_name="Corner Start Index in a Face",
         attribute_domain_on_default='FACE',
@@ -475,7 +506,8 @@ object_data_sources = {
     ),
 
     "FACE_FROM_FACE_MAP": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Face Map ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Boolean From Face Map",
+        enum_gui_friendly_name="Boolean From Face Map ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Boolean From Face Map",
         enum_gui_description="Create boolean face attribute from face map assignment",
         attribute_auto_name="Is face in {face_map}",
         attribute_domain_on_default='FACE',
@@ -489,7 +521,8 @@ object_data_sources = {
     ),
 
     "FACE_MAP_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Map Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Face Map Index",
+        enum_gui_friendly_name="Face Map Index ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Face Map Index",
         enum_gui_description="Create boolean face attribute from face map assignment",
         attribute_auto_name="Assigned Face Map Index",
         attribute_domain_on_default='FACE',
@@ -503,7 +536,8 @@ object_data_sources = {
     ),
 
     "FACE_IS_MATERIAL_ASSIGNED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Material Assignment ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Boolean From Material Assignment",
+        enum_gui_friendly_name="Boolean From Material Assignment ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Boolean From Material Assignment",
         enum_gui_description="Create boolean face attribute from material assignment",
         attribute_auto_name="Is {material} assigned",
         attribute_domain_on_default='FACE',
@@ -517,7 +551,8 @@ object_data_sources = {
     ),
 
     "FACE_IS_MATERIAL_SLOT_ASSIGNED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Material Slot Assignment ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Boolean From Material Slot Assignment",
+        enum_gui_friendly_name="Boolean From Material Slot Assignment ⁻ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name_no_special_characters="Boolean From Material Slot Assignment",
         enum_gui_description="Create boolean face attribute from material slot assignment",
         attribute_auto_name="Is {material_slot} slot assigned",
         attribute_domain_on_default='FACE',
@@ -535,7 +570,8 @@ object_data_sources = {
     "INSERT_NEWLINE_FACE_CORNER": None,
     
     "SPLIT_NORMALS": ObjectDataSource(
-        enum_gui_friendly_name="Split Normals ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Split Normals",
+        enum_gui_friendly_name="Split Normals ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Split Normals",
         enum_gui_description="Create vector face corner attribute from split normals",
         attribute_auto_name="Split Normals",
         attribute_domain_on_default='CORNER',
@@ -549,7 +585,8 @@ object_data_sources = {
     ),
 
     "CORNER_TANGENT": ObjectDataSource(
-        enum_gui_friendly_name="Tangent ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Tangent",
+        enum_gui_friendly_name="Tangent ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Tangent",
         enum_gui_description="Create vector face corner attribute from tangent",
         attribute_auto_name="Tangent",
         attribute_domain_on_default='CORNER',
@@ -563,7 +600,8 @@ object_data_sources = {
     ),
 
     "CORNER_BITANGENT": ObjectDataSource(
-        enum_gui_friendly_name="Bitangent ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Bitangent",
+        enum_gui_friendly_name="Bitangent ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Bitangent",
         enum_gui_description="Create vector face corner attribute from bitangent",
         attribute_auto_name="Bitangent",
         attribute_domain_on_default='CORNER',
@@ -577,7 +615,8 @@ object_data_sources = {
     ),
 
     "CORNER_BITANGENT_SIGN": ObjectDataSource(
-        enum_gui_friendly_name="Bitangent Sign ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Bitangent Sign",
+        enum_gui_friendly_name="Bitangent Sign ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Bitangent Sign",
         enum_gui_description="Create float face corner attribute from corner bitangent sign",
         attribute_auto_name="Bitangent Sign",
         attribute_domain_on_default='CORNER',
@@ -591,7 +630,8 @@ object_data_sources = {
     ),
 
     "CORNER_EDGE_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Corner Edge Index ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Face Corner Edge Index",
+        enum_gui_friendly_name="Face Corner Edge Index ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Face Corner Edge Index",
         enum_gui_description="Create integer face corner attribute from assigned edge index",
         attribute_auto_name="Face Corner Edge Index",
         attribute_domain_on_default='CORNER',
@@ -605,7 +645,8 @@ object_data_sources = {
     ),
 
     "CORNER_VERTEX_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Corner Vertex Index ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "Face Corner Vertex Index",
+        enum_gui_friendly_name="Face Corner Vertex Index ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="Face Corner Vertex Index",
         enum_gui_description="Create integer face corner attribute from assigned vertex index",
         attribute_auto_name="Face Corner Vertex Index",
         attribute_domain_on_default='CORNER',
@@ -618,7 +659,8 @@ object_data_sources = {
         icon= "LINENUMBERS_ON"
     ),
     "UVMAP": ObjectDataSource(
-        enum_gui_friendly_name="UVMap ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "UVMap",
+        enum_gui_friendly_name="UVMap ⁻ ᶜᵒʳⁿᵉʳ",
+        enum_gui_friendly_name_no_special_characters="UVMap",
         enum_gui_description="Create Vector2D UVMap attribute from selected UVMap",
         attribute_auto_name="UVMap",
         attribute_domain_on_default='CORNER',
@@ -640,7 +682,8 @@ object_data_sources = {
 
     # "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
     #     enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Vertices (UV Editor)",
-    #     enum_gui_description="Create boolean vertex attribute from selected vertices in UV Editor",
+    #     enum_gui_friendly_name_no_special_characters="",
+    #   enum_gui_description="Create boolean vertex attribute from selected vertices in UV Editor",
     #     attribute_auto_name="Selected {uvmap} UV Vertices",
     #     attribute_domain_on_default='POINT',
     #     domains_supported=['POINT'],
@@ -654,7 +697,8 @@ object_data_sources = {
 
     # "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
     #     enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Edges (UV Editor)",
-    #     enum_gui_description="Create boolean edge attribute from selected edges in UV Editor",
+    #     enum_gui_friendly_name_no_special_characters="",
+    #   enum_gui_description="Create boolean edge attribute from selected edges in UV Editor",
     #     attribute_auto_name="Selected {uvmap} UV Edges",
     #     attribute_domain_on_default='EDGE',
     #     domains_supported=['EDGE'],
@@ -966,6 +1010,15 @@ object_data_targets = {
     #         icon="",
     #     ),    
 
+    # "TO_PINNED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
+    #         enum_gui_friendly_name="Pinned UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "SPinned UV Vertices (UV Editor)",
+    #         enum_gui_description="Convert this attribute to pinned vertices in UV Editor Panel",
+    #         domains_supported=['POINT'],
+    #         data_type='BOOLEAN',
+    #         min_blender_ver=None,
+    #         unsupported_from_blender_ver=None,
+    #         icon="",
+    #     ),    
 
 }
 
@@ -974,6 +1027,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "friendly_name",
     "min_blender_ver",
     "unsupported_from_blender_ver",
+    "supported_attribute_invert_modes",
+    "supported_comparison_modes"
 ])
 
 # Defines all supported mesh data types
@@ -982,56 +1037,78 @@ attribute_data_types = {
         friendly_name="Float",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["REVERSE_ORDER"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["NOT"],
+        supported_comparison_modes=['EQ','NEQ']
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
         min_blender_ver=(3,6,0),
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
         min_blender_ver=(4,0,0),
         unsupported_from_blender_ver=None,
+        supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
     ),
 }
 
@@ -1073,6 +1150,7 @@ ConvertAttributeMode = namedtuple("ConvertAttributeMode", [
     "unsupported_from_blender_ver",
 ])
 
+# Defines all convert attribute modes
 convert_attribute_modes = {
     "GENERIC": AttributeDomain(
         friendly_name="Generic",
@@ -1150,3 +1228,321 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
     val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
     val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)
+
+# All attribute types. Used to limit operator scope
+# Some of them might be unused for now
+class EAttributeType(Enum):
+    NORMAL = 0                  # For attributes created by user or other
+    HIDDEN = 1                  # For attributes starting with . for a reason
+    READONLY = 2                # For attributes that are read only
+    INTERNAL = 3                # For attributes for internal use only eg .pn.UVMap
+    AUTOGENERATED = 4           # For attributes auto generated by blender, eg sharp_face. 
+    NOTPROCEDURAL = 5           # Not used for procedural context (geonodes)
+    DONOTREMOVE = 6             # Attributes that should not be removed
+    CANTREMOVE = 7              # Attributes that CANNOT be removed. 
+
+# Used to describe an entry in defined_attributes
+AttributeType = namedtuple("AttriubteType", [
+    "friendly_name",                    # Name used in GUI
+    "description",                      # Description, just in case
+    "types",                            # List of EAttributeType
+    "object_types",                     # Found on object types, eg MESH
+    "min_blender_ver",                  # Minimum blender version that this attribute appeared
+    "unsupported_from_blender_ver",     # First blender version that removed this attribute
+])  
+
+# Stores all explicitly defined attributes that are generated by blender.
+defined_attributes = {
+
+    # "GENERIC": AttributeDomain(
+    #     
+    #     friendly_name = "",                    
+    #     description = "",                      
+    #     types = [],                            
+    #     object_types = [],                     
+    #     min_blender_ver = None,                  
+    #     unsupported_from_blender_ver = None,
+    #),
+    "position": AttributeType(
+        
+        friendly_name = "Vertex Position",                    
+        description = "The position of vertices in a mesh",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.CANTREMOVE, EAttributeType.DONOTREMOVE],                            
+        object_types = ['MESH'],                        
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "radius": AttributeType(
+        
+        friendly_name = "Curve or Point Cloud Radius",                    
+        description = "The radius of the point cloud points or curves",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVE', 'POINT_CLOUD'], # I have no idea what is the object name for this, as it seems to be removed. Left just in case.                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "id": AttributeType(
+        
+        friendly_name = "ID",                    
+        description = "Unique index (auto-generated by geometry nodes)",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "material_index": AttributeType(
+        
+        friendly_name = "Material Index",                    
+        description = "Index of applied material to a face",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "crease": AttributeType(
+        
+        friendly_name = "Edge Crease",                    
+        description = "Edge Crease",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "sharp_face": AttributeType(
+        
+        friendly_name = "Face Sharp",                    
+        description = "aka. smooth shading",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "resolution": AttributeType(
+        
+        friendly_name = "Bézier Spline/NURBs Resolution",                    
+        description = "Number of points between two control points",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVE'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "cyclic": AttributeType(
+        
+        friendly_name = "Spline Cyclic",                    
+        description = "\"Is the spline cyclic\" boolean",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
+        object_types = ['CURVE'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "handle_left": AttributeType(
+        
+        friendly_name = "Bézier Curve Handle Left",                    
+        description = "The position of right handle of Bézier Curve",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
+        object_types = ['CURVE'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "handle_right": AttributeType(
+        
+        friendly_name = "Bézier Curve Handle Right",                    
+        description = "The position of right handle of Bézier Curve",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
+        object_types = ['CURVE'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    "velocity": AttributeType(
+        
+        friendly_name = "Velocity",                    
+        description = "Velocity vector value used for motion blur",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "rest_position": AttributeType(
+        
+        friendly_name = "Mesh Rest Position",                    
+        description = "The position of vertices without shape keys and modifiers",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "surface_uv_coordinate": AttributeType(
+        
+        friendly_name = "Surface UV Coordinate",                    
+        description = "Curves attachment location to a mesh",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    ".sculpt_face_set": AttributeType(
+        
+        friendly_name = "Sculpt face set",                    
+        description = "Index of sculpt face set",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    ".vs.": AttributeType(
+        
+        friendly_name = "Selected Vertices in UV Editor",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL],                            
+        object_types = ['MESH'],                       
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    ".es.": AttributeType(
+        friendly_name = "Selected Edges in UV Editor",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL],                            
+        object_types = ['MESH'],                     
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    ".pn.": AttributeType(
+        friendly_name = "Pinned Vertices in UV Editor", # thanks to Etherlord for figuring this one out
+        description = "Might not exist if there is no pinned vertices in UV Edtior",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.INTERNAL, EAttributeType.NOTPROCEDURAL],                            
+        object_types = ['MESH'],                      
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".corner_edge": AttributeType(
+        
+        friendly_name = "Face Corner Edge Index",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".corner_vert": AttributeType(
+        
+        friendly_name = "Face Corner Vertex Index",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".edge_verts": AttributeType(
+        friendly_name = "Edge Vertex Indexes",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".select_edge": AttributeType(
+        friendly_name = "Selected Edges",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".select_poly": AttributeType(
+        friendly_name = "Selected Faces",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+    ".select_vert": AttributeType(
+        friendly_name = "Selected Vertices",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL, EAttributeType.CANTREMOVE],                            
+        object_types = ['MESH'],                     
+         
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+
+}
+
+
+# Defines invert mode of the attribute
+AttributeInvertMode = namedtuple("AttributeInvertMode", [
+    "friendly_name",                    # Name used in GUI
+    "description",                      # Description, just in case
+])  
+
+# Defines all supported invert modes for the attributes
+# Some of them are vanity entries to inform the user about the action, and are not used in operators.
+attribute_invert_modes = {
+    "NOT": AttributeInvertMode(
+        friendly_name='Not Operation',
+        description='Sets the True values to False and False values to True',
+
+    ),
+    "MULTIPLY_MINUS_ONE": AttributeInvertMode(
+        friendly_name='Multiply by -1',
+        description='Multiply each attribute value by -1',
+
+    ),
+    "ADD_TO_MINUS_ONE": AttributeInvertMode(
+        friendly_name='Add to -1',
+        description='Add each attribute value to -1',
+
+    ),
+    "SUBTRACT_FROM_ONE": AttributeInvertMode(
+        friendly_name='Subtract from 1',
+        description='Subtract each attribute value from 1',
+
+    ),
+    "REVERSE_ORDER": AttributeInvertMode(
+        friendly_name='Reverse Order',
+        description='Reverse the order of elements',
+
+    ),
+}
+
+# All supported modes for converting attributes to different type
+attribute_convert_modes = [("GENERIC", "Generic", ""),
+               ("VERTEX_GROUP", "Vertex Group", ""),]
+
+# All modes used for comparing data in attributes
+attribute_comparison_modes = {
+    "EQ": ("EQ", "Equal", "=="),
+    "NEQ": ("NEQ", "Not equal", "!="),
+    "EQORGR": ("EQORGR", "Equal or greater", ">="),
+    "EQORLS": ("EQORLS", "Equal or lesser", "<="),
+    "GR": ("GR", "Greater than", ">"),
+    "LS": ("LS", "Lesser than", "<"),
+    "CONTAINS": ("CONTAINS", "Contains", "in"),
+    "STARTS_WITH": ("STARTS_WITH", "Starts with", "startswith"),
+    "ENDS_WITH": ("ENDS_WITH", "Ends with", "endswith"),
+}

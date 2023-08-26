@@ -63,7 +63,7 @@ class MAMETestAll(bpy.types.Operator):
                             
 
         return {'FINISHED'}
-        for domain in func.get_target_compatible_domains(self, context):
+        for domain in func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context):
             for data_target in func.get_target_data_enum(self, context):
                 bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT',
                                                             append_to_current=False,

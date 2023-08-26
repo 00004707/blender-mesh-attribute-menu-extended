@@ -33,8 +33,11 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
     bl_description = "Assigns active attribute value to selection in edit mode."
     bl_options = {'REGISTER', 'UNDO'}
     
-    clear: bpy.props.BoolProperty(name="clear", default = False)
-    fc_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False)
+    # The toggle to clear attribute value - set it's value to the zero value
+    b_clear: bpy.props.BoolProperty(name="clear", default = False)
+
+    # The toggle to enable face corner spilling to nearby face corners of selected vertices/edges/faces
+    b_face_corner_spill_enable: bpy.props.BoolProperty(name="Face Corner Spill", default = False)
 
     @classmethod
     def poll(self, context):
@@ -42,8 +45,8 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
                 and context.active_object.mode == 'EDIT' 
                 and context.active_object.type == 'MESH' 
                 and context.active_object.data.attributes.active 
-                and func.get_is_attribute_valid(context.active_object.data.attributes.active.name))
-
+                and func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)
+                )
 
     def execute(self, context):
         obj = context.active_object
@@ -59,32 +62,32 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         prop_group = context.object.MAME_PropValues
         dt = attribute.data_type
         if dt == "FLOAT":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_float
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_float
         elif dt == "INT":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int
         elif dt == "FLOAT_VECTOR":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_vector
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_vector
         elif dt == "FLOAT_COLOR":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_color
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_color
         elif dt == "BYTE_COLOR":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_bytecolor
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_bytecolor
         elif dt == "STRING":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_string
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_string
         elif dt == "BOOLEAN":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_bool
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_bool
         elif dt == "FLOAT2":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_vector2d
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_vector2d
         elif dt == "INT8":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int8
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int8
         elif dt == "INT32_2D":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_int32_2d
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int32_2d
         elif dt == "QUATERNION":
-            value = func.get_attrib_default_value(attribute) if self.clear else prop_group.val_quaternion
+            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_quaternion
         else:
             self.report({'ERROR', "Unsupported data type!"})
 
         # Set the value
-        func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.fc_spill)
+        func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.b_face_corner_spill_enable)
         
         bpy.ops.object.mode_set(mode='EDIT')
         
@@ -102,33 +105,39 @@ class CreateAttribFromData(bpy.types.Operator):
     
     # Main settings
 
+    # The name of the created attribute.
     attrib_name: bpy.props.StringProperty(name="Attribute Name", default="", description="New attribute name. Leave blank for automatic name")
 
-    domain_data_type: bpy.props.EnumProperty(
+    # The source data to fill the created attribute
+    domain_data_type_enum: bpy.props.EnumProperty(
         name="Domain Data",
         description="Select an option",
-        items=func.get_source_data_enum
+        items=func.get_source_data_enum_with_separators
     )
 
-    target_attrib_domain: bpy.props.EnumProperty(
+    # Optional selector for selecting the attribute domain, if source is available in multiple
+    target_attrib_domain_enum: bpy.props.EnumProperty(
         name="Attribute Domain",
         description="Select an option",
-        items=func.get_natively_supported_domains_enum
+        items=func.get_supported_domains_for_selected_mesh_data_source_enum_entry
     )
 
-    batch_convert_enabled: bpy.props.BoolProperty(
+    # Enables batch mode to convert multiple mesh data to multiple attributes. Limited to selected mesh data that supports this function.
+    b_batch_convert_enabled: bpy.props.BoolProperty(
         name="Batch Convert And Create Attributes", 
         description="Convert all vertex groups/shape keys/face maps/... at once", 
         default=False)
     
-    # used for batch shape key offset attribute creation
-    batch_convert_sk_offset_target_toggle: bpy.props.BoolProperty(
+    # Switch "Offset From"<>"Offset to" when batch creating attributes from shape keys.
+    b_offset_from_offset_to_toggle: bpy.props.BoolProperty(
         name="Set \"Offset to\" instead of \"Offset From\"", 
         description="", 
         default=False)
     
+    # Overwrite toggle for attributes that already exist
     b_overwrite: bpy.props.BoolProperty(name="Overwrite", description="Overwrites the attribute if exists", default=False)
-    
+
+    # Description string used when hovering over the enable name formatting checkbox
     name_format_desc = """ Replaces wildcards with predefined names. using {uvmap} will replace it with current UVMap name.
 • {domain} - Domain name
 • {face_map} - Face map name
@@ -141,11 +150,10 @@ class CreateAttribFromData(bpy.types.Operator):
 • {uvmap} - UVMap name
 • {index} - (Batch only) index of the processed element
 """
-
+    # Toggle to enable name formatting by user with .format
     b_enable_name_formatting: bpy.props.BoolProperty(name="Enable Name Formatting (hover for info)", description=name_format_desc, default=True)
 
     # Data selectors
-
     enum_face_maps: bpy.props.EnumProperty(
         name="Face Map",
         description="Select an option",
@@ -188,22 +196,26 @@ class CreateAttribFromData(bpy.types.Operator):
         items=func.get_uvmaps_enum
     )
     
-    # Converter props
+    # Automatic Converter settings
 
-    auto_convert: bpy.props.BoolProperty(name="Convert Attribute", description="Auto converts created attribute to another domain or type", default=False)
+    # Enable automatic converting of attribute to different type after creation
+    b_auto_convert: bpy.props.BoolProperty(name="Convert Attribute", description="Auto converts created attribute to another domain or type", default=False)
     
+    # Convert mode
     enum_attrib_converter_mode:bpy.props.EnumProperty(
         name="Mode",
         description="Select an option",
         items=func.get_convert_attribute_modes_enum,
     )
 
+    # The target domain to convert this attribute to
     enum_attrib_converter_domain:bpy.props.EnumProperty(
         name="Domain",
         description="Select an option",
         items=func.get_attribute_domains_enum,
     )
 
+    # The target data type to convert this attribute to
     enum_attrib_converter_datatype: bpy.props.EnumProperty(
         name="Mode",
         description="Select an option",
@@ -212,18 +224,18 @@ class CreateAttribFromData(bpy.types.Operator):
 
     def perform_user_input_test(self):
         """
-        Checks for all user input in gui
+        User input checks for valid mesh data and selections in GUI. Displays a message on failure to inform the user.
         """
 
         #check if selection even exists
-        if not self.domain_data_type in data.object_data_sources:
-            self.report({'ERROR'}, f"Can't find this data source {self.domain_data_type}. Contact developer.")
+        if not self.domain_data_type_enum in data.object_data_sources:
+            self.report({'ERROR'}, f"Can't find this data source {self.domain_data_type_enum}. Contact developer.")
             return False
 
         # Check if the user has selected input data if applicable to specific sources:
-        if self.domain_data_type in ["FACE_FROM_FACE_MAP"]:
+        if self.domain_data_type_enum in ["FACE_FROM_FACE_MAP"]:
             if self.enum_face_maps == 'NULL':
-                if not self.batch_convert_enabled:
+                if not self.b_batch_convert_enabled:
                     self.report({'ERROR'}, f"No Face Map Selected. Nothing done")
                 else:
                     self.report({'ERROR'}, f"No Face Maps. Nothing done")
@@ -232,9 +244,9 @@ class CreateAttribFromData(bpy.types.Operator):
                 
     
         # material slots
-        if self.domain_data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"]:
+        if self.domain_data_type_enum in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"]:
             if self.enum_material_slots == 'NULL':
-                if not self.batch_convert_enabled:
+                if not self.b_batch_convert_enabled:
                     self.report({'ERROR'}, f"No material slot selected. Nothing done")
                 else:
                     self.report({'ERROR'}, f"No Material slots. Nothing done")
@@ -242,9 +254,9 @@ class CreateAttribFromData(bpy.types.Operator):
                 return False
     
         # materials
-        if self.domain_data_type in ["FACE_IS_MATERIAL_ASSIGNED"]:
+        if self.domain_data_type_enum in ["FACE_IS_MATERIAL_ASSIGNED"]:
             if self.enum_materials == 'NULL':
-                if not self.batch_convert_enabled:
+                if not self.b_batch_convert_enabled:
                     self.report({'ERROR'}, f"No Materials assigned. Nothing done")
                 else:
                     self.report({'ERROR'}, f"No Materials. Nothing done")
@@ -252,49 +264,47 @@ class CreateAttribFromData(bpy.types.Operator):
                 return False
     
         # shape keys
-        if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
+        if self.domain_data_type_enum ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
-            if self.batch_convert_enabled:
-                if not self.batch_convert_sk_offset_target_toggle and self.enum_shape_keys_offset_target == 'NULL':
+            if self.b_batch_convert_enabled:
+                if not self.b_offset_from_offset_to_toggle and self.enum_shape_keys_offset_target == 'NULL':
                         self.report({'ERROR'}, f"Source shape key to get offset target is invalid. Nothing done")
                         return False
 
-                if self.batch_convert_sk_offset_target_toggle and self.enum_shape_keys == 'NULL':
+                if self.b_offset_from_offset_to_toggle and self.enum_shape_keys == 'NULL':
                     self.report({'ERROR'}, f"Target shape key to get offset from is invalid. Nothing done")
                     return False
                 
             
-        if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION":
+        if self.domain_data_type_enum ==  "VERT_SHAPE_KEY_POSITION":
             if self.enum_shape_keys == 'NULL':
-                if not self.batch_convert_enabled:
+                if not self.b_batch_convert_enabled:
                     self.report({'ERROR'}, f"No shape key selected. Nothing done")
                 else:
                     self.report({'ERROR'}, f"No shape keys. Nothing done")
                 return False
         
         # vertex groups
-        if self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]: # ???????????
+        if self.domain_data_type_enum in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"]: # ???????????
             if self.enum_vertex_groups == 'NULL':
-                if not self.batch_convert_enabled:
+                if not self.b_batch_convert_enabled:
                     self.report({'ERROR'}, f"No vertex group selected. Nothing done")
                 else:
                     self.report({'ERROR'}, f"No vertex groups. Nothing done")
                 return False
 
         # UVMaps
-        if self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']: 
+        if self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']: 
             if self.enum_uvmaps == 'NULL':
                 self.report({'ERROR'}, f"No UVMap selected. Nothing done")
                 return False
 
 
         # invalid domain enum for multiple choices
-        if len(data.object_data_sources[self.domain_data_type].domains_supported) > 1 and self.target_attrib_domain == '':
+        if len(data.object_data_sources[self.domain_data_type_enum].domains_supported) > 1 and self.target_attrib_domain_enum == '':
             self.report({'ERROR'}, f"Invalid source domain. Nothing done")
             return False
         return True
-
-    
 
 
     @classmethod
@@ -317,22 +327,22 @@ class CreateAttribFromData(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Get default value if default was chosen
-        if self.target_attrib_domain =="DEFAULT":
-            self.target_attrib_domain = data.object_data_sources[self.domain_data_type].attribute_domain_on_default
+        if self.target_attrib_domain_enum =="DEFAULT" or self.target_attrib_domain_enum == "":
+            self.target_attrib_domain_enum = data.object_data_sources[self.domain_data_type_enum].attribute_domain_on_default
 
         # Read prefixes and suffixes of automatic naming
-        data_type = data.object_data_sources[self.domain_data_type].data_type
+        data_type = data.object_data_sources[self.domain_data_type_enum].data_type
         
         
         if func.is_verbose_mode_enabled():
-            print(f"Batch mode supported & enabled: {not (not data.object_data_sources[self.domain_data_type].batch_convert_support or not self.batch_convert_enabled) }")
+            print(f"Batch mode supported & enabled: {not (not data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled) }")
         
         # [Batch mode off] Single assignment to single attribute
-        if not data.object_data_sources[self.domain_data_type].batch_convert_support or not self.batch_convert_enabled:
+        if not data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled:
             
             def format_name(name:str):
                 # this is dirty but it already gets the right data so...
-                return name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                return name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
                                 face_map=func.get_face_maps_enum(self, context)[int(self.enum_face_maps)][1] if self.enum_face_maps != 'NULL' else None,
                                 shape_key=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
                                 shape_key_to=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_target)][1] if self.enum_shape_keys_offset_target != 'NULL' else None, 
@@ -344,7 +354,7 @@ class CreateAttribFromData(bpy.types.Operator):
             
             # Automatic name formatting
             if self.attrib_name == "":
-                name = data.object_data_sources[self.domain_data_type].attribute_auto_name
+                name = data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
                 name = format_name(name)
             else:
                 name = self.attrib_name
@@ -357,10 +367,10 @@ class CreateAttribFromData(bpy.types.Operator):
             if self.b_overwrite and name in obj.data.attributes:
                 obj.data.attributes.remove(obj.data.attributes[name])
 
-            attrib = obj.data.attributes.new(name=name, type=data_type, domain=self.target_attrib_domain)
+            attrib = obj.data.attributes.new(name=name, type=data_type, domain=self.target_attrib_domain_enum)
             obj_data = func.get_mesh_data(obj, 
-                                        self.domain_data_type, 
-                                        self.target_attrib_domain, 
+                                        self.domain_data_type_enum, 
+                                        self.target_attrib_domain_enum, 
                                         vg_index=self.enum_vertex_groups,
                                         sk_index=self.enum_shape_keys,
                                         sk_offset_index=self.enum_shape_keys_offset_target,
@@ -375,7 +385,7 @@ class CreateAttribFromData(bpy.types.Operator):
             func.set_attribute_values(attrib, obj_data)
 
             # Convert to different type (optional)
-            if self.auto_convert:
+            if self.b_auto_convert:
                 func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
                                                domain=self.enum_attrib_converter_domain, 
                                                data_type=self.enum_attrib_converter_datatype)
@@ -390,7 +400,7 @@ class CreateAttribFromData(bpy.types.Operator):
         # "FACE_IS_MATERIAL_SLOT_ASSIGNED", 
         # "FACE_FROM_FACE_MAP"
         else:
-            for element_index, element in enumerate(func.get_all_mesh_data_ids_of_type(obj, self.domain_data_type)):
+            for element_index, element in enumerate(func.get_all_mesh_data_entries_of_type(obj, self.domain_data_type_enum)):
                 
                 if func.is_verbose_mode_enabled():
                     print(f"Batch converting #{element}")
@@ -412,22 +422,22 @@ class CreateAttribFromData(bpy.types.Operator):
                 # VERT_IS_IN_VERTEX_GROUP: check for each group if vertex is in it 
                 # VERT_FROM_VERTEX_GROUP: get vertex weight for each vertex group for each vertex
                 # -> iterates over every vertex group
-                if self.domain_data_type in ['VERT_IS_IN_VERTEX_GROUP', "VERT_FROM_VERTEX_GROUP"]: 
+                if self.domain_data_type_enum in ['VERT_IS_IN_VERTEX_GROUP', "VERT_FROM_VERTEX_GROUP"]: 
                     vertex_group_name = func.get_vertex_groups_enum(self, context)[element][1]
                     vg_index = element
 
                 # case: get shape key position for each shape key 
-                if self.domain_data_type in ["VERT_SHAPE_KEY_POSITION"]:
+                if self.domain_data_type_enum in ["VERT_SHAPE_KEY_POSITION"]:
                     shape_key = func.get_shape_keys_enum(self, context)[element][1]
                     sk_index = element
                     if func.is_verbose_mode_enabled():
                         print(f"Source is shape key POS ({shape_key}), \nFROM: {func.get_shape_keys_enum(self, context)[element]} ")
                       
                 # case: get shape key offset from specific one
-                elif self.domain_data_type == 'VERT_SHAPE_KEY_POSITION_OFFSET':
+                elif self.domain_data_type_enum == 'VERT_SHAPE_KEY_POSITION_OFFSET':
 
                     # case: user wants to set offset from
-                    if self.batch_convert_sk_offset_target_toggle:
+                    if self.b_offset_from_offset_to_toggle:
                         shape_key = func.get_shape_keys_enum(self, context)[element][1]
                         shape_key_to = func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1]
                         sk_index = element
@@ -446,24 +456,24 @@ class CreateAttribFromData(bpy.types.Operator):
                         
                 # case: check for each material if it's assigned
                 # -> iterates over every material
-                if self.domain_data_type == "FACE_IS_MATERIAL_ASSIGNED":
+                if self.domain_data_type_enum == "FACE_IS_MATERIAL_ASSIGNED":
                     material = func.get_materials_enum(self, context)[element][1]
                     sel_mat = element    
 
                 # case; check for each material slot if it's assigned
                 # -> iterates over every material slot
-                if self.domain_data_type == "FACE_IS_MATERIAL_SLOT_ASSIGNED":
+                if self.domain_data_type_enum == "FACE_IS_MATERIAL_SLOT_ASSIGNED":
                     material_slot = func.get_material_slots_enum(self, context)[element][1]
                     mat_index = element
 
                 #case: check for each face map if it's assigned
                 # -> iterates over every face map
-                if self.domain_data_type == "FACE_FROM_FACE_MAP":
+                if self.domain_data_type_enum == "FACE_FROM_FACE_MAP":
                     face_map = func.get_face_maps_enum(self, context)[element][1]
                     fm_index = element
 
                 def format_name_batch(xname:str):
-                    return xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain, plural=True), 
+                    return xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
                                     face_map=face_map,
                                     shape_key=shape_key, 
                                     shape_key_to=shape_key_to,
@@ -475,7 +485,7 @@ class CreateAttribFromData(bpy.types.Operator):
 
                 # Create formatted attribute name
                 if self.attrib_name == "":
-                    xname = data.object_data_sources[self.domain_data_type].attribute_auto_name
+                    xname = data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
                     xname = format_name_batch(xname)
                 else:
                     xname = self.attrib_name
@@ -491,12 +501,12 @@ class CreateAttribFromData(bpy.types.Operator):
                     obj.data.attributes.remove(obj.data.attributes[xname])
                 
                 # Create new attribute
-                attrib = obj.data.attributes.new(name=xname, type=data_type, domain=self.target_attrib_domain)
+                attrib = obj.data.attributes.new(name=xname, type=data_type, domain=self.target_attrib_domain_enum)
 
                 # Fetch data
                 obj_data = func.get_mesh_data(obj, 
-                                        self.domain_data_type, 
-                                        self.target_attrib_domain, 
+                                        self.domain_data_type_enum, 
+                                        self.target_attrib_domain_enum, 
                                         vg_index=vg_index,
                                         sk_index=sk_index,
                                         sk_offset_index=sk_offset_index,
@@ -508,7 +518,7 @@ class CreateAttribFromData(bpy.types.Operator):
                 func.set_attribute_values(attrib, obj_data)
 
                 # Convert to different type (optional)
-                if self.auto_convert:
+                if self.b_auto_convert:
                     func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
                                                domain=self.enum_attrib_converter_domain, 
                                                data_type=self.enum_attrib_converter_datatype)
@@ -525,7 +535,7 @@ class CreateAttribFromData(bpy.types.Operator):
     def draw(self, context):
         
         # get if the attrib supports batch conversion
-        batch_convert_support = False if self.domain_data_type == '' else data.object_data_sources[self.domain_data_type].batch_convert_support
+        batch_convert_support = False if self.domain_data_type_enum == '' else data.object_data_sources[self.domain_data_type_enum].batch_convert_support
 
         row = self.layout
 
@@ -535,65 +545,65 @@ class CreateAttribFromData(bpy.types.Operator):
             row.label(text="Using auto-generated name", icon='INFO')
 
         # Data to create the attribute from
-        row.prop(self, "domain_data_type", text="Data")
+        row.prop(self, "domain_data_type_enum", text="Data")
         
         # Source domain selector, if applicable to source attribute
-        if len(func.get_natively_supported_domains_enum(self, context)) > 1:
-            row.prop(self, "target_attrib_domain", text="From")
+        if len(func.get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context)) > 1:
+            row.prop(self, "target_attrib_domain_enum", text="From")
         
         # Specific data source GUI entries
 
         # face maps
-        if self.domain_data_type in ["FACE_FROM_FACE_MAP"] and not self.batch_convert_enabled:
+        if self.domain_data_type_enum in ["FACE_FROM_FACE_MAP"] and not self.b_batch_convert_enabled:
             row.prop(self, "enum_face_maps", text="Face Map")
         
         # material slots
-        elif self.domain_data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"] and not self.batch_convert_enabled:
+        elif self.domain_data_type_enum in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"] and not self.b_batch_convert_enabled:
             row.prop(self, "enum_material_slots", text="Material Slot")
         
         # materials
-        elif self.domain_data_type in ["FACE_IS_MATERIAL_ASSIGNED"] and not self.batch_convert_enabled:
+        elif self.domain_data_type_enum in ["FACE_IS_MATERIAL_ASSIGNED"] and not self.b_batch_convert_enabled:
             row.prop(self, "enum_materials", text="Material")
         
         # shape keys
-        elif self.domain_data_type == "VERT_SHAPE_KEY_POSITION_OFFSET" or (self.domain_data_type == "VERT_SHAPE_KEY_POSITION" and not self.batch_convert_enabled):
+        elif self.domain_data_type_enum == "VERT_SHAPE_KEY_POSITION_OFFSET" or (self.domain_data_type_enum == "VERT_SHAPE_KEY_POSITION" and not self.b_batch_convert_enabled):
             
             # Shape key "Offset From" and  "Offset To" selectors
-            if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
+            if self.domain_data_type_enum ==  "VERT_SHAPE_KEY_POSITION_OFFSET":
 
-                if not self.batch_convert_enabled or (not self.batch_convert_sk_offset_target_toggle):
+                if not self.b_batch_convert_enabled or (not self.b_offset_from_offset_to_toggle):
                     row.prop(self, "enum_shape_keys", text="Offset from")
                     
-                if not self.batch_convert_enabled or self.batch_convert_sk_offset_target_toggle:
+                if not self.b_batch_convert_enabled or self.b_offset_from_offset_to_toggle:
                     row.prop(self, "enum_shape_keys_offset_target", text="Offset to")
                 
                 # Batch convert toggle mode either to create multiple "offset from" attributes or mulitple "offset to" attributes
-                if self.batch_convert_enabled:
-                    row.prop(self, "batch_convert_sk_offset_target_toggle", text="Set \"Offset to\" instead of \"Offset From\"")
+                if self.b_batch_convert_enabled:
+                    row.prop(self, "b_offset_from_offset_to_toggle", text="Set \"Offset to\" instead of \"Offset From\"")
 
             # Simple shape key vertex position to attribute mode
-            if self.domain_data_type ==  "VERT_SHAPE_KEY_POSITION":
+            if self.domain_data_type_enum ==  "VERT_SHAPE_KEY_POSITION":
                 row.prop(self, "enum_shape_keys", text="Shape Key")
                  
         # vertex groups
-        elif self.domain_data_type in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.batch_convert_enabled:
+        elif self.domain_data_type_enum in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.b_batch_convert_enabled:
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
         
         # UVMap domain selection, or from UVMap for legacy blender versions
-        elif self.domain_data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']:
+        elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']:
             row.prop(self, "enum_uvmaps", text="UV Map")
 
         # convert all of type to attrib
         if batch_convert_support:
-            row.prop(self, "batch_convert_enabled", text="Batch Convert All To Attributes")
+            row.prop(self, "b_batch_convert_enabled", text="Batch Convert All To Attributes")
 
         # Overwrite toggle
         row.prop(self, "b_overwrite", text="Overwrite if exists")
         row.prop(self, "b_enable_name_formatting")
         
         # Automatic conversion to another type, toggleable
-        row.prop(self, "auto_convert", text="Convert Attribute After Creation")
-        if self.auto_convert:
+        row.prop(self, "b_auto_convert", text="Convert Attribute After Creation")
+        if self.b_auto_convert:
             row.label(text="Conversion Options")
             row.prop(self, "enum_attrib_converter_mode", text="Mode")
             if self.enum_attrib_converter_mode == 'GENERIC':
@@ -602,7 +612,8 @@ class CreateAttribFromData(bpy.types.Operator):
 
 class DuplicateAttribute(bpy.types.Operator):
     """
-    Simply duplicates an attribute"""
+    Simply duplicates an attribute
+    """
 
     bl_idname = "mesh.attribute_duplicate"
     bl_label = "Duplicate Attribute"
@@ -633,6 +644,7 @@ class DuplicateAttribute(bpy.types.Operator):
 class InvertAttribute(bpy.types.Operator):
     """
     Inverts active attribute value, with edit mode selection support
+
     """
 
     bl_idname = "mesh.attribute_invert"
@@ -640,29 +652,36 @@ class InvertAttribute(bpy.types.Operator):
     bl_description = "Invert Active Attribute Value"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def invert_attrib_color_mode_enum(self, context):
-        # reverse
-        return func.get_attribute_invert_modes(self, context)[::-1]
+    
 
-    edit_mode_selected_only: bpy.props.BoolProperty(
+    # Whether to perform this operation on selected domain in edit mode
+    b_edit_mode_selected_only: bpy.props.BoolProperty(
         name="Selected Only",
         description="Affect only selected in edit mode",
         default=False
     )
 
-    edit_mode_face_corner_spill: bpy.props.BoolProperty(
+    # The toggle to enable face corner spilling to nearby face corners of selected vertices/edges/faces
+    b_face_corner_spill: bpy.props.BoolProperty(
         name="Face Corner Spill",
         description="Allow inverting value to nearby corners of selected vertices or limit it only to selected face",
         default=False
     )
 
-    invert_mode: bpy.props.EnumProperty(
+    # The dropdown menu for invert modes for selected attribute.
+    invert_mode_enum: bpy.props.EnumProperty(
         name="Invert Mode",
         description="Select an option",
         items=func.get_attribute_invert_modes
     )
 
-    color_invert_mode: bpy.props.EnumProperty(
+    # Trick to show the "Subtract from one" as first dropdown entry for color attributes
+    def invert_attrib_color_mode_enum(self, context):
+        # reverse
+        return func.get_attribute_invert_modes(self, context)[::-1]
+
+    # The dropdown menu for inverting modes for selected color attributes
+    color_invert_mode_enum: bpy.props.EnumProperty(
         name="Invert Mode",
         description="Select an option",
         items=invert_attrib_color_mode_enum
@@ -683,48 +702,30 @@ class InvertAttribute(bpy.types.Operator):
         src_attrib = obj.data.attributes[src_attrib_name] # !important
         
         # get selected domain indexes
-        selected = [domain.index for domain in func.get_mesh_selected_by_domain(obj, src_attrib.domain, self.edit_mode_face_corner_spill)]
+        selected = [domain.index for domain in func.get_mesh_selected_by_domain(obj, src_attrib.domain, self.b_face_corner_spill)]
         if func.is_verbose_mode_enabled():
             print(f"Selected domain indexes: {selected}")
         
         # No selection and selection mode is enabled?
-        if not len(selected) and self.edit_mode_selected_only:
+        if not len(selected) and self.b_edit_mode_selected_only:
             self.report({'ERROR'}, f"No selection to perform the operations onto")
             bpy.ops.object.mode_set(mode=current_mode)
             return {'CANCELLED'}
-
-        # # strings are different
-        # if src_attrib.data_type == 'STRING':
-        #     for i, dom in enumerate(src_attrib.data):
-        #         if not self.edit_mode_selected_only or i in selected:
-        #             dom.value = dom.value[::-1]
         
         # # numbers:
         # else:
         prop_name = func.get_attrib_value_propname(src_attrib)
         
         storage = func.get_attrib_values(src_attrib, obj)
-
-        # create storage
-        # if src_attrib.domain == 'POINT':
-        #     storage = [func.get_attrib_default_value(src_attrib)] * len(obj.data.vertices)
-        # elif src_attrib.domain == 'EDGE':
-        #     storage = [func.get_attrib_default_value(src_attrib)] * len(obj.data.edges)
-        # elif src_attrib.domain == 'FACE':
-        #     storage = [func.get_attrib_default_value(src_attrib)] * len(obj.data.polygons)
-        # else:
-        #     storage = [func.get_attrib_default_value(src_attrib)] * len(obj.data.loops)
-
-        # storage = list(storage)
         
         # int just get and multiply by -1
         if src_attrib.data_type in ['INT','INT8']:
             src_attrib.data.foreach_get(prop_name, storage)
-            storage = [-v if not self.edit_mode_selected_only or i in selected else v for i, v in enumerate(storage) ]
+            storage = [-v if not self.b_edit_mode_selected_only or i in selected else v for i, v in enumerate(storage) ]
         
         # strings reverse them
         elif src_attrib.data_type in ['STRING']:
-            storage = [string[::-1] if not self.edit_mode_selected_only or i in selected else string for i, string in enumerate(storage) ]
+            storage = [string[::-1] if not self.b_edit_mode_selected_only or i in selected else string for i, string in enumerate(storage) ]
 
         # for floats just get it as there is multiple modes
         elif src_attrib.data_type in ['FLOAT']:
@@ -733,7 +734,7 @@ class InvertAttribute(bpy.types.Operator):
         # booleans just not them
         elif src_attrib.data_type =='BOOLEAN':
             src_attrib.data.foreach_get(prop_name, storage)
-            storage = [not v if not self.edit_mode_selected_only or i in selected else v for i, v in enumerate(storage)]
+            storage = [not v if not self.b_edit_mode_selected_only or i in selected else v for i, v in enumerate(storage)]
         
         # vectors get them as a single list
         elif src_attrib.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']:
@@ -742,16 +743,16 @@ class InvertAttribute(bpy.types.Operator):
 
         # invert modes for vectors and float
         if src_attrib.data_type in ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']:
-            invert_mode = self.color_invert_mode if src_attrib.data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] else self.invert_mode
+            invert_mode = self.color_invert_mode_enum if src_attrib.data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] else self.invert_mode_enum
 
             #ah vectors, yes
             skip = len(func.get_attrib_default_value(src_attrib)) if not src_attrib.data_type == 'FLOAT' else 1
             if invert_mode == "MULTIPLY_MINUS_ONE":
-                storage = [v * -1 if not self.edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)]
+                storage = [v * -1 if not self.b_edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)]
             elif invert_mode == "SUBTRACT_FROM_ONE":
-                storage = [1-v if not self.edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)] 
+                storage = [1-v if not self.b_edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)] 
             elif invert_mode == "ADD_TO_MINUS_ONE":
-                storage = [-1+v if not self.edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)] 
+                storage = [-1+v if not self.b_edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)] 
         
         func.set_attribute_values(src_attrib, storage, flat_list=True)
         
@@ -759,64 +760,90 @@ class InvertAttribute(bpy.types.Operator):
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
-    
-    multiple_invert_modes_datatypes = ['FLOAT', 'FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'QUATERNION', 'INT32_2D']
 
     def invoke(self, context, event):
-        if context.active_object.data.attributes.active.data_type in self.multiple_invert_modes_datatypes or context.active_object.mode == 'EDIT':
-            # display props
-            return context.window_manager.invoke_props_dialog(self)
-        else:
-            return self.execute(context)
+        return context.window_manager.invoke_props_dialog(self)
+
 
     def draw(self, context):
         row = self.layout
         obj = context.active_object
 
-        # invert mode for float and vectors
-        if obj.data.attributes.active.data_type in self.multiple_invert_modes_datatypes:
-            prop = "invert_mode" if context.active_object.data.attributes.active.data_type not in ['FLOAT_COLOR', 'BYTE_COLOR'] else "color_invert_mode"
-            row.prop(self, prop, text="Invert Mode")
+        # Show the drop-down menu for invert mode types
+        prop = "invert_mode_enum" if context.active_object.data.attributes.active.data_type not in ['FLOAT_COLOR', 'BYTE_COLOR'] else "color_invert_mode_enum"
+        sub_box = row.box()
+        sub_box.enabled = len(func.get_attribute_invert_modes(self, context)) != 1
+        sub_box.prop(self, prop, text="Invert Mode")
         
         # selected only
         if obj.mode =='EDIT':
-            row.prop(self, "edit_mode_selected_only", text="Selected only")
+            row.prop(self, "b_edit_mode_selected_only", text="Selected only")
             # spill face corners
             if context.active_object.data.attributes.active.domain == 'CORNER':
-                row.prop(self, "edit_mode_face_corner_spill", text="Face Corner Spill")
+                row.prop(self, "b_face_corner_spill", text="Face Corner Spill")
 
 class RemoveAllAttribute(bpy.types.Operator):
     """
-    Removes all valid attributes
+    Removes all attributes
     """
     bl_idname = "mesh.attribute_remove_all"
     bl_label = "Remove All"
     bl_description = "Removes all attributes"
     bl_options = {'REGISTER', 'UNDO'}
 
-    bool_include_uvs: bpy.props.BoolProperty(
+    # Whether to include the UVMaps when removing attributes
+    b_include_uvs: bpy.props.BoolProperty(
         name="Include UVMaps", 
         description="All Vector2D attributes stored in Face Corners", 
         default=False
         )
     
-    bool_include_color_attribs: bpy.props.BoolProperty(
+    # Whether to include color attributes when removing attributes
+    b_include_color_attribs: bpy.props.BoolProperty(
         name="Include Color Attributes", 
         description="All Color attributes stored in Vertices or Face Corners", 
         default=False
         )
+    
+    # Whether to include attributes tagged as DONOTREMOVE
+    b_include_all: bpy.props.BoolProperty(
+        name="Include non-recommended", 
+        description="Include attributes that you probably do not want to remove, like shade smooth.", 
+        default=False
+        )
 
-
-    @classmethod
-    def poll(self, context):
-        return context.active_object and len(func.get_valid_attributes(context.active_object))
-
+    # Whether to include attributes starting with a dot
+    b_include_hidden: bpy.props.BoolProperty(
+        name="Include Hidden attributes", 
+        description="Include hidden attributes starting with a dot in name", 
+        default=False
+        )
+    
+    
+    # Quick check if an attribute is an UVMap
     def is_uvmap(self, a):
         return a.domain == 'CORNER' and a.data_type == 'FLOAT2'
 
+    # Quick check if an attribute is a color attribute
     def is_color_attrib(self, a):
         return (a.domain == 'CORNER' or a.domain == 'POINT') and (a.data_type == 'FLOAT_COLOR' or a.data_type == 'BYTE_COLOR') 
     
+    @classmethod
+    def poll(self, context):
+
+        # Check if there is any attibute that can be removed
+        if context.active_object and context.active_object.type == 'MESH':
+            for a in context.active_object.data.attributes:
+                types = func.get_attribute_types(a)
+                editable = True
+                for e in [data.EAttributeType.CANTREMOVE]:
+                    if e in types:
+                        editable = False
+                        break
+                if editable:
+                    return True
+        return False
+
     def execute(self, context):
         obj = context.active_object
         current_mode = obj.mode
@@ -826,13 +853,22 @@ class RemoveAllAttribute(bpy.types.Operator):
         attrib_names = [a.name for a in obj.data.attributes]
         
         for name in attrib_names:
-            if not func.get_is_attribute_valid(name) or name not in obj.data.attributes:
+            
+            # If the name is not in the attributes for some weird reason ignore.
+            if name not in obj.data.attributes:
                 continue
             
             a = obj.data.attributes[name]
+            a_types = func.get_attribute_types(a)
+
+            # If the attribute cannot be removed, ignore
+            if data.EAttributeType.CANTREMOVE in a_types :
+                continue
             
-            if ((self.bool_include_uvs if self.is_uvmap(a) else True) and 
-                (self.bool_include_color_attribs if self.is_color_attrib(a) else True)):
+            if ((self.b_include_uvs if self.is_uvmap(a) else True) and 
+                (self.b_include_color_attribs if self.is_color_attrib(a) else True) and
+                (self.b_include_hidden if data.EAttributeType.HIDDEN in a_types else True) and
+                (self.b_include_all if data.EAttributeType.DONOTREMOVE in a_types else True)):
                     if func.is_verbose_mode_enabled():
                         print(f"Attribute removed - {a.name}: {a.domain}, {a.data_type}")
                     obj.data.attributes.remove(a)
@@ -844,88 +880,95 @@ class RemoveAllAttribute(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        # show prompt only if uvs or color attribs were found
-        if len(context.active_object.data.uv_layers) or len(context.active_object.data.color_attributes):
-            return context.window_manager.invoke_props_dialog(self)
-        else:
-            return self.execute(context)
+        return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         row = self.layout
-        row.label(text="WARNING")
-        row.separator()
-        warn_text = "Attributes include Color Attributes"
-        if bpy.app.version >= (3,5,0):
-            warn_text += " and UVMaps"
-        row.label(text=warn_text)
-        row.label(text="Potentially more data in newer versions of blender")
-        row.separator()
+
         row.label(text="Include:")
         if bpy.app.version >= (3,5,0):
-            row.prop(self, "bool_include_uvs", text="UVMaps")
-        row.prop(self, "bool_include_color_attribs", text="Color Attributes")
+            row.prop(self, "b_include_uvs", text="UVMaps")
+        row.prop(self, "b_include_color_attribs", text="Color Attributes")
+        row.prop(self, "b_include_hidden", text="Hidden")
+        row.prop(self, "b_include_all", text="Non-Recommended")
 
 class ConvertToMeshData(bpy.types.Operator):
+    """
+    Converts attribute to mesh data
+    """
     bl_idname = "mesh.attribute_convert_to_mesh_data"
     bl_label = "Convert To Mesh Data"
     bl_description = "Converts attribute to vertex group, shape key, normals..."
     bl_options = {'REGISTER', 'UNDO'}
 
-    append_to_current: bpy.props.BoolProperty(name="Append", default=False)
 
-    apply_to_first_shape_key: bpy.props.BoolProperty(name="Apply to first shape key too", default=True, description="With this disabled, it might produce result you did not expect")
-    create_shape_key_if_not_present: bpy.props.BoolProperty(name="Also create Basis shape key", default=True, description="Creates a basis shape key before converting")
+    # Setting the position attribute will not change the basis shape key, which might be unexpected.
+    b_apply_to_first_shape_key: bpy.props.BoolProperty(name="Apply to first shape key too", default=True, description="With this disabled, it might produce result you did not expect")
     
-    delete_if_converted: bpy.props.BoolProperty(name="Delete after conversion", default=False)
+    # Creates basis shape key when converting to shape keys, which is probably the expected result
+    b_create_basis_shape_key: bpy.props.BoolProperty(name="Also create Basis shape key", default=True, description="Creates a basis shape key before converting")
+    
+    # Whether to remove the attribute after converting to mesh data
+    b_delete_if_converted: bpy.props.BoolProperty(name="Delete after conversion", default=False)
 
-    data_target: bpy.props.EnumProperty(
+    # The target to convert the active attribute to
+    data_target_enum: bpy.props.EnumProperty(
         name="Target",
         description="Select an option",
-        items=func.get_target_data_enum
+        items=func.get_target_data_enum_with_separators
     )
 
+    # The name of newly created mesh data, eg. vertex group or shape key. By default it is the name of the attribute itself.
     attrib_name: bpy.props.StringProperty(name="Name", default="")
 
-    convert_to_domain: bpy.props.EnumProperty(
+    # The target domain to convert this attribute to. eg. Vertex Mean Bevel and Edge Mean Bevel
+    convert_to_domain_enum: bpy.props.EnumProperty(
         name="Store in",
         description="Select an option",
-        items=func.get_target_compatible_domains
+        items=func.get_supported_domains_for_selected_mesh_data_target_enum_entry
     )
 
-    enable_auto_smooth: bpy.props.BoolProperty(name="Enable Auto Smooth",
+    # After converting to custom split normals to see the result auto smooth needs to be enabled.
+    b_enable_auto_smooth: bpy.props.BoolProperty(name="Enable Auto Smooth",
                                                description="Custom split normals are visible only when Auto Smooth is enabled", 
                                                default=True)
     
+    # The single float value to set the weight to all vertices when converting to vertex group index
     to_vgindex_weight: bpy.props.FloatProperty(name='Weight Value',
                                                           description="Weight value to apply to vertex group at index defined in this attribute",
                                                           default=1.0
                                                           )
-    
-    to_vgindex_weight_mode: bpy.props.EnumProperty(
+    # The mode to use when converting to vertex group index
+    to_vgindex_weight_mode_enum: bpy.props.EnumProperty(
         name="Weighting mode",
         description="Select an option",
         items=[("STATIC", "Use float value to weight", "Use predefined float value to weight vertices"),
                ("ATTRIBUTE", "Use float attribute to weight", "Use float attribute to weight vertices")]
     )
     
-    to_vgindex_source_attribute: bpy.props.EnumProperty(
+    # The atttribute data types in to_vgindex_source_attribute_enum
+    data_types_filter = ['FLOAT', 'INT']
+
+    # The attribute to get weights from when converting to vertex group index
+    to_vgindex_weights_attribute_enum: bpy.props.EnumProperty(
         name="Float Attribute",
         description="Select an option",
-        items=func.get_float_int_attributes
+        items=func.get_vertex_weight_attributes_enum
     )
     
-
-    to_uvmap_domain_selection: bpy.props.EnumProperty(
+    # The UVMap to use
+    uvmaps_enum: bpy.props.EnumProperty(
         name="UVMap",
         description="Select an option",
         items=func.get_uvmaps_enum
     )
 
+    # Whether to invert the value of sculpt mask while converting
     b_invert_sculpt_mode_mask: bpy.props.BoolProperty(name="Invert Sculpt Mode Mask",
                                                description="Subtracts mask value from 1.0. The value is clamped in 0.0 to 1.0 values.", 
                                                default=False)
 
-
+    # The mode to use when converting to sculpt mode mask
     enum_expand_sculpt_mask_mode: bpy.props.EnumProperty(
         name="Expand Mask Mode",
         description="Select an option",
@@ -933,6 +976,59 @@ class ConvertToMeshData(bpy.types.Operator):
                ("EXPAND", "Expand", "Adds the values to current sculpt mask"),
                ("SUBTRACT", "Subtract", "Removes the values from current sculpt mask")]
     )
+
+    def perform_user_input_test(self, obj, current_mode):    
+        """ 
+        Check for user input validity
+        """
+
+        input_invalid = False
+        if self.data_target_enum == "TO_FACE_MAP_INDEX" and not len(obj.face_maps):
+            self.report({'ERROR'}, "No Face Maps. Nothing done")
+            input_invalid = True
+
+        elif self.data_target_enum == "TO_MATERIAL_INDEX" and not len(obj.material_slots):
+            self.report({'ERROR'}, "No material slots. Nothing done")
+            input_invalid = True
+        
+        elif self.data_target_enum == "TO_VERTEX_GROUP_INDEX" and not len(obj.vertex_groups):
+            self.report({'ERROR'}, "No vertex groups. Nothing done")
+            input_invalid = True
+
+        elif self.data_target_enum == "TO_VERTEX_GROUP_INDEX" and self.to_vgindex_weight_mode_enum == 'ATTRIBUTE' and self.to_vgindex_weights_attribute_enum =='NULL':
+            self.report({'ERROR'}, "Invalid source weights attribute. Nothing done")
+            input_invalid = True
+        
+        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"] and not len(obj.data.uv_layers):
+            self.report({'ERROR'}, "No UVMaps. Nothing done")
+            input_invalid = True
+
+        if input_invalid:
+            bpy.ops.object.mode_set(mode=current_mode)
+            return {'CANCELLED'}
+
+    def create_temp_converted_attrib(convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
+        """
+        Copies the attribute and converts it to required type. Returns name of temporary converted attribute.
+        """
+
+        convert_from = obj.data.attributes[convert_from_name]
+        if func.is_verbose_mode_enabled():
+            print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {data_target_data_type}")
+        
+        new_attrib = obj.data.attributes.new(name=convert_from.name + " " + name_suffix, type=convert_from.data_type, domain=convert_from.domain)
+        new_attrib_name = new_attrib.name
+        
+        if func.is_verbose_mode_enabled():
+            print(f"Created temporary attribute {new_attrib_name}")
+        
+        convert_from = obj.data.attributes[convert_from_name] # After the new attribute has been created, reference is invalid
+        func.set_attribute_values(new_attrib, func.get_attrib_values(convert_from, obj))
+        func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', target_domain, target_data_type)
+        if func.is_verbose_mode_enabled():
+            print(f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}")
+        return new_attrib_name
+
 
     @classmethod
     def poll(self, context):
@@ -949,113 +1045,67 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib = obj.data.attributes[src_attrib_name] # !important
         src_attrib_domain = src_attrib.domain
         src_attrib_data_type = src_attrib.data_type
-        data_target_data_type = data.object_data_targets[self.data_target].data_type
-        data_target_compatible_domains = func.get_target_compatible_domains(self, context)
+        data_target_data_type = data.object_data_targets[self.data_target_enum].data_type
+        data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
+
+        # Check if user input is valid.
+        self.perform_user_input_test(obj, current_mode)
 
         if func.is_verbose_mode_enabled():
-            print(f"Converting attribute {src_attrib.name} to {self.data_target}")
+            print(f"Converting attribute {src_attrib.name} to {self.data_target_enum}")
 
-        # Check for user input validity
-        input_invalid = False
-        if self.data_target == "TO_FACE_MAP_INDEX" and not len(obj.face_maps):
-            self.report({'ERROR'}, "No Face Maps. Nothing done")
-            input_invalid = True
-
-        elif self.data_target == "TO_MATERIAL_INDEX" and not len(obj.material_slots):
-            self.report({'ERROR'}, "No material slots. Nothing done")
-            input_invalid = True
-        
-        elif self.data_target == "TO_VERTEX_GROUP_INDEX" and not len(obj.vertex_groups):
-            self.report({'ERROR'}, "No vertex groups. Nothing done")
-            input_invalid = True
-
-        elif self.data_target == "TO_VERTEX_GROUP_INDEX" and self.to_vgindex_weight_mode == 'ATTRIBUTE' and self.to_vgindex_source_attribute =='NULL':
-            self.report({'ERROR'}, "Invalid source weights attribute. Nothing done")
-            input_invalid = True
-        
-        elif self.data_target in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"] and not len(obj.data.uv_layers):
-            self.report({'ERROR'}, "No UVMaps. Nothing done")
-            input_invalid = True
-
-        if input_invalid:
-            bpy.ops.object.mode_set(mode=current_mode)
-            return {'CANCELLED'}
-        
-
-        # add basis shape key if none present and enabled in gui
-        if self.data_target in ['TO_SHAPE_KEY'] and not hasattr(obj.data.shape_keys, 'key_blocks') and self.create_shape_key_if_not_present:
+        # Add basis shape key if none present and enabled in gui
+        if self.data_target_enum in ['TO_SHAPE_KEY'] and not hasattr(obj.data.shape_keys, 'key_blocks') and self.b_create_basis_shape_key:
             bpy.ops.object.shape_key_add(from_mix=False)
             if func.is_verbose_mode_enabled():
                 print("Creating basis shape key...")
 
-        # Convert if needed, use copy
-
-        def create_temp_converted_attrib(convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
-                """
-                Returns name of temporary converted attribute. (not reference to avoid various issues)
-                """
-
-                convert_from = obj.data.attributes[convert_from_name]
-                if func.is_verbose_mode_enabled():
-                    print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain} in {data_target_data_type}")
-                new_attrib = obj.data.attributes.new(name=convert_from.name + " " + name_suffix, type=convert_from.data_type, domain=convert_from.domain)
-                new_attrib_name = new_attrib.name
-                if func.is_verbose_mode_enabled():
-                    print(f"Created temporary attribute {new_attrib_name}")
-                
-                convert_from = obj.data.attributes[convert_from_name] # After the new attribute has been created, reference is invalid
-                func.set_attribute_values(new_attrib, func.get_attrib_values(convert_from, obj))
-                func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', target_domain, target_data_type)
-                if func.is_verbose_mode_enabled():
-                    print(f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}")
-                return new_attrib_name
-
+        # Convert the attribute if required. Create a copy.
         domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
         data_type_compatible = src_attrib_data_type == data_target_data_type
-        
         attrib_to_convert = src_attrib
 
         if not domain_compatible or not data_type_compatible:
-            attribute_to_convert_name = create_temp_converted_attrib(src_attrib.name, "temp", self.convert_to_domain, data_target_data_type)
+            attribute_to_convert_name = self.create_temp_converted_attrib(src_attrib.name, "temp", self.convert_to_domain_enum, data_target_data_type)
             attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
         else:
             attribute_to_convert_name = src_attrib_name
         
-        # If target is vertex group index, with attribute weight, make sure the weight attribute is float
+        # If target is VERTEX GROUP INDEX, with attribute weight, make sure the weight attribute is float
         used_conveted_vgweight_attrib = False
-        if self.to_vgindex_weight_mode == 'ATTRIBUTE':
-            vg_weight_attrib = obj.data.attributes[self.to_vgindex_source_attribute]
+        if self.to_vgindex_weight_mode_enum == 'ATTRIBUTE':
+            vg_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
             if vg_weight_attrib.data_type != 'FLOAT' or vg_weight_attrib.domain != 'POINT':
                 if func.is_verbose_mode_enabled():
                     print(f"Source attribute for weights ({vg_weight_attrib.name}) is is not correct type, converting...")
 
-                vg_weight_attrib_name = create_temp_converted_attrib(vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
+                vg_weight_attrib_name = self.create_temp_converted_attrib(vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
                 vg_weight_attrib =  obj.data.attributes[vg_weight_attrib_name]
                 used_conveted_vgweight_attrib = True
         else:
             vg_weight_attrib = None
 
         if func.is_verbose_mode_enabled():
-            print(f"attribute -> data: {attrib_to_convert.name} -> {self.data_target}")
+            print(f"attribute -> data: {attrib_to_convert.name} -> {self.data_target_enum}")
         
         # Welp, new attribute might be added in vgweight convert and the reference to attrib_to_convert is gone...
         attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
 
         # Set mesh data
-        func.set_mesh_data(obj, self.data_target, 
+        func.set_mesh_data(obj, self.data_target_enum, 
                            attrib_to_convert, 
                            face_map_name=self.attrib_name, 
                            vertex_group_name=self.attrib_name, 
-                           enable_auto_smooth=self.enable_auto_smooth, 
-                           apply_to_first_shape_key=self.apply_to_first_shape_key,
+                           enable_auto_smooth=self.b_enable_auto_smooth, 
+                           apply_to_first_shape_key=self.b_apply_to_first_shape_key,
                            to_vgindex_weight=self.to_vgindex_weight,
-                           to_vgindex_weight_mode=self.to_vgindex_weight_mode,
+                           to_vgindex_weight_mode=self.to_vgindex_weight_mode_enum,
                            to_vgindex_src_attrib=vg_weight_attrib,
-                           uvmap_index=self.to_uvmap_domain_selection,
+                           uvmap_index=self.uvmaps_enum,
                            invert_sculpt_mask=self.b_invert_sculpt_mode_mask,
                            expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode)
         
-        #post-conversion cleanup
+        # post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
             obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
 
@@ -1063,11 +1113,10 @@ class ConvertToMeshData(bpy.types.Operator):
              obj.data.attributes.remove(obj.data.attributes[vg_weight_attrib_name])
 
         # remove if user enabled
-        if self.delete_if_converted:
+        if self.b_delete_if_converted:
             obj.data.attributes.remove(obj.data.attributes[src_attrib_name])
 
         obj.data.update()
-
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
     
@@ -1079,44 +1128,48 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib = obj.data.attributes.active
         src_attrib_domain = src_attrib.domain
         src_attrib_data_type = src_attrib.data_type
-        data_target_data_type = data.object_data_targets[self.data_target].data_type
-        data_target_compatible_domains = func.get_target_compatible_domains(self, context)
+        data_target_data_type = data.object_data_targets[self.data_target_enum].data_type
+        data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
         domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
         data_type_compatible = src_attrib_data_type == data_target_data_type
 
-
         row = self.layout
-        row.prop(self, "data_target", text="Target")
+        row.prop(self, "data_target_enum", text="Target")
 
-        # TO avoid unexpected results
-        if self.data_target in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
-            row.prop(self, 'apply_to_first_shape_key')
+        # Setting the position attribute will not change the basis shape key, which might be unexpected.
+        if self.data_target_enum in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
+            row.prop(self, 'b_apply_to_first_shape_key')
 
-        elif self.data_target in ['TO_VERTEX_GROUP']:
+        # Inform user that the suffix will be added to avoid crashing of blender.
+        elif self.data_target_enum in ['TO_VERTEX_GROUP']:
             row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
-
-        elif self.data_target in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
-            row.prop(self, 'create_shape_key_if_not_present')
+        # Creates basis shape key when converting to shape keys, which is probably the expected result
+        elif self.data_target_enum in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
+            row.prop(self, 'b_create_basis_shape_key')
 
         # Custom name for face maps and vertex groups
-        elif self.data_target in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
+        elif self.data_target_enum in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
             row.prop(self, "attrib_name", text="Name")
         
-        elif self.data_target in ['TO_SPLIT_NORMALS']:
+        # Show a message that normals should be, well, normalized
+        elif self.data_target_enum in ['TO_SPLIT_NORMALS']:
             row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
 
             if not obj.data.use_auto_smooth:
-                row.prop(self, 'enable_auto_smooth')
+                # After converting to custom split normals to see the result auto smooth needs to be enabled.
+                row.prop(self, 'b_enable_auto_smooth')
                 row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
         
-        elif self.data_target in ['TO_VERTEX_GROUP_INDEX']:
-            row.prop(self, 'to_vgindex_weight_mode', text="Mode")
-            if self.to_vgindex_weight_mode == "ATTRIBUTE":
-                row.prop(self, 'to_vgindex_source_attribute', text='Attribute')
+        # Show modes to set the Vertex Group index
+        elif self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
+            row.prop(self, 'to_vgindex_weight_mode_enum', text="Mode")
+            if self.to_vgindex_weight_mode_enum == "ATTRIBUTE":
+                # Show the dropdown menu to select the attribute with weights
+                row.prop(self, 'to_vgindex_weights_attribute_enum', text='Attribute')
 
                 # inform user if the weights attribute is invalid
-                if self.to_vgindex_source_attribute != "NULL":
-                    src_weight_attrib = obj.data.attributes[self.to_vgindex_source_attribute]
+                if self.to_vgindex_weights_attribute_enum != "NULL":
+                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
                     if src_weight_attrib.data_type  != 'FLOAT' or src_weight_attrib.domain  != 'POINT':
                         if src_weight_attrib.data_type  != 'FLOAT':
                             row.label(icon='ERROR', text=f"Weights Attribute values should be of Float data type")
@@ -1127,11 +1180,12 @@ class ConvertToMeshData(bpy.types.Operator):
             else:
                 row.prop(self, 'to_vgindex_weight')
 
-
-        elif self.data_target in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
-            row.prop(self, 'to_uvmap_domain_selection', text="UVMap")
-            
-        elif self.data_target == 'TO_SCULPT_MODE_MASK':
+        # UVMap selector
+        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
+            row.prop(self, 'uvmaps_enum', text="UVMap")
+        
+        # Show options for sculpt mode mask conversion
+        elif self.data_target_enum == 'TO_SCULPT_MODE_MASK':
             row.prop(self, "b_invert_sculpt_mode_mask")
             row.prop(self, "enum_expand_sculpt_mask_mode", text='Mode')
             
@@ -1142,9 +1196,9 @@ class ConvertToMeshData(bpy.types.Operator):
             if not domain_compatible:   
                 row.label(icon='ERROR', text=f"This data cannot be stored in {func.get_friendly_domain_name(src_attrib_domain)}")
                 if len(data_target_compatible_domains) == 1:
-                    row.label(text=f"Will be stored in {func.get_friendly_domain_name(self.convert_to_domain)}")
+                    row.label(text=f"Will be stored in {func.get_friendly_domain_name(self.convert_to_domain_enum)}")
                 else:
-                    row.prop(self, "convert_to_domain")
+                    row.prop(self, "convert_to_domain_enum")
             
             # Not compatible data type
             if not data_type_compatible:
@@ -1153,7 +1207,7 @@ class ConvertToMeshData(bpy.types.Operator):
             
             row.label(icon='ERROR', text=f"This might not yield good results")
         
-        row.prop(self, 'delete_if_converted')
+        row.prop(self, 'b_delete_if_converted')
 
 class CopyAttributeToSelected(bpy.types.Operator):
     bl_idname = "mesh.attribute_copy"
@@ -1161,10 +1215,14 @@ class CopyAttributeToSelected(bpy.types.Operator):
     bl_description = "Copies attribute from active mesh to selected meshes, by index"
     bl_options = {'REGISTER', 'UNDO'}
 
-    overwrite: bpy.props.BoolProperty(name="Overwrite", default=True, description="Overwrite on target if exists, and is same data type or domain")
-    overwrite_different_type: bpy.props.BoolProperty(name="Overwrite different type", default=True, description="For the attribute in target that has a different domain or data type")
+    # Whether to overwrite attributes that exist on target meshes
+    b_overwrite: bpy.props.BoolProperty(name="Overwrite", default=True, description="Overwrite on target if exists, and is same data type or domain")
+    
+    # Whether to overwrite attributes that exist on target meshes but have different data type or domain
+    b_overwrite_different_type: bpy.props.BoolProperty(name="Overwrite different type", default=True, description="For the attribute in target that has a different domain or data type")
 
-    extend_mode: bpy.props.EnumProperty(
+    # What to fill the vertices/edges/faces/face corners with if the targets have more of them
+    extend_mode_enum: bpy.props.EnumProperty(
         name="Extend Mode",
         description="If target has more vertices/faces/edges/face corners than source, what data should be stored inside of those?",
         items=[("LAST_VAL", "Repeat value at last index", ""),
@@ -1194,7 +1252,13 @@ class CopyAttributeToSelected(bpy.types.Operator):
         active_attrib = context.active_object.data.attributes.active
         selected_more_than_one_obj = len(context.selected_objects) > 1 
         valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
-        valid_attribute = func.get_is_attribute_valid(active_attrib.name) if active_attrib else False
+        
+        # Check if the attribute can be copied
+        if active_attrib:
+            valid_attribute = not bool(len([atype for atype in func.get_attribute_types(active_attrib) if atype in [data.EAttributeType.INTERNAL, data.EAttributeType.READONLY]]))
+        else:
+            valid_attribute = False
+
         if not active_attrib:
             self.poll_message_set("No active attribute")
         elif not selected_more_than_one_obj:
@@ -1225,12 +1289,12 @@ class CopyAttributeToSelected(bpy.types.Operator):
                 sel_obj_attr = sel_obj.data.attributes[src_attrib_name]
 
                 # overwrite if present?
-                if not self.overwrite:
+                if not self.b_overwrite:
                     continue
                 
                 #overwrite different type?
                 not_same_type = sel_obj_attr.domain != src_attrib.domain or sel_obj_attr.data_type != src_attrib.domain
-                if not_same_type and not self.overwrite_different_type:
+                if not_same_type and not self.b_overwrite_different_type:
                     continue
                 
                 # remove current if overwriting
@@ -1258,14 +1322,14 @@ class CopyAttributeToSelected(bpy.types.Operator):
             if target_size > source_size:
                 
                 # Fill extra with single value
-                if self.extend_mode not in ["REPEAT", "PING_PONG"]: 
+                if self.extend_mode_enum not in ["REPEAT", "PING_PONG"]: 
                     
                     # With value on last index
-                    if self.extend_mode =='LAST_VAL':
+                    if self.extend_mode_enum =='LAST_VAL':
                         fill_value = [a_vals[-1]]
 
                     # With 'zero' value
-                    elif self.extend_mode =='ZERO':
+                    elif self.extend_mode_enum =='ZERO':
                         fill_value = func.get_attrib_default_value(src_attrib)
                         fill_value = [fill_value]
 
@@ -1276,11 +1340,11 @@ class CopyAttributeToSelected(bpy.types.Operator):
                     times = target_size - source_size
 
                     # Repeat from start
-                    if self.extend_mode =="REPEAT":
+                    if self.extend_mode_enum =="REPEAT":
                         target_a_vals = a_vals * times
                     
                     # Repeat but from end to start then from start to end
-                    elif self.extend_mode == "PING_PONG":
+                    elif self.extend_mode_enum == "PING_PONG":
                         target_a_vals = []
                         for t in range(0, times):
                             if t%2:
@@ -1307,9 +1371,9 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
     def draw(self, context):
         row = self.layout
-        row.prop(self, "overwrite", text="Overwrite if exists")
-        row.prop(self, "overwrite_different_type", text="Overwrite different type")
-        row.prop(self, "extend_mode", text="Extend Mode")
+        row.prop(self, "b_overwrite", text="Overwrite if exists")
+        row.prop(self, "b_overwrite_different_type", text="Overwrite different type")
+        row.prop(self, "extend_mode_enum", text="Extend Mode")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
@@ -1320,57 +1384,24 @@ class ConditionalSelection(bpy.types.Operator):
     bl_description = "Select mesh domain by attribute value with specified conditions"
     bl_options = {'REGISTER', 'UNDO'}
 
-    deselect: bpy.props.BoolProperty(name="Deselect", default=False)
+    # Whether to deselect the domain that meets the condition
+    b_deselect: bpy.props.BoolProperty(name="Deselect", default=False)
 
-
-    # conditions
-    
-    def get_numeric_conditions_enum(self,context):
-        return [
-            ("EQ", "Equal", "=="),
-            ("NEQ", "Not equal", "!="),
-            ("EQORGR", "Equal or greater", ">="),
-            ("EQORLS", "Equal or lesser", "<="),
-            ("GR", "Greater than", ">"),
-            ("LS", "Lesser than", "<"),
-        ]
-
-    numeric_condition_enum: bpy.props.EnumProperty(
+    # All conditions for attributes containing numeric values
+    attribute_comparison_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=get_numeric_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum
     )
     
-    bool_condition_enum: bpy.props.EnumProperty(
-        name="Condition",
-        description="Select an option",
-        items=[
-            ("EQ", "Equal", "=="),
-            ("NEQ", "Not equal", "!="),
-        ],
-        default="EQ"
-    )
-
-    string_condition_enum: bpy.props.EnumProperty(
-        name="Condition",
-        description="Select an option",
-        items=[
-            ("EQ", "Equal", "=="),
-            ("NEQ", "Not equal", "!="),
-            ("CONTAINS", "Contains", "in"),
-            ("STARTS_WITH", "Starts with", "startswith"),
-            ("ENDS_WITH", "Ends with", "endswith"),
-        ],
-        default="EQ"
-    )
-
-    string_case_sensitive_bool: bpy.props.BoolProperty(
+    # Whether to check strings with case sensitivity
+    b_string_case_sensitive: bpy.props.BoolProperty(
         name="Case sensitive", 
         description="Is \"BLENDER\" different than \"blEnDer\"?", 
         default=False
         )
 
-    # RGB HSV
+    # Toggle between comparing RGB or HSV values for color attributes.
     color_value_type_enum: bpy.props.EnumProperty(
         name="Color Mode",
         description="Select an option",
@@ -1381,28 +1412,18 @@ class ConditionalSelection(bpy.types.Operator):
         default="RGBA"
     )
 
-    color_gui_mode_enum: bpy.props.EnumProperty(
-        name="Color Mode",
+    # The mode to check individual vector float values with. Either all of the values need to meet the conditions or one of them.
+    vector_value_cmp_type_enum: bpy.props.EnumProperty(
+        name="Condition",
         description="Select an option",
         items=[
-            ("COLOR", "Color", ""),
-            ("VALUE", "Value", ""),
-        ],
-        default="COLOR"
-    )
-
-    vector_value_cmp_type: bpy.props.EnumProperty(
-        name="Operation",
-        description="Select an option",
-        items=[
-            ("AND", "And", "All of the conditions above need to be met"),
-            ("OR", "Or", "Any of the conditions above need to be met"),
+            ("AND", "Needs to meet all of above (AND)", "All of the conditions above need to be met"),
+            ("OR", "Needs to meet any of above (OR)", "Any of the conditions above need to be met"),
         ],
         default="AND"
     )
 
-    # do same for vectors
-
+    # ALL GUI INPUT BOXES
     val_int: bpy.props.IntProperty(name="Integer Value", default=0)
     val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
     val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
@@ -1414,6 +1435,8 @@ class ConditionalSelection(bpy.types.Operator):
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if etc.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
+
+    # The values to compare to, for each type of vector attributes.
 
     val_float_x: bpy.props.FloatProperty(name="X", default=0.0)
     val_float_y: bpy.props.FloatProperty(name="Y", default=0.0)
@@ -1430,30 +1453,34 @@ class ConditionalSelection(bpy.types.Operator):
     val_float_color_z: bpy.props.FloatProperty(name="Z", default=0.0, min=0.0, max=1.0)
     val_float_color_w: bpy.props.FloatProperty(name="W", default=0.0, min=0.0, max=1.0)
 
+    # Toggles for enabling comparing the individual vector/color values
+
     val_vector_x_toggle: bpy.props.BoolProperty(name="X", default=False)
     val_vector_y_toggle: bpy.props.BoolProperty(name="Y", default=False)
     val_vector_z_toggle: bpy.props.BoolProperty(name="Z", default=False)
     val_vector_w_toggle: bpy.props.BoolProperty(name="W", default=False)
 
+    # The comparision modes between each of vector/color values
+
     vec_x_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=get_numeric_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum,
     )
     vec_y_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=get_numeric_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum,
     )
     vec_z_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=get_numeric_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum,
     )
     vec_w_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=get_numeric_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum,
     )
 
 
@@ -1520,7 +1547,7 @@ FiltIndex: {filtered_indexes}""")
             elif attrib_data_type == 'STRING':
                 condition = self.string_condition_enum
                 comparison_value = self.val_string
-                case_sensitive_comp = self.string_case_sensitive_bool
+                case_sensitive_comp = self.b_string_case_sensitive
 
             filtered_indexes = func.get_filtered_indexes_by_condition([entry.value for entry in attrib.data], condition, comparison_value, case_sensitive_comp)
 
@@ -1549,7 +1576,7 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_float_z
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[2] for entry in attrib.data], condition, comparison_value))
                 
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
 
         elif attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
             vals_to_cmp = []
@@ -1595,7 +1622,7 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_float_color_w #if self.color_gui_mode_enum == 'VALUE' else self.val_color[3]
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[3] for c in colors], condition, comparison_value))
 
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
 
         # case 3: integer vector values (.VALUE PROPERTY, NOT .VECTOR)
         elif attrib_data_type in ['INT32_2D']:
@@ -1626,7 +1653,7 @@ FiltIndex: {filtered_indexes}""")
                 #     comparison_value = self.val_int_w
                 #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
 
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
         
         # case 4: float vector values with .value property
         elif attrib_data_type in ['QUATERNION']:
@@ -1657,12 +1684,12 @@ FiltIndex: {filtered_indexes}""")
                 comparison_value = self.val_float_w
                 vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
 
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type)
+                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
 
         if func.is_verbose_mode_enabled():
             debug_print()
 
-        func.set_selection_or_visibility_of_mesh_domain(obj, attrib.domain, filtered_indexes, not self.deselect)
+        func.set_selection_or_visibility_of_mesh_domain(obj, attrib.domain, filtered_indexes, not self.b_deselect)
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {"FINISHED"}
@@ -1680,7 +1707,7 @@ FiltIndex: {filtered_indexes}""")
 
         if attribute.data_type == 'BOOLEAN':
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "bool_condition_enum", text="")
+            grid.prop(self, "attribute_comparison_condition_enum", text="")
             grid.prop(self, "val_bool", text="Value")
 
         elif attribute.data_type == 'STRING':
@@ -1692,17 +1719,17 @@ FiltIndex: {filtered_indexes}""")
 
         elif attribute.data_type == 'INT':
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "numeric_condition_enum", text="")
+            grid.prop(self, "attribute_comparison_condition_enum", text="")
             grid.prop(self, "val_int", text="Value")
 
         elif attribute.data_type == 'INT8':
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "numeric_condition_enum", text="")
+            grid.prop(self, "attribute_comparison_condition_enum", text="")
             grid.prop(self, "val_int8", text="Value")
         
         elif attribute.data_type == 'FLOAT':
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "numeric_condition_enum", text="")
+            grid.prop(self, "attribute_comparison_condition_enum", text="")
             grid.prop(self, "val_float", text="Value")
 
         # VEC FLOAT2
@@ -1732,7 +1759,7 @@ FiltIndex: {filtered_indexes}""")
                 grid.enabled = self.val_vector_z_toggle
                 grid.prop(self, "vec_z_condition_enum", text="")
                 grid.prop(self, "val_float_z", text="Value") 
-            row.prop(self, 'vector_value_cmp_type')
+            row.prop(self, 'vector_value_cmp_type_enum')
 
         # COLOR
         elif attribute.data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
@@ -1783,7 +1810,7 @@ FiltIndex: {filtered_indexes}""")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_color_w", text="Value")
                     
-                row.prop(self, 'vector_value_cmp_type')
+                row.prop(self, 'vector_value_cmp_type_enum')
 
         # INT32_2D
         elif attribute.data_type in ['INT32_2D']:
@@ -1802,7 +1829,7 @@ FiltIndex: {filtered_indexes}""")
             grid.enabled = self.val_vector_y_toggle
             grid.prop(self, "vec_y_condition_enum", text="")
             grid.prop(self, "val_int_y", text="Value") 
-            row.prop(self, 'vector_value_cmp_type') 
+            row.prop(self, 'vector_value_cmp_type_enum') 
             
 
             # if attribute.data_type in ['QUATERNION']:
@@ -1855,9 +1882,9 @@ FiltIndex: {filtered_indexes}""")
             grid.prop(self, "vec_w_condition_enum", text="")
             grid.prop(self, "val_float_w", text="Value") 
 
-            row.prop(self, 'vector_value_cmp_type') 
+            row.prop(self, 'vector_value_cmp_type_enum') 
 
-        row.prop(self, 'deselect')         
+        row.prop(self, 'b_deselect')         
 
 class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
@@ -1883,7 +1910,7 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
         else:
             val_float_x = 0.0
         bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
-                                                deselect = False,
+                                                b_deselect = False,
                                                 val_float = 0.0,
                                                 val_int = 0,
                                                 numeric_condition_enum = 'NEQ',
@@ -1892,7 +1919,7 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 vec_z_condition_enum = "NEQ",
                                                 vec_w_condition_enum = "NEQ",
                                                 string_condition_enum = 'NEQ',
-                                                vector_value_cmp_type = 'OR',
+                                                vector_value_cmp_type_enum = 'OR',
                                                 bool_condition_enum = "EQ",
                                                 val_vector_x_toggle = True,
                                                 val_vector_y_toggle = True,
@@ -1941,7 +1968,7 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
         else:
             val_float_x = 0.0
         bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
-                                                deselect = True,
+                                                b_deselect = True,
                                                 val_float = 0.0,
                                                 val_int = 0,
                                                 numeric_condition_enum = 'NEQ',
@@ -1950,7 +1977,7 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 vec_z_condition_enum = "NEQ",
                                                 vec_w_condition_enum = "NEQ",
                                                 string_condition_enum = 'NEQ',
-                                                vector_value_cmp_type = 'OR',
+                                                vector_value_cmp_type_enum = 'OR',
                                                 bool_condition_enum = "EQ",
                                                 val_vector_x_toggle = True,
                                                 val_vector_y_toggle = True,
@@ -1976,6 +2003,10 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
         return func.conditional_selection_poll(self, context)
 
 class AttributeResolveNameCollisions(bpy.types.Operator):
+    """
+    Adds suffix to attributes with colliding names
+    """
+
     bl_idname = "mesh.attribute_resolve_name_collisions"
     bl_label = "Resolve name collisions"
     bl_description = "Renames attributes to avoid name collisions"
@@ -2024,7 +2055,8 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                 print(f"{a} {i}")
                 
             if obj.data.attributes[i].name in restricted_names:
-                if (not func.get_is_attribute_valid(obj.data.attributes[i].name) 
+                atypes = func.get_attribute_types(obj.data.attributes[i])
+                if (not bool(len([atype for atype in atypes if atype in [data.EAttributeType.HIDDEN, data.EAttributeType.CANTREMOVE, data.EAttributeType.READONLY]])) 
                     or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER' and bpy.app.version >= (3,5,0)) #ignore uvmaps, they're auto renamed if bl > 3,5
                     or (obj.data.attributes[i].data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] and obj.data.attributes[i].domain in ['POINT', 'CORNER'])): # same for color attribs
                     failed += 1
@@ -2035,25 +2067,25 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                         j += 1
                         obj.data.attributes[i].name = str(obj.data.attributes[i].name) + "." + str(j).zfill(3)
                     
-        self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else "") + (f", did not rename {failed} (reserved attribute names/auto renamed)" if failed else ""))
+        self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else ""))
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
 
-class ReadValueFromActiveDomain(bpy.types.Operator):
-    bl_idname = "mesh.attribute_read_value_from_active_domain"
-    bl_label = "Sample from active domain"
-    bl_description = "Reads the attribute value under active domain and sets it in GUI"
-    bl_options = {'REGISTER', 'UNDO'}
+# class ReadValueFromActiveDomain(bpy.types.Operator):
+#     bl_idname = "mesh.attribute_read_value_from_active_domain"
+#     bl_label = "Sample from active domain"
+#     bl_description = "Reads the attribute value under active domain and sets it in GUI"
+#     bl_options = {'REGISTER', 'UNDO'}
 
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+#     @classmethod
+#     def poll(self, context):
+#         self.poll_message_set("Not implemented yet...")
+#         # check if its a mesh
+#         return False
 
-    def execute(self, context):
-        return 
+#     def execute(self, context):
+#         return 
 
 # TODO
 # class ConditionedRemoveAttribute(bpy.types.Operator):

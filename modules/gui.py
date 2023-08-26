@@ -41,7 +41,7 @@ def attribute_assign_panel(self, context):
             if etc.get_preferences_attrib('attribute_assign_menu'):
                     
                 # Do not edit hidden attributes
-                if not func.get_is_attribute_valid(ob.data.attributes.active.name): 
+                if not func.get_is_attribute_valid_for_manual_val_assignment(ob.data.attributes.active):
                     row.label(text="Editing of non-editable and hidden attributes is disabled.")
                 else:
                     friendly_domain_name = "mesh domain"
@@ -65,11 +65,11 @@ def attribute_assign_panel(self, context):
                         # Assignment buttons
                         sub = row.row(align=True)
                         btn_assign = sub.operator('object.set_active_attribute_to_selected', text=f"Assign")
-                        btn_assign.clear = False
-                        btn_assign.fc_spill = prop_group.face_corner_spill
+                        btn_assign.b_clear = False
+                        btn_assign.b_face_corner_spill_enable = prop_group.face_corner_spill
                         btn_clear = sub.operator('object.set_active_attribute_to_selected', text=f"Clear")
-                        btn_clear.clear = True
-                        btn_clear.fc_spill = prop_group.face_corner_spill
+                        btn_clear.b_clear = True
+                        btn_clear.b_face_corner_spill_enable = prop_group.face_corner_spill
 
                         #Selection buttons
                         sub = row.row(align=True)
@@ -159,6 +159,3 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
-
-    
-
