@@ -15,7 +15,8 @@ Debug
 import bpy
 from . import ops
 from . import func
-
+from . import data
+from . import etc
 # Operators
 # ----------------------------
 
@@ -92,8 +93,14 @@ class MAMECreateAllAttributes(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
+        dts = []
+        for dt in data.attribute_data_types:
+             if etc.get_blender_support(data.attribute_data_types[dt].min_blender_ver, data.attribute_data_types[dt].unsupported_from_blender_ver):
+                  print(dt)
+                  dts.append(dt)
+             
         for domain in ['POINT', 'EDGE','FACE','CORNER']:
-            for data_type in ['INT','INT8','FLOAT','FLOAT_VECTOR','FLOAT2','FLOAT_COLOR','BYTE_COLOR','BOOLEAN','STRING', 'INT32_2D', 'QUATERNION']:
+            for data_type in dts:
                 bpy.context.active_object.data.attributes.new(f"{domain} {data_type}", data_type, domain)
         return {'FINISHED'}
 
