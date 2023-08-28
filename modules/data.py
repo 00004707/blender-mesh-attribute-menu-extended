@@ -949,9 +949,9 @@ object_data_targets = {
             icon="UV_FACESEL",
         ),
 
-    "TO_MATERIAL_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="To Material Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Material Index",
-            enum_gui_description="Convert this attribute to Material Index",
+    "TO_MATERIAL_SLOT_INDEX": ObjectDataTarget(
+            enum_gui_friendly_name="To Material Slot Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Material Slot Index",
+            enum_gui_description="Convert this attribute to Material Slot Index",
             
             domains_supported=['FACE'],
             data_type='INT',

@@ -1060,6 +1060,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
+
 def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     """Sets mesh data from selected attribute
 
@@ -1292,9 +1293,18 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
     
     # TO MATERIAL INDEX
-    elif data_target == "TO_MATERIAL_INDEX":
-        # todo %
-        set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
+    elif data_target == "TO_MATERIAL_SLOT_INDEX":
+        if len(obj.data.polygons):
+            
+            if hasattr(obj.data.polygons[0], 'material_index'):
+                if max_index > 0:
+                    set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
+
+            else: # futureproofing
+                max_index = max((len(obj.material_slots)-1), 0)
+                if not 'material_index' in obj.data.attributes:
+                    obj.data.attributes.new('material_index', 'INT', 'FACE')
+                set_attribute_values(obj.data.attributes['material_index'], a_vals)
     
     # TO FACE MAP INDEX
     elif data_target == "TO_FACE_MAP_INDEX":
