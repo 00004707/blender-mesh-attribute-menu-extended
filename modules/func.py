@@ -1060,8 +1060,6 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
-# TODO Below + refactor comments to the same as in get_mesh_data
-
 def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     """Sets mesh data from selected attribute
 
@@ -1095,150 +1093,53 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     
     src_attrib_name = src_attrib.name
 
-        # BOOLEANS
+    # QUICK BOOLEANS
+    # -----------------------------
+
+    # TO VISIBLE
     if data_target == "TO_VISIBLE":
         vis_indexes = [index for index, value in enumerate(a_vals) if value]
         set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, vis_indexes, False, selection=False)
 
+    # TO HIDDEN
     elif data_target == "TO_HIDDEN":
         hid_indexes = [index for index, value in enumerate(a_vals) if value]
         set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, hid_indexes, True, selection=False)
 
+    # TO SELECTED
     elif data_target == "TO_SELECTED":
         sel_indexes = [index for index, value in enumerate(a_vals) if value]
         set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, sel_indexes, True)
 
+    # TO NOT SELECTED
     elif data_target == "TO_NOT_SELECTED":
          nsel_indexes = [index for index, value in enumerate(a_vals) if value]
          set_selection_or_visibility_of_mesh_domain(obj, src_attrib.domain, nsel_indexes, False)
 
-    # -- EDGE ONLY
 
-    elif data_target == "TO_SEAM":
-        set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
+    # VERTEX MESH DATA
+    # -----------------------------
 
-    elif data_target == "TO_SHARP":
-        if len(obj.data.edges):
-            if hasattr(obj.data.edges[0], "use_sharp"):
-                set_domain_attribute_values(obj, "use_sharp", src_attrib.domain, a_vals) 
-            elif hasattr(obj.data.edges[0], "use_edge_sharp"):
-                set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
-
-    elif data_target == "TO_FREESTYLE_MARK":
-        set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
-
-    # -- FACE ONLY
-
-    elif data_target == "TO_FACE_MAP":
-        fm_name = "Face Map" if kwargs["face_map_name"] == '' else kwargs["face_map_name"]
-        fm = obj.face_maps.new(name=fm_name)
-        
-        # create layer
-        bm = bmesh.new()
-        bm.from_mesh(obj.data)
-        bm.faces.layers.face_map.verify()
-        bm.to_mesh(obj.data)
-        bm.free()
-
-        # Set face map index to selected polygons in attribute (True)
-        for i, val in enumerate(a_vals):
-            if val:
-                obj.data.face_maps[0].data[i].value = fm.index
-
-    elif data_target == "TO_FACE_SHADE_SMOOTH":
-        set_domain_attribute_values(obj, 'use_smooth', src_attrib.domain, a_vals) 
-        
-    
-    # INTEGER
-
-    # -- VERTEX
-
+    # TO VERTEX GROUP INDEX
     elif data_target == "TO_VERTEX_GROUP_INDEX":
     
         # clamp to max index
         max_index_input = max(a_vals)
         max_index_target = len(obj.vertex_groups) - 1
-        max_index = min([max_index_input, max_index_target])
+        max_index = max(min([max_index_input, max_index_target]), 0)
         
         if kwargs["to_vgindex_weight_mode"] == 'STATIC':
             #lazy set the weight to static value
             for i, val in enumerate(a_vals):
-                obj.vertex_groups[min([max_index, val])].add([i], kwargs['to_vgindex_weight'], 'REPLACE')
+                obj.vertex_groups[min([max_index, max(val,0)])].add([i], kwargs['to_vgindex_weight'], 'REPLACE')
         
         # or use attrib
         elif kwargs["to_vgindex_weight_mode"] == 'ATTRIBUTE':
             for i, val in enumerate(a_vals):
-                obj.vertex_groups[min([max_index, val])].add([i], kwargs['to_vgindex_src_attrib'].data[i].value, 'REPLACE')
-
-    # -- FACE ONLY
-    elif data_target == "TO_SCULPT_MODE_FACE_SETS":
-        # case: no face sets
-        if ".sculpt_face_set" not in obj.data.polygon_layers_int:
-            obj.data.polygon_layers_int.new(name=".sculpt_face_set" )
-
-        for i, val in enumerate(a_vals):
-            obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
-        
-    elif data_target == "TO_MATERIAL_INDEX":
-        # todo %
-        set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
-    
-    elif data_target == "TO_FACE_MAP_INDEX":
-        for i, val in enumerate(a_vals):
-            # limit the value
-            val = max(0, min(val, len(obj.face_maps)-1))
-            obj.data.face_maps[0].data[i].value = val
-
-        
-
-    # 8-BIT INTEGER
-
-
-    # FLOAT
-
-    # -- VERTEX + EDGE
-    elif data_target == "TO_MEAN_BEVEL_WEIGHT":
-        if hasattr(obj.data.vertices, 'bevel_weight'): # Works for edges too, as the api change happened for both at once.
-            set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
-        else:
-            if src_attrib.domain == 'POINT':
-                if not "bevel_weight_vert" in obj.data.attributes:
-                    obj.data.attributes.new("bevel_weight_vert", 'FLOAT', 'POINT')
-                set_attribute_values(obj.data.attributes["bevel_weight_vert"], a_vals)
-
-            elif src_attrib.domain == 'EDGE':
-                if not "bevel_weight_edge" in obj.data.attributes:
-                    obj.data.attributes.new("bevel_weight_edge", 'FLOAT', 'EDGE')
-                set_attribute_values(obj.data.attributes["bevel_weight_edge"], a_vals)
-        
-    
-    elif data_target == "TO_MEAN_CREASE":
-        if src_attrib.domain == 'POINT':
-            if bpy.app.version < (4,0):
                 
-                # Create layer if it does not exist:
-                if not len(obj.data.vertex_creases):
-                    bm = bmesh.new()
-                    bm.from_mesh(obj.data)
-                    bm.verts.layers.crease.verify()
-                    bm.to_mesh(obj.data)
-                    bm.free()
-                for i, val in enumerate(a_vals):
-                    obj.data.vertex_creases[0].data[i].value = val
-            else:
-                if not "vertex_creases" in obj.data.attributes:
-                    obj.data.attributes.new("vertex_creases", 'FLOAT', 'POINT')
-                
-                set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
-                
-        elif src_attrib.domain == 'EDGE':
-            if bpy.app.version < (4,0):
-                set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
-            else:
-                if not "edge_creases" in obj.data.attributes:
-                    obj.data.attributes.new("edge_creases", 'FLOAT', 'EDGE')
-                set_attribute_values(obj.data.attributes["edge_creases"], a_vals)
-    # -- VERTEX
+                obj.vertex_groups[min([max_index, max(val,0)])].add([i], kwargs['to_vgindex_src_attrib'].data[i].value, 'REPLACE')
+
+    # TO SCULPT MODE MASK
     elif data_target == "TO_SCULPT_MODE_MASK":
 
         # case: no mask layer, user never used mask on this mesh
@@ -1267,7 +1168,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             elif kwargs['expand_sculpt_mask_mode'] == 'SUBTRACT':
                 obj.data.vertex_paint_masks[0].data[i].value -= val
         
-        
+    # TO VERTEX GROUP
     elif data_target == "TO_VERTEX_GROUP":
         name = get_safe_attrib_name(obj, src_attrib_name + " Group", 'Group')
         vg = obj.vertex_groups.new(name=name if kwargs["vertex_group_name"] == '' else kwargs["vertex_group_name"])
@@ -1275,8 +1176,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             weight = a_vals[vert.index]
             vg.add([vert.index], weight, 'REPLACE')
 
-
-    # VECTOR
+    # TO POSITION
     elif data_target == "TO_POSITION":
         set_domain_attribute_values(obj, 'co', src_attrib.domain, a_vals) 
 
@@ -1286,13 +1186,127 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             for i, val in enumerate(a_vals):
                 sk[i].co = val
 
-    
+    # TO SHAPE KEY
     elif data_target == "TO_SHAPE_KEY":
         sk = obj.shape_key_add(name=src_attrib_name)
         l = [[vec[0],vec[1],vec[2]] for vec in a_vals]
         for vert in obj.data.vertices:
             sk.data[vert.index].co = l[vert.index]
 
+    # VERTEX & EDGE MESH DATA
+    # -----------------------------
+
+    # TO MEAN BEVEL WEIGHT
+    elif data_target == "TO_MEAN_BEVEL_WEIGHT":
+        if hasattr(obj.data.vertices, 'bevel_weight'): # Works for edges too, as the api change happened for both at once.
+            set_domain_attribute_values(obj, 'bevel_weight', src_attrib.domain, a_vals) 
+        else:
+            if src_attrib.domain == 'POINT':
+                if not "bevel_weight_vert" in obj.data.attributes:
+                    obj.data.attributes.new("bevel_weight_vert", 'FLOAT', 'POINT')
+                set_attribute_values(obj.data.attributes["bevel_weight_vert"], a_vals)
+
+            elif src_attrib.domain == 'EDGE':
+                if not "bevel_weight_edge" in obj.data.attributes:
+                    obj.data.attributes.new("bevel_weight_edge", 'FLOAT', 'EDGE')
+                set_attribute_values(obj.data.attributes["bevel_weight_edge"], a_vals)
+        
+    # TO MEAN CREASE
+    elif data_target == "TO_MEAN_CREASE":
+        if src_attrib.domain == 'POINT':
+            if bpy.app.version < (4,0):
+                
+                # Create layer if it does not exist:
+                if not len(obj.data.vertex_creases):
+                    bm = bmesh.new()
+                    bm.from_mesh(obj.data)
+                    bm.verts.layers.crease.verify()
+                    bm.to_mesh(obj.data)
+                    bm.free()
+                for i, val in enumerate(a_vals):
+                    obj.data.vertex_creases[0].data[i].value = val
+            else:
+                if not "vertex_creases" in obj.data.attributes:
+                    obj.data.attributes.new("vertex_creases", 'FLOAT', 'POINT')
+                
+                set_attribute_values(obj.data.attributes["vertex_creases"], a_vals)
+                
+        elif src_attrib.domain == 'EDGE':
+            if bpy.app.version < (4,0):
+                set_domain_attribute_values(obj, 'crease', src_attrib.domain, a_vals) 
+            else:
+                if not "edge_creases" in obj.data.attributes:
+                    obj.data.attributes.new("edge_creases", 'FLOAT', 'EDGE')
+                set_attribute_values(obj.data.attributes["edge_creases"], a_vals)
+   
+    # EDGE MESH DATA
+    # -----------------------------
+
+    # TO EDGE SEAM
+    elif data_target == "TO_SEAM":
+        set_domain_attribute_values(obj, 'use_seam', src_attrib.domain, a_vals) 
+
+    # TO EDGE SHARP
+    elif data_target == "TO_SHARP":
+        if len(obj.data.edges):
+            if hasattr(obj.data.edges[0], "use_sharp"):
+                set_domain_attribute_values(obj, "use_sharp", src_attrib.domain, a_vals) 
+            elif hasattr(obj.data.edges[0], "use_edge_sharp"):
+                set_domain_attribute_values(obj, 'use_edge_sharp', src_attrib.domain, a_vals) 
+
+    # TO FREESTYLE MARK
+    elif data_target == "TO_FREESTYLE_MARK":
+        set_domain_attribute_values(obj, 'use_freestyle_mark', src_attrib.domain, a_vals) 
+
+    # FACE MESH DATA
+    # -----------------------------
+
+    # TO FACE MAP
+    elif data_target == "TO_FACE_MAP":
+        fm_name = "Face Map" if kwargs["face_map_name"] == '' else kwargs["face_map_name"]
+        fm = obj.face_maps.new(name=fm_name)
+        
+        # create layer
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        bm.faces.layers.face_map.verify()
+        bm.to_mesh(obj.data)
+        bm.free()
+
+        # Set face map index to selected polygons in attribute (True)
+        for i, val in enumerate(a_vals):
+            if val:
+                obj.data.face_maps[0].data[i].value = fm.index
+
+    # TO SHADE SMOOTH
+    elif data_target == "TO_FACE_SHADE_SMOOTH":
+        set_domain_attribute_values(obj, 'use_smooth', src_attrib.domain, a_vals) 
+    
+    # TO SCULPT MODE FACE SETS
+    elif data_target == "TO_SCULPT_MODE_FACE_SETS":
+        # case: no face sets
+        if ".sculpt_face_set" not in obj.data.polygon_layers_int:
+            obj.data.polygon_layers_int.new(name=".sculpt_face_set" )
+
+        for i, val in enumerate(a_vals):
+            obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
+    
+    # TO MATERIAL INDEX
+    elif data_target == "TO_MATERIAL_INDEX":
+        # todo %
+        set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
+    
+    # TO FACE MAP INDEX
+    elif data_target == "TO_FACE_MAP_INDEX":
+        for i, val in enumerate(a_vals):
+            # limit the value
+            val = max(0, min(val, len(obj.face_maps)-1))
+            obj.data.face_maps[0].data[i].value = val
+
+    # FACE CORNER MESH DATA
+    # -----------------------------
+
+    # TO SPLIT NORMALS
     elif data_target == 'TO_SPLIT_NORMALS':
         obj.data.use_auto_smooth = kwargs['enable_auto_smooth']
         if src_attrib.domain == 'POINT':
@@ -1300,27 +1314,41 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         elif src_attrib.domain == 'CORNER':
             obj.data.normals_split_custom_set([[vec[0],vec[1],vec[2]] for vec in a_vals])
     
-    # VECTOR2D (FLOAT2)
-
+    # TO UV MAP
     elif data_target == "TO_UVMAP":
         obj.data.uv_layers.new(name=src_attrib_name)
         for i, val in enumerate(a_vals):
             obj.data.uv_layers[int(kwargs['uvmap_index'])].data[i].uv = (val[0], val[1])
 
-    # special
+    # UV EDITOR SPECIALS
+    # -----------------------------
 
+    # TO SELECTED VERTICES IN UV EDITOR
     elif data_target == "TO_SELECTED_VERTICES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
 
         for i, val in enumerate(a_vals):
             obj.data.attributes[f'.vs.{uvmap_name}'].data[i].value = val
 
+    # TO SELECTED EDGES IN UV EDITOR
     elif data_target == "TO_SELECTED_EDGES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
 
         for i, val in enumerate(a_vals):
             obj.data.attributes[f'.es.{uvmap_name}'].data[i].value = val
 
+    # TO PINNED VERTICES IN UV EDITOR
+    elif data_target == "TO_PINNED_VERTICES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+
+        if not '.pn.{uvmap_name}' in obj.data.attributes:
+            obj.data.attributes.new('.es.{uvmap_name}', 'BOOLEAN', 'CORNER')
+
+        for i, val in enumerate(a_vals):
+            obj.data.attributes[f'.pn.{uvmap_name}'].data[i].value = val
+
+    # NONE OF ABOVE
+    # -----------------------------
     else:
         raise etc.MeshDataWriteException("set_mesh_data", f"Can't find {data_target} to set")
           
