@@ -1024,11 +1024,12 @@ object_data_targets = {
 
 # Define mesh data type entries
 AttributeDataType = namedtuple("AttributeDataType", [
-    "friendly_name",
-    "min_blender_ver",
-    "unsupported_from_blender_ver",
-    "supported_attribute_invert_modes",
-    "supported_comparison_modes"
+    "friendly_name",                            # The name presented to the user
+    "min_blender_ver",                          # Minimum blender version that this data type is supported from
+    "unsupported_from_blender_ver",             # First blender version that this data type is unsupported from
+    "supported_attribute_invert_modes",         # Supported invert modes, from attribute_invert_modes
+    "supported_comparison_modes",               # Supported comparison modes, from attribute_comparison_modes
+    "gui_property_name"                         # The property name from MAME_PropValues class
 ])
 
 # Defines all supported mesh data types
@@ -1038,77 +1039,88 @@ attribute_data_types = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_float"
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_int"
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_int8"
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_vector"
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_color"
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_bytecolor"
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["REVERSE_ORDER"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_string"
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["NOT"],
-        supported_comparison_modes=['EQ','NEQ']
+        supported_comparison_modes=['EQ','NEQ'],
+        gui_property_name="val_bool"
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_vector2d"
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
         min_blender_ver=(3,6,0),
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_int32_2d"
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
         min_blender_ver=(4,0,0),
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
-        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS']
+        supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+        gui_property_name="val_quaternion"
     ),
 }
 
