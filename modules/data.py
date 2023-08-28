@@ -1052,7 +1052,7 @@ attribute_data_types = {
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
-        min_blender_ver=None,
+        min_blender_ver=(3,2,0),
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
