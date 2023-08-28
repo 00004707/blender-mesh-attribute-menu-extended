@@ -65,6 +65,7 @@ classes = [
     ops.DeSelectDomainWithAttributeZeroValue,
     ops.SelectDomainWithAttributeZeroValue,
     ops.AttributeResolveNameCollisions,
+    ops.ReadValueFromSelectedDomains,
 ]
 
 # Debug

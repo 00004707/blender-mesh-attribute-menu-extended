@@ -364,7 +364,7 @@ def get_mesh_selected_by_domain(obj, domain, spill=False):
         etc.MeshDataReadException: _description_
 
     Returns:
-        _type_: _description_
+        list: List of obj.data.vertices/edges/polygons/loops objects
     """
 
     if domain == 'POINT': 

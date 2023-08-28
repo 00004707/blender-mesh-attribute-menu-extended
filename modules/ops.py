@@ -21,6 +21,8 @@ import bmesh
 from . import func
 from . import data
 from . import etc
+from bpy_types import bpy_types
+from mathutils import Vector
 
 class AssignActiveAttribValueToSelection(bpy.types.Operator):
     """
@@ -2074,20 +2076,108 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
 
-# class ReadValueFromActiveDomain(bpy.types.Operator):
-#     bl_idname = "mesh.attribute_read_value_from_active_domain"
-#     bl_label = "Sample from active domain"
-#     bl_description = "Reads the attribute value under active domain and sets it in GUI"
-#     bl_options = {'REGISTER', 'UNDO'}
+class ReadValueFromSelectedDomains(bpy.types.Operator):
+    """
+    Reads the active attribute value from selected domains (absolute if single domain, average if multiple), and sets it in GUI
+    """
 
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
+    bl_idname = "mesh.attribute_read_value_from_selected_domains"
+    bl_label = "Sample from selected domains"
+    bl_description = "Reads the attribute value under selected domains and sets it in GUI"
+    bl_options = {'REGISTER', 'UNDO'}
 
-#     def execute(self, context):
-#         return 
+    @classmethod
+    def poll(self, context):
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.mode == 'EDIT' :
+            self.poll_message_set("Not in edit mode")
+            return False
+        elif not context.active_object.data.attributes.active :
+            self.poll_message_set("No active attribute")
+            return False
+        elif not context.active_object.data.attributes.active.data_type in data.attribute_data_types :
+            self.poll_message_set("Data type is not yet supported!")
+            return False
+        elif not context.active_object.data.attributes.active :
+            self.poll_message_set("No active attribute")
+            return False
+        elif bool(len([atype for atype in func.get_attribute_types(context.active_object.data.attributes.active) if atype in [data.EAttributeType.NOTPROCEDURAL]])) :
+            self.poll_message_set("This attribute is unsupported (Non-procedural)")
+            return False
+        
+        return True
+    
+    def execute(self, context):
+        
+        obj = context.active_object
+        active_attribute_name = obj.data.attributes.active.name
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        attribute = obj.data.attributes[active_attribute_name]
+        prop_group = context.object.MAME_PropValues
+        domain = obj.data.attributes[active_attribute_name].domain
+        dt = attribute.data_type
+
+        selected = func.get_mesh_selected_by_domain(obj, domain, prop_group.face_corner_spill)
+
+        if not len(selected):
+            self.report({'ERROR'}, f"No selected {func.get_friendly_domain_name(domain)}")
+            bpy.ops.object.mode_set(mode='EDIT')
+            return {'CANCELLED'}
+        
+        # Get indexes
+        if domain == 'POINT':
+            domain_indexes = [vert.index for vert in selected]
+        if domain == 'EDGE':
+            domain_indexes = [edge.index for edge in selected]
+        if domain == 'EDGE':
+            domain_indexes = [poly.index for poly in selected]
+        else:
+            domain_indexes = [loop.index for loop in selected]
+
+        # Get the value to set in GUI
+        if dt in ['STRING', 'BOOLEAN']:
+            # get the value from first index of selection
+            if len(domain_indexes) > 1:
+                self.report({'WARNING'}, f"It's best to select single {func.get_friendly_domain_name(domain)} instead to always get expected result for {func.get_friendly_data_type_name(dt)}s")
+            attribute_value = getattr(obj.data.attributes[active_attribute_name].data[domain_indexes[0]], func.get_attrib_value_propname(attribute))
+        else:
+            # Get average for numeric
+
+
+            # get default value to calc the avg
+            attribute_value = func.get_attrib_default_value(attribute)
+            if type(attribute_value) == list:
+                    attribute_value = tuple(attribute_value)
+
+            # get the total
+            for vi in domain_indexes:
+                val = getattr(obj.data.attributes[active_attribute_name].data[vi], func.get_attrib_value_propname(attribute))
+                print(type(val))
+                if type(val) in [bpy_types.bpy_prop_array, Vector]:
+                    val = tuple(val)
+                    attribute_value = tuple(vv+attribute_value[i] for i, vv in enumerate(val))
+                else:
+                    attribute_value += val
+
+            # and the avg
+            if type(attribute_value) == tuple:
+                attribute_value = tuple(tv/len(domain_indexes) for tv in attribute_value)
+            else:
+                attribute_value /= len(domain_indexes)
+        
+        # Get int for ints
+        if dt in ['INT']:
+            attribute_value = int(round(attribute_value))
+
+        # Set the attribute value in GUI
+        setattr(prop_group, data.attribute_data_types[dt].gui_property_name, attribute_value)
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        return {'FINISHED'}
 
 # TODO
 # class ConditionedRemoveAttribute(bpy.types.Operator):
