@@ -1105,13 +1105,15 @@ class ConvertToMeshData(bpy.types.Operator):
                            invert_sculpt_mask=self.b_invert_sculpt_mode_mask,
                            expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode)
         
+        
         # post-conversion cleanup
         if not domain_compatible or not data_type_compatible:
             obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
 
         if used_conveted_vgweight_attrib:
              obj.data.attributes.remove(obj.data.attributes[vg_weight_attrib_name])
-
+        
+        func.set_active_attribute(obj, src_attrib_name)
         # remove if user enabled
         if self.b_delete_if_converted:
             obj.data.attributes.remove(obj.data.attributes[src_attrib_name])
