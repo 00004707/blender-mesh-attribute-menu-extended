@@ -129,9 +129,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
         row.prop(self, 'attribute_assign_menu')
         row.label(text='Assign and clear buttons', icon='INFO')
 
-        row = box.row()
-        row.prop(self, 'add_set_attribute')
-        row.label(text='Set Attribute operator in dropdown menu', icon='INFO')
+        if bpy.app.version >= (3,5,0):
+            row = box.row()
+            row.prop(self, 'add_set_attribute')
+            row.label(text='Set Attribute operator in dropdown menu', icon='INFO')
 
         if bpy.app.version >= (3,3,0):
             row = box.row()

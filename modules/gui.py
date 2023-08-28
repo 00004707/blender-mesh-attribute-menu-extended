@@ -148,7 +148,7 @@ def attribute_context_menu_extension(self, context):
     """
 
     self.layout.operator_context = "INVOKE_DEFAULT"
-    if etc.get_preferences_attrib('add_set_attribute'):
+    if etc.get_preferences_attrib('add_set_attribute') and bpy.app.version >= (3,5,0):
         self.layout.operator('mesh.attribute_set')
     self.layout.operator('mesh.attribute_create_from_data', icon='MESH_DATA')
     self.layout.operator('mesh.attribute_convert_to_mesh_data', icon='MESH_ICOSPHERE')
