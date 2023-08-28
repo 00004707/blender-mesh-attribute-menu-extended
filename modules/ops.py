@@ -1501,7 +1501,7 @@ class ConditionalSelection(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
         attrib = obj.data.attributes[attribute_name]
 
-        condition = ""
+        condition = self.attribute_comparison_condition_enum
         comparison_value = None
         attrib_data_type = attrib.data_type
         case_sensitive_comp = False
@@ -1536,7 +1536,6 @@ FiltIndex: {filtered_indexes}""")
         #case 1: single number/value
         if attrib_data_type in ['FLOAT', 'INT', 'INT8', 'STRING', 'BOOLEAN']:
             if attrib_data_type in ['FLOAT', 'INT', 'INT8']:
-                condition = self.numeric_condition_enum
                 if attrib_data_type == 'INT':
                     comparison_value = self.val_int
                 elif attrib_data_type == 'INT8':
@@ -1545,11 +1544,9 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_float
 
             elif attrib_data_type == 'BOOLEAN':
-                    condition = self.bool_condition_enum
                     comparison_value = self.val_bool
 
             elif attrib_data_type == 'STRING':
-                condition = self.string_condition_enum
                 comparison_value = self.val_string
                 case_sensitive_comp = self.b_string_case_sensitive
 
@@ -1896,12 +1893,17 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
     bl_idname = "mesh.attribute_zero_value_select"
     bl_label = "Select Domain With Zero Value of Current Attribute"
-    bl_description = "Select attribute with non-zero value"
+    bl_description = "Select attribute with non-zero or True value"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         dt = context.active_object.data.attributes.active.data_type
         
+        if dt == 'BOOLEAN':
+            condition = 'EQ'
+        else:
+            condition = 'NEQ'
+
         # do not compare alpha value
         if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
             w_toggle = False
@@ -1917,14 +1919,7 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 b_deselect = False,
                                                 val_float = 0.0,
                                                 val_int = 0,
-                                                numeric_condition_enum = 'NEQ',
-                                                vec_x_condition_enum = "NEQ",
-                                                vec_y_condition_enum = "NEQ",
-                                                vec_z_condition_enum = "NEQ",
-                                                vec_w_condition_enum = "NEQ",
-                                                string_condition_enum = 'NEQ',
-                                                vector_value_cmp_type_enum = 'OR',
-                                                bool_condition_enum = "EQ",
+                                                attribute_comparison_condition_enum = condition,
                                                 val_vector_x_toggle = True,
                                                 val_vector_y_toggle = True,
                                                 val_vector_z_toggle = True,
@@ -1954,12 +1949,17 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
     bl_idname = "mesh.attribute_zero_value_deselect"
     bl_label = "Deselect Domain With Zero Value of Current Attribute"
-    bl_description = "Deselect attribute with non-zero value"
+    bl_description = "Deselect attribute with non-zero or True value"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         dt = context.active_object.data.attributes.active.data_type
         
+        if dt == 'BOOLEAN':
+            condition = 'EQ'
+        else:
+            condition = 'NEQ'
+
         # do not compare alpha value
         if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
             w_toggle = False
@@ -1975,14 +1975,7 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 b_deselect = True,
                                                 val_float = 0.0,
                                                 val_int = 0,
-                                                numeric_condition_enum = 'NEQ',
-                                                vec_x_condition_enum = "NEQ",
-                                                vec_y_condition_enum = "NEQ",
-                                                vec_z_condition_enum = "NEQ",
-                                                vec_w_condition_enum = "NEQ",
-                                                string_condition_enum = 'NEQ',
-                                                vector_value_cmp_type_enum = 'OR',
-                                                bool_condition_enum = "EQ",
+                                                attribute_comparison_condition_enum = condition,
                                                 val_vector_x_toggle = True,
                                                 val_vector_y_toggle = True,
                                                 val_vector_z_toggle = True,
