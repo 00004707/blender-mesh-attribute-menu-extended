@@ -62,8 +62,24 @@ def attribute_assign_panel(self, context):
                     if dt not in data.attribute_data_types:
                         layout.label(text="This attribute type is not supported.")
                     else:
+                        col = layout.row()
+                        #col.split = 0.5
+                        col2 = col.row(align=True)
+                        col2.prop(prop_group, data.attribute_data_types[dt].gui_property_name, text="Boolean Value" if dt == 'BOOLEAN' else f"")
+                        col2.ui_units_x = 40
+ 
+                        col2 = col.row(align=True)
+                        #col2.ui_units_x = 4
+                        if ob.data.attributes.active.domain == "CORNER":
+                            col2.prop(prop_group, "face_corner_spill", text=f"Spill", toggle=True)
+                        else:
+                            col2.operator("mesh.always_disabled_face_corner_spill_operator", text=f"Spill")
+                        col2.operator("mesh.attribute_read_value_from_selected_domains", text="Read")
+
+                        col = layout.row()
+
                         # Assignment buttons
-                        sub = row.row(align=True)
+                        sub = col.row(align=True)
                         btn_assign = sub.operator('object.set_active_attribute_to_selected', text=f"Assign")
                         btn_assign.b_clear = False
                         btn_assign.b_face_corner_spill_enable = prop_group.face_corner_spill
@@ -72,68 +88,12 @@ def attribute_assign_panel(self, context):
                         btn_clear.b_face_corner_spill_enable = prop_group.face_corner_spill
 
                         #Selection buttons
-                        sub = row.row(align=True)
+                        sub = col.row(align=True)
                         sub.operator_context = 'EXEC_DEFAULT'
-                        # Input fields for each type
-                        if dt == "FLOAT":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
-                            layout.prop(prop_group, "val_float", text=f"{friendly_domain_name} Float Value")
-
-                        elif dt == "INT":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
-                            layout.prop(prop_group, "val_int", text=f"{friendly_domain_name} Integer Value")
-
-                        elif dt == "FLOAT_VECTOR":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0,0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0,0")
-                            layout.prop(prop_group, "val_vector", text=f"{friendly_domain_name} Vector Value")
-
-                        elif dt == "FLOAT_COLOR":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select Non Black")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Black")
-                            layout.prop(prop_group, "val_color", text=f"{friendly_domain_name} Color Value")
-
-                        elif dt == "BYTE_COLOR":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select Non Black")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Black")
-                            layout.prop(prop_group, "val_bytecolor", text=f"{friendly_domain_name} Bytecolor Value")
-
-                        elif dt == "STRING":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select Non Empty")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect Non Empty")
-                            layout.prop(prop_group, "val_string", text=f"{friendly_domain_name} String Value")
-
-                        elif dt == "BOOLEAN":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select True")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect True")
-                            layout.prop(prop_group, "val_bool", text=f"{friendly_domain_name} Boolean Value")
-
-                        elif dt == "FLOAT2":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0")
-                            layout.prop(prop_group, "val_vector2d", text=f"{friendly_domain_name} Vector 2D Value")
-
-                        elif dt == "INT32_2D":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0,0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0,0")
-                            layout.prop(prop_group, "val_int32_2d", text=f"{friendly_domain_name} 2D Int Vector Value")
-
-                        elif dt == "QUATERNION":
-                            sub.operator("mesh.attribute_zero_value_select", text="Sel≠1,0,0,0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Desel≠1,0,0,0")
-                            layout.prop(prop_group, "val_quaternion", text=f"{friendly_domain_name} Quaternion Value")
-
-                        elif dt == "INT8":
-                            sub.operator("mesh.attribute_zero_value_select", text="Select≠0")
-                            sub.operator("mesh.attribute_zero_value_deselect", text="Deselect≠0")
-                            layout.prop(prop_group, "val_int8", text=f"{friendly_domain_name} 8-bit Integer Value")
-                            
-
-                    # Toggle Face Corner Spill 
-                    if ob.data.attributes.active.domain == "CORNER":
-                        layout.prop(prop_group, "face_corner_spill", text=f"Face Corner Spill")
+                        sub.operator("mesh.attribute_zero_value_select", text=f"Select")
+                        sub.operator("mesh.attribute_zero_value_deselect", text=f"Deselect")
+                        
+                    
         else:
             if etc.get_preferences_attrib('debug_operators'):
                 # Extra tools
@@ -159,3 +119,19 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
+
+class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
+    """
+    Fake operator to occupy GUI place
+    .disabled is not available for properties in gui, so this is the hack
+    """
+
+    bl_idname = "mesh.always_disabled_face_corner_spill_operator"
+    bl_label = "Fake operator to occupy GUI place"
+    bl_description = "Enable Face Corner Spill"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Active attribute is not on Face Corner domain")
+        return False

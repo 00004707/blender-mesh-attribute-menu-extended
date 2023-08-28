@@ -66,6 +66,7 @@ classes = [
     ops.SelectDomainWithAttributeZeroValue,
     ops.AttributeResolveNameCollisions,
     ops.ReadValueFromSelectedDomains,
+    gui.FakeFaceCornerSpillDisabledOperator
 ]
 
 # Debug
