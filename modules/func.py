@@ -18,7 +18,7 @@ import bmesh
 import math
 from . import etc
 from . import data
-
+import numpy as np
 
 # Attribute related
 # ------------------------------------------
@@ -210,8 +210,8 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
     Args:
         attribute (Reference): Reference to the attribute
         value (list or value): The value or values to set
-        on_indexes (list, optional): Indexes to set the value on. Defaults to [].
-        flat_list (bool, optional): Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
+        on_indexes (list, optional): Indexes to set the value on. Defaults to []. Duplicates WILL NOT be checked
+        flat_list (bool, optional): Only for setting ALL values. Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
 
     Raises:
         etc.MeshDataWriteException: On failure
@@ -219,9 +219,36 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
     Returns:
         Nothing 
     """
+
+    """
+    For a mesh of 30,722 vertices
+    Setting all values using foreach set only: ~~ 0.013s to finish (ALL values to single one)
+    Setting all values using foreach get, foreach set ~~ 0.21s to finish
+    Setting all values using for loop over .value ~~ 0.49s to finish
     
-    # Set all values mode
-    if len(on_indexes) == 0:
+    I'm not smart enough to calculate computation complexity, but eyeballing it on multiple meshes resulted in strategy that
+    <25% mesh for loop
+    >25% mesh, foreach get foreach set
+    all just foreach set
+
+    setattr is noticeably slower
+
+    guess it's a call to finally learn how to program and count for real
+    """
+    
+    # Foreach_set
+    # Note: Strings do not support FOREACH_SET
+    if is_verbose_mode_enabled():
+        print(f"""
+SETTING ATTRIBUTE VALUES
+ATTRIBUTE: {attribute.name}
+VALUE: {value}
+ON_INDEXES: {on_indexes}
+FLAT_LIST: {flat_list}              
+""")
+
+    if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and attribute.data_type != 'STRING' :
+        etc.pseudo_profiler("FOR_EACH_START")
         prop_name = get_attrib_value_propname(attribute)
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
@@ -233,32 +260,62 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
             if len(value) != len(attribute.data):
                 print(f"INPUT DATA INVALID LEN {len(value)} EXPECTED {len(attribute.data)} VALUES:\n{value}")
                 raise etc.MeshDataWriteException("set_attribute_values", "Invalid input value data length.")
-            storage = value
+            
+            # convert to single dimension list if of vector type
+            if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
+                storage = value.flatten()
+                etc.pseudo_profiler("1D LIST CREATED")
+            else:
+                storage = value
+            
         else:
-            storage = [value] * len(attribute.data)
-
-        # convert to single dimension list if of vector type
-        if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION'] and not flat_list:
-            storage = [val for vec in storage for val in vec]
+            storage = np.repeat(value, len(attribute.data))
+        etc.pseudo_profiler("STORAGE_CREATED")
         
-        storage = list(storage)
-
-        # Strings have to be set manually
-        if attribute.data_type == 'STRING':
-            for i, entry in enumerate(attribute.data):
-                entry.value = storage[i]
-        else:
-            attribute.data.foreach_set(prop_name, storage)
+        attribute.data.foreach_set(prop_name, storage)
+        etc.pseudo_profiler("FOREACH SET DONE")
 
     # on selected indexes mode
     else:
-        prop = get_attrib_value_propname(attribute)
-        for i in on_indexes:
-            if type(value) is list:
-                setattr(attribute.data[i], prop, value[i%len(value)]) 
-            else:
-                setattr(attribute.data[i], prop, value) 
+        if is_verbose_mode_enabled():
+            print(f"Setting {attribute.name} attribute values for {len(on_indexes)} domains. ")
 
+        prop = get_attrib_value_propname(attribute)
+        dt = attribute.data_type
+        domain = attribute.domain
+        
+        # FOREACH_GET_FOREACH_SET for > 25%
+        if len(on_indexes) > len(attribute.data)/4:
+
+            if attribute.data_type == 'FLOAT':
+                prop_name = get_attrib_value_propname(attribute)
+                storage = np.repeat(value, len(attribute.data))
+                attribute.data.foreach_get(prop_name, storage)
+                storage[on_indexes] = np.repeat(value, len(attribute.data))[on_indexes]
+                attribute.data.foreach_set(prop_name, storage)
+
+        # For loop for < 25% mesh selected
+        else:
+            etc.pseudo_profiler("SET_VAL_ON_SELECTION_START")
+            if prop == "vector":
+                for i in on_indexes:
+                    attribute.data[i].vector = value
+            elif prop == "color":
+                for i in on_indexes:
+                    attribute.data[i].color = value
+            else: # "value"
+                for i in on_indexes:
+                    attribute.data[i].value = value
+
+            etc.pseudo_profiler("SET_VAL_ON_SELECTION_END")
+                
+            # This would be very nice, but it's slow
+            # for i in on_indexes:
+            #     if type(value) is list:
+            #         setattr(attribute.data[i], prop, value[i%len(value)]) 
+            #     else:
+            #         setattr(attribute.data[i], prop, value) 
+                    
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
     """Assigns a single value to all selected domain in edit mode.
 
@@ -281,9 +338,11 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print( f"Working on {active_attrib_name} attribute" )
 
     # Get selection in edit mode, on attribute domain
-    selected_el = get_mesh_selected_by_domain(obj, active_attrib.domain, face_corner_spill)
-    
-    if not selected_el:
+    etc.pseudo_profiler("EXEC_START_SET_VAL_ON_SEL")
+    selected_el = get_mesh_selected_domain_indexes(obj, active_attrib.domain, face_corner_spill)
+    etc.pseudo_profiler("GET_SEL_BY_DOMAIN_DONE")
+
+    if not len(selected_el):
         self.report({'ERROR'}, "Invalid selection or no selection")
         return False
     
@@ -297,9 +356,11 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print(f"Pre-set values: {str(a_vals)}")
 
     # Write the new values
-    selected_el = [el.index for el in selected_el]
+    #selected_el = [i for i, el in enumerate(selected_el) if el]
+    #selected_el = [i.index for i in selected_el]
+    etc.pseudo_profiler("GET_SEL_EL_INDEX")
     set_attribute_values(active_attrib, value, selected_el)
-
+    etc.pseudo_profiler("SET_VALUES_END")
     if is_verbose_mode_enabled():
         a_vals = get_attrib_values(attribute, obj)
         print(f"Post-set values: {str(a_vals)}")
@@ -352,8 +413,8 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
 
 # get
 
-def get_mesh_selected_by_domain(obj, domain, spill=False):
-    """Gets the references to selected domain entries in edit mode. (Vertices, edges, faces or Face Corners)
+def get_mesh_selected_domain_indexes(obj, domain, spill=False):
+    """Gets the indexes of selected domain entries in edit mode. (Vertices, edges, faces or Face Corners)
 
     Args:
         obj (Reference): 3D Object Reference
@@ -361,74 +422,121 @@ def get_mesh_selected_by_domain(obj, domain, spill=False):
         spill (bool, optional): Enables selection spilling to nearby face corners from selected verts/faces/edges. Defaults to False.
 
     Raises:
-        etc.MeshDataReadException: _description_
+        etc.MeshDataReadException: If domain is unsupported
 
     Returns:
-        list: List of obj.data.vertices/edges/polygons/loops objects
+        list: List of indexes
     """
 
     if domain == 'POINT': 
-        return [v for v in obj.data.vertices if v.select]
+        #return [v for v in obj.data.vertices if v.select]
+        storage = np.zeros(len(obj.data.vertices), dtype=np.bool)
+        obj.data.vertices.foreach_get('select', storage)
+        return np.arange(0, len(obj.data.vertices))[storage]
+    
     elif domain == 'EDGE': 
-        return [e for e in obj.data.edges if e.select]
+        #return [e for e in obj.data.edges if e.select]
+        storage = np.zeros(len(obj.data.edges), dtype=np.bool)
+        obj.data.edges.foreach_get('select', storage)
+        return np.arange(0, len(obj.data.edges))[storage]
+    
     elif domain == 'FACE': 
-        return [f for f in obj.data.polygons if f.select]
+        #return [f for f in obj.data.polygons if f.select]
+        storage = np.zeros(len(obj.data.polygons), dtype=np.bool)
+        obj.data.polygons.foreach_get('select', storage)
+        return np.arange(0, len(obj.data.polygons))[storage]
+
     elif domain == 'CORNER': 
         # boneless chicken 
-        if spill: # if spill then idc
-            return [fc for fc in obj.data.loops if obj.data.vertices[fc.vertex_index].select]
+        if spill: 
+            # Get selected verts ids
+            storage = np.zeros(len(obj.data.vertices), dtype=np.bool)
+            obj.data.vertices.foreach_get('select', storage)
+            sel_verts = np.arange(0, len(obj.data.vertices))[storage]
+            
+            # Get loop assigned verts
+            storage = np.zeros(len(obj.data.loops), dtype=np.int)
+            obj.data.loops.foreach_get('vertex_index', storage)
+
+            # Get the loops with the selected verts
+            return np.arange(0, len(obj.data.loops))[np.isin(storage, sel_verts)]
+
         else:
             mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
+            result = [] # ???
             
-            result = []
+            # Case: User wants to assign faces
             if mesh_selected_modes[2]: # faces
-                return [obj.data.loops[fc] for f in obj.data.polygons if f.select for fc in f.loop_indices]
-            
-            
-            #elif mesh_selected_modes[1]: #edges
-            else:
-                # get selected edges
-                sel_edges = [e.index for e in obj.data.edges if e.select]
+
+                # Get selected faces
+                face_select = np.zeros(len(obj.data.polygons), dtype=np.bool)
+                obj.data.polygons.foreach_get('select', face_select)
                 
+                # Get face loop indexes
+                #face_loop_start_ids = np.zeros(len(obj.data.polygons), dtype=np.int)
+                #obj.data.polygons.foreach_get('loop_start', face_loop_indices) # why not?
+
+                face_loop_indices = []
+                for i in np.arange(0, len(obj.data.polygons))[face_select]:
+                    face_loop_indices += obj.data.polygons[i].loop_indices
+                return np.unique(face_loop_indices)#[face_select])
+            
+            # Case User wants to select individual face corners by edge selection (detect same for vert selection)
+            else:
+                
+                # get selected edges
+                b_sel_edges = np.zeros(len(obj.data.edges), dtype=np.bool)
+                obj.data.edges.foreach_get('select', b_sel_edges)
+                sel_edges = np.arange(0, len(obj.data.edges))[b_sel_edges]
+                
+                # go away if none selected
                 if not len(sel_edges):
                     return []
                 
-                for fc in obj.data.loops:
-                    # check if fc.vertex_index in selection
-                    if not fc.edge_index in sel_edges:
-                        continue
+                # get edge indexes for all loops
+                loops_edge_index = np.zeros(len(obj.data.loops), dtype=np.int)
+                obj.data.loops.foreach_get('edge_index', loops_edge_index)
+
+                # get loops that are connected to selected edges
+                loop_ids_of_selected_edges = np.arange(0, len(obj.data.loops))[np.isin(loops_edge_index, sel_edges)]
+                
+                if is_verbose_mode_enabled():
+                    print(f"The selection might be one of {loop_ids_of_selected_edges} fcs")
+                
+                for fc in [obj.data.loops[li] for li in loop_ids_of_selected_edges]:
                     
                     # Get face that has this loop
                     for f in obj.data.polygons:
                         if fc.index in f.loop_indices:
                             face = f
                             break
-                    
-                    # Get all edges that are using the vert of the loop
-                    edges = [e for e in obj.data.edges if fc.vertex_index in e.vertices]
-                    
-                    # Get edges of that face that have vertex of the loop
-                    # those can be mixed, since this is a 2 index list, just check both cases
+
+                    if is_verbose_mode_enabled():
+                        print(f"Face {face.index} has fc {fc.index}")
+                        print(f"Face {face.index} has vts {[v for v in face.vertices]}")
+                        print(f"Looking for vert {fc.vertex_index}")
+                        print(f"Looking in face {face.index}: {list(obj.data.polygons[face.index].loop_indices)}")
+
                     valid_edges = []
-                    for edge in edges:
-                        edge_verts = [v for v in edge.vertices]
-                        if edge_verts in [[e[0], e[1]] for e in face.edge_keys] or edge_verts[::-1] in [[e[0], e[1]] for e in face.edge_keys]:
-                            valid_edges.append(edge.index)
+                    for i in obj.data.polygons[face.index].loop_indices:
+                        if b_sel_edges[obj.data.loops[i].edge_index]:
+                            edge = obj.data.edges[obj.data.loops[i].edge_index]
+                            #print(f"{face.index}: has edge with verts {edge.vertices}")
+                            edge_verts = [v for v in edge.vertices]
+
+                            if fc.vertex_index in edge_verts:
+                                valid_edges.append(edge.index)
+                                #print(f"{edge.index} contains the vert of fc")
                     
                     # check if at least two of those edges are selected
-                    sel_count = 0
 
-                    for valid_edge in valid_edges:
-                        if valid_edge in sel_edges:
-                            sel_count += 1
-
-                    if sel_count > 1:
-                        result.append(fc)
+                    if len(valid_edges) > 1:
+                        result.append(fc.index)
                 
                 return result
     
     else:
-        raise etc.MeshDataReadException('get_mesh_selected_by_domain', f'The {domain} domain is not supported')
+        raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {domain} domain is not supported')
 
 # TODO this one below
 

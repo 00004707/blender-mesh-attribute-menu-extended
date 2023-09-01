@@ -23,6 +23,7 @@ from . import data
 from . import etc
 from bpy_types import bpy_types
 from mathutils import Vector
+import numpy as np
 
 class AssignActiveAttribValueToSelection(bpy.types.Operator):
     """
@@ -51,10 +52,16 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
                 )
 
     def execute(self, context):
+        etc.pseudo_profiler_init()
         obj = context.active_object
         active_attrib_name = obj.data.attributes.active.name 
+        
+        etc.pseudo_profiler("EXEC START")
 
         bpy.ops.object.mode_set(mode='OBJECT')
+        etc.pseudo_profiler("OBJ MODE SW")
+        
+
         if func.is_verbose_mode_enabled():
             print( f"Working on {active_attrib_name} attribute" )
 
@@ -63,37 +70,30 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         # Get value from GUI
         prop_group = context.object.MAME_PropValues
         dt = attribute.data_type
-        if dt == "FLOAT":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_float
-        elif dt == "INT":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int
-        elif dt == "FLOAT_VECTOR":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_vector
-        elif dt == "FLOAT_COLOR":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_color
-        elif dt == "BYTE_COLOR":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_bytecolor
-        elif dt == "STRING":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_string
-        elif dt == "BOOLEAN":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_bool
-        elif dt == "FLOAT2":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_vector2d
-        elif dt == "INT8":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int8
-        elif dt == "INT32_2D":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_int32_2d
-        elif dt == "QUATERNION":
-            value = func.get_attrib_default_value(attribute) if self.b_clear else prop_group.val_quaternion
+        if dt in data.attribute_data_types:
+            
+            gui_value = getattr(prop_group, data.attribute_data_types[dt].gui_property_name)
+            etc.pseudo_profiler("READ_ATTRIB")
+
+            if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
+                gui_value = tuple(gui_value)
+            
+            value = func.get_attrib_default_value(attribute) if self.b_clear else gui_value
+            etc.pseudo_profiler("GET_DEFAULT_VAL")
+
+            # Set the value
+            func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.b_face_corner_spill_enable)
+            
+            bpy.ops.object.mode_set(mode='EDIT')
+        
+            return {"FINISHED"}
+        
         else:
             self.report({'ERROR', "Unsupported data type!"})
-
-        # Set the value
-        func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.b_face_corner_spill_enable)
+            bpy.ops.object.mode_set(mode='EDIT')
+            return {"CANCELLED"}
         
-        bpy.ops.object.mode_set(mode='EDIT')
         
-        return {"FINISHED"}
     
 class CreateAttribFromData(bpy.types.Operator):
     """
@@ -704,7 +704,7 @@ class InvertAttribute(bpy.types.Operator):
         src_attrib = obj.data.attributes[src_attrib_name] # !important
         
         # get selected domain indexes
-        selected = [domain.index for domain in func.get_mesh_selected_by_domain(obj, src_attrib.domain, self.b_face_corner_spill)]
+        selected = func.get_mesh_selected_domain_indexes(obj, src_attrib.domain, self.b_face_corner_spill)
         if func.is_verbose_mode_enabled():
             print(f"Selected domain indexes: {selected}")
         
@@ -2114,22 +2114,22 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         domain = obj.data.attributes[active_attribute_name].domain
         dt = attribute.data_type
 
-        selected = func.get_mesh_selected_by_domain(obj, domain, prop_group.face_corner_spill)
+        domain_indexes = func.get_mesh_selected_domain_indexes(obj, domain, prop_group.face_corner_spill)
 
-        if not len(selected):
+        if not len(domain_indexes):
             self.report({'ERROR'}, f"No selected {func.get_friendly_domain_name(domain)}")
             bpy.ops.object.mode_set(mode='EDIT')
             return {'CANCELLED'}
         
-        # Get indexes
-        if domain == 'POINT':
-            domain_indexes = [vert.index for vert in selected]
-        if domain == 'EDGE':
-            domain_indexes = [edge.index for edge in selected]
-        if domain == 'EDGE':
-            domain_indexes = [poly.index for poly in selected]
-        else:
-            domain_indexes = [loop.index for loop in selected]
+        # # Get indexes
+        # if domain == 'POINT':
+        #     domain_indexes = [vert.index for vert in selected]
+        # if domain == 'EDGE':
+        #     domain_indexes = [edge.index for edge in selected]
+        # if domain == 'EDGE':
+        #     domain_indexes = [poly.index for poly in selected]
+        # else:
+        #     domain_indexes = [loop.index for loop in selected]
 
         # Get the value to set in GUI
         if dt in ['STRING', 'BOOLEAN']:
@@ -2149,7 +2149,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
             # get the total
             for vi in domain_indexes:
                 val = getattr(obj.data.attributes[active_attribute_name].data[vi], func.get_attrib_value_propname(attribute))
-                print(type(val))
+                
                 if type(val) in [bpy_types.bpy_prop_array, Vector]:
                     val = tuple(val)
                     attribute_value = tuple(vv+attribute_value[i] for i, vv in enumerate(val))

@@ -16,6 +16,7 @@ The file must not create a circular import with anything
 """
 
 import bpy
+import time
 
 # Constants
 # ------------------------------------------
@@ -83,7 +84,15 @@ def get_enhanced_enum_titles_enabled():
     else:
         return False
 
+profiler_timestamp_start = 0
 
+def pseudo_profiler_init():
+    global profiler_timestamp_start
+    profiler_timestamp_start = time.time()
+
+def pseudo_profiler(info_string:str):
+    if get_preferences_attrib("pseudo_profiler"):
+        print(f"[PROFILER][{time.time()-profiler_timestamp_start}] {info_string}")
 
 # ------------------------------------------
 # Preferences
@@ -101,6 +110,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
+    pseudo_profiler: bpy.props.BoolProperty(name="Enable pseudo-profiler", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
     extra_context_menus: bpy.props.BoolProperty(name="Enable Extra Context Menu Entries", description="Adds extra operators to Shape Keys Menu, Vertex Group Menu and other menus", default=True)
 
@@ -184,4 +194,5 @@ class AddonPreferences(bpy.types.AddonPreferences):
         box.label(text='Danger zone')
         box.prop(self, 'verbose_mode')
         box.prop(self, 'debug_operators')
+        box.prop(self, 'pseudo_profiler')
         box.prop(self, 'disable_version_checks')
