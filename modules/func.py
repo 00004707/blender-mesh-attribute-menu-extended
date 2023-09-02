@@ -285,14 +285,19 @@ FLAT_LIST: {flat_list}
         domain = attribute.domain
         
         # FOREACH_GET_FOREACH_SET for > 25%
-        if len(on_indexes) > len(attribute.data)/4:
-
-            if attribute.data_type == 'FLOAT':
-                prop_name = get_attrib_value_propname(attribute)
-                storage = np.repeat(value, len(attribute.data))
-                attribute.data.foreach_get(prop_name, storage)
-                storage[on_indexes] = np.repeat(value, len(attribute.data))[on_indexes]
-                attribute.data.foreach_set(prop_name, storage)
+        if len(on_indexes) > len(attribute.data)/4 and attribute.data_type != 'STRING':
+            etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
+            
+            prop_name = get_attrib_value_propname(attribute)
+            storage = np.repeat(value, len(attribute.data))
+            attribute.data.foreach_get(prop_name, storage)
+            if type(value) == tuple:
+                for i in on_indexes:
+                    for l in range(0, len(value)):
+                        storage[i*len(value)+l] = value[l]
+            else:
+                storage[on_indexes] = value
+            attribute.data.foreach_set(prop_name, storage)
 
         # For loop for < 25% mesh selected
         else:
