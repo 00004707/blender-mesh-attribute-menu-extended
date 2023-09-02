@@ -201,6 +201,9 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
 
     return attribute_name
 
+def get_random_attribute_of_data_type(context, data_type:str):
+    return
+
 # set
 
 def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):

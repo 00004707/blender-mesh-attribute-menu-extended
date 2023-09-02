@@ -65,7 +65,12 @@ def attribute_assign_panel(self, context):
                         col = layout.row()
                         #col.split = 0.5
                         col2 = col.row(align=True)
-                        col2.prop(prop_group, data.attribute_data_types[dt].gui_property_name, text="Boolean Value" if dt == 'BOOLEAN' else f"")
+                        if dt == 'BOOLEAN':
+                            title_str = "True" if prop_group.val_bool else "False"
+                        else:
+                            title_str = ""
+
+                        col2.prop(prop_group, data.attribute_data_types[dt].gui_property_name, text=title_str, toggle=True)
                         col2.ui_units_x = 40
  
                         col2 = col.row(align=True)
@@ -93,6 +98,10 @@ def attribute_assign_panel(self, context):
                         sub.operator("mesh.attribute_zero_value_select", text=f"Select")
                         sub.operator("mesh.attribute_zero_value_deselect", text=f"Deselect")
                         
+                        
+                        sub = col.row(align=True)
+                        sub.ui_units_x = 1
+                        sub.prop(prop_group, "val_select_non_zero_toggle", text=f"Ø", toggle=True)
                     
         else:
             if etc.get_preferences_attrib('debug_operators'):
@@ -117,21 +126,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_copy', icon='COPYDOWN')
     self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
+    self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
 
-class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
-    """
-    Fake operator to occupy GUI place
-    .disabled is not available for properties in gui, so this is the hack
-    """
-
-    bl_idname = "mesh.always_disabled_face_corner_spill_operator"
-    bl_label = "Fake operator to occupy GUI place"
-    bl_description = "Enable Face Corner Spill"
-    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Active attribute is not on Face Corner domain")
-        return False

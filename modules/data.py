@@ -1022,6 +1022,20 @@ object_data_targets = {
 
 }
 
+# Defines all supported mesh data types as enum
+class EAttributeDataType(Enum):
+    FLOAT = 0
+    INT = 1
+    INT8 = 2
+    FLOAT_VECTOR = 3
+    FLOAT_COLOR = 4
+    BYTE_COLOR = 5
+    STRING = 6
+    BOOLEAN = 7
+    FLOAT2 = 8
+    INT32_2D = 9
+    QUATERNION = 10
+
 # Define mesh data type entries
 AttributeDataType = namedtuple("AttributeDataType", [
     "friendly_name",                            # The name presented to the user
@@ -1029,7 +1043,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "unsupported_from_blender_ver",             # First blender version that this data type is unsupported from
     "supported_attribute_invert_modes",         # Supported invert modes, from attribute_invert_modes
     "supported_comparison_modes",               # Supported comparison modes, from attribute_comparison_modes
-    "gui_property_name"                         # The property name from MAME_PropValues class
+    "gui_property_name",                        # The property name from MAME_PropValues class
+    "vector_subelements_names"                  # Names of subelements in a vector value, eg X Y Z or None       
 ])
 
 # Defines all supported mesh data types
@@ -1040,7 +1055,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_float"
+        gui_property_name="val_float",
+        vector_subelements_names=None
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1048,7 +1064,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_int"
+        gui_property_name="val_int",
+        vector_subelements_names=None
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1056,7 +1073,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_int8"
+        gui_property_name="val_int8",
+        vector_subelements_names=None
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1064,7 +1082,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_vector"
+        gui_property_name="val_vector",
+        vector_subelements_names=['X','Y','Z']
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1072,7 +1091,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_color"
+        gui_property_name="val_color",
+        vector_subelements_names=['R','G','B','A']
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1080,7 +1100,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_bytecolor"
+        gui_property_name="val_bytecolor",
+        vector_subelements_names=['R','G','B','A']
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1088,7 +1109,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["REVERSE_ORDER"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_string"
+        gui_property_name="val_string",
+        vector_subelements_names=None
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1096,7 +1118,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["NOT"],
         supported_comparison_modes=['EQ','NEQ'],
-        gui_property_name="val_bool"
+        gui_property_name="val_bool",
+        vector_subelements_names=None
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1104,7 +1127,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_vector2d"
+        gui_property_name="val_vector2d",
+        vector_subelements_names=['X','Y']
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1112,7 +1136,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_int32_2d"
+        gui_property_name="val_int32_2d",
+        vector_subelements_names=['X','Y']
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1120,7 +1145,8 @@ attribute_data_types = {
         unsupported_from_blender_ver=None,
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
-        gui_property_name="val_quaternion"
+        gui_property_name="val_quaternion",
+        vector_subelements_names=['X','Y','Z','W']
     ),
 }
 
@@ -1190,56 +1216,20 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_string: bpy.props.StringProperty(name="String Value", default="")
     val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
     val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=-128, max=127, default=0)
+    if etc.get_blender_support(attribute_data_types['INT8'].min_blender_ver, attribute_data_types['INT8'].unsupported_from_blender_ver):
+        val_int8: bpy.props.IntProperty(name="8-bit Integer Value", min=-128, max=127, default=0)
     val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if etc.get_blender_support(attribute_data_types['INT32_2D'].min_blender_ver, attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
     if etc.get_blender_support(attribute_data_types['QUATERNION'].min_blender_ver, attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
         val_quaternion: bpy.props.FloatVectorProperty(name="Quaternion Value", size=4, default=(1.0,0.0,0.0,0.0))
-
-    face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
-
-    # Assign random value (not implemented, placeholder)
+    
+    # Assign/select options
     # -------------------------------------------------
 
-    val_random_toggle: bpy.props.BoolProperty(name="Randomize", default=False)
-    val_random_min_float:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
-    val_random_max_float:bpy.props.FloatProperty(name="Float Random Max", default=1.0)
-    val_random_min_int:bpy.props.IntProperty(name="Integer Random Min", default=0)
-    val_random_max_int:bpy.props.IntProperty(name="Integer Random Max", default=100)
-    val_random_min_int8:bpy.props.IntProperty(name="8-Bit Integer Random Min", default=-128, min=-128, max=127)
-    val_random_max_int8:bpy.props.IntProperty(name="8-Bit Integer Random Max", default=127, min=-128, max=127)
-    val_random_min_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0))
-    val_random_max_vec2d:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0))
-    val_random_min_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Min", size=3, default=(0.0,0.0,0.0))
-    val_random_max_vec3d:bpy.props.FloatVectorProperty(name="Vector Random Max", size=3, default=(0.0,0.0,0.0))
-    
-    color_rand_type: bpy.props.EnumProperty(
-        name="Color Randomize Type",
-        description="Select an option",
-        items=[
-            
-            ("HSV", "Randomize HSV Values", "Randomize HSV Values"),
-            ("RGB", "Randomize RGB Values", "Randomize RGB Values"),
-        ],
-        default="HSV"
-    )
-    
-    val_random_hue_toggle: bpy.props.BoolProperty(name="Randomize Hue", default=True)
-    val_random_saturation_toggle: bpy.props.BoolProperty(name="Randomize Saturation", default=True)
-    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Value", default=True)
-
-    val_random_r_toggle: bpy.props.BoolProperty(name="Randomize Red", default=True)
-    val_random_g_toggle: bpy.props.BoolProperty(name="Randomize Green", default=True)
-    val_random_b_toggle: bpy.props.BoolProperty(name="Randomize Blue", default=True)
-
-    val_random_min_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(0.0,0.0,0.0))
-    val_random_max_color:bpy.props.FloatVectorProperty(name="Color Random Max", size=3, default=(1.0,1.0,1.0))
-
-    val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
-    val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
-    val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)
+    face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
+    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Select buttons will select/deselect "non-zero" values instead')
 
 # All attribute types. Used to limit operator scope
 # Some of them might be unused for now

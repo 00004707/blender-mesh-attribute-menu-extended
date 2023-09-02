@@ -84,6 +84,28 @@ def get_enhanced_enum_titles_enabled():
     else:
         return False
 
+# Fake operators
+# ------------------------------
+
+class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
+    """
+    Fake operator to occupy GUI place
+    .disabled is not available for properties in gui, so this is the hack
+    """
+
+    bl_idname = "mesh.always_disabled_face_corner_spill_operator"
+    bl_label = "Fake operator to occupy GUI place"
+    bl_description = "Enable Face Corner Spill"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Active attribute is not on Face Corner domain")
+        return False
+
+# Profiler
+# ------------------------------
+
 profiler_timestamp_start = 0
 
 def pseudo_profiler_init():
