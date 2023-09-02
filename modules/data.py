@@ -119,7 +119,7 @@ object_data_sources = {
     "INSERT_SEPARATOR_QBOOL": None,
 
     "SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name="Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
         enum_gui_friendly_name_no_special_characters="Boolean From Selected",
         enum_gui_description="Create boolean attribute from domain selection",
         attribute_auto_name="Selected {domain}",
@@ -134,7 +134,7 @@ object_data_sources = {
     ),
 
     "NOT_SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Not Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+        enum_gui_friendly_name="Not Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
         enum_gui_friendly_name_no_special_characters="Boolean From Not Selected",
         enum_gui_description="Create boolean attribute from domain that is not selected",
         attribute_auto_name="Not selected {domain}",
