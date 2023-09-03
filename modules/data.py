@@ -1036,6 +1036,13 @@ class EAttributeDataType(Enum):
     INT32_2D = 9
     QUATERNION = 10
 
+class EDataTypeGuiPropType(Enum):
+    SCALAR = 0          #int float int8
+    VECTOR = 1          #float vector, vector 2d, quaternion
+    COLOR  = 3          # float color byte color
+    STRING = 4          # string
+    BOOLEAN = 5         # boolean
+
 # Define mesh data type entries
 AttributeDataType = namedtuple("AttributeDataType", [
     "friendly_name",                            # The name presented to the user
@@ -1044,7 +1051,9 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "supported_attribute_invert_modes",         # Supported invert modes, from attribute_invert_modes
     "supported_comparison_modes",               # Supported comparison modes, from attribute_comparison_modes
     "gui_property_name",                        # The property name from MAME_PropValues class
-    "vector_subelements_names"                  # Names of subelements in a vector value, eg X Y Z or None       
+    "gui_prop_subtype",                         # Type of the gui to display for this attribute data type (EDataTypeGuiPropType)
+    "vector_subelements_names"                  # Names of subelements in a vector value, eg X Y Z or None    
+
 ])
 
 # Defines all supported mesh data types
@@ -1056,7 +1065,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_float",
-        vector_subelements_names=None
+        vector_subelements_names=None,
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1065,7 +1075,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int",
-        vector_subelements_names=None
+        vector_subelements_names=None,
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1074,7 +1085,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int8",
-        vector_subelements_names=None
+        vector_subelements_names=None,
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1083,7 +1095,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_vector",
-        vector_subelements_names=['X','Y','Z']
+        vector_subelements_names=['X','Y','Z'],
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1092,7 +1105,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_color",
-        vector_subelements_names=['R','G','B','A']
+        vector_subelements_names=['R','G','B','A'],
+        gui_prop_subtype=EDataTypeGuiPropType.COLOR
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1101,7 +1115,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_bytecolor",
-        vector_subelements_names=['R','G','B','A']
+        vector_subelements_names=['R','G','B','A'],
+        gui_prop_subtype=EDataTypeGuiPropType.COLOR
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1110,7 +1125,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["REVERSE_ORDER"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_string",
-        vector_subelements_names=None
+        vector_subelements_names=None,
+        gui_prop_subtype=EDataTypeGuiPropType.STRING
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1119,7 +1135,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["NOT"],
         supported_comparison_modes=['EQ','NEQ'],
         gui_property_name="val_bool",
-        vector_subelements_names=None
+        vector_subelements_names=None,
+        gui_prop_subtype=EDataTypeGuiPropType.BOOLEAN
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1128,7 +1145,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_vector2d",
-        vector_subelements_names=['X','Y']
+        vector_subelements_names=['X','Y'],
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1137,7 +1155,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int32_2d",
-        vector_subelements_names=['X','Y']
+        vector_subelements_names=['X','Y'],
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1146,7 +1165,8 @@ attribute_data_types = {
         supported_attribute_invert_modes=["MULTIPLY_MINUS_ONE", "ADD_TO_MINUS_ONE", "SUBTRACT_FROM_ONE"],
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_quaternion",
-        vector_subelements_names=['X','Y','Z','W']
+        vector_subelements_names=['X','Y','Z','W'],
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
     ),
 }
 
@@ -1538,13 +1558,13 @@ attribute_convert_modes = [("GENERIC", "Generic", ""),
 
 # All modes used for comparing data in attributes
 attribute_comparison_modes = {
-    "EQ": ("EQ", "Equal", "=="),
-    "NEQ": ("NEQ", "Not equal", "!="),
-    "EQORGR": ("EQORGR", "Equal or greater", ">="),
-    "EQORLS": ("EQORLS", "Equal or lesser", "<="),
+    "EQ": ("EQ", "Equal to", "=="),
+    "NEQ": ("NEQ", "Not equal to", "!="),
+    "EQORGR": ("EQORGR", "Equal or greater than", ">="),
+    "EQORLS": ("EQORLS", "Equal or lesser than", "<="),
     "GR": ("GR", "Greater than", ">"),
     "LS": ("LS", "Lesser than", "<"),
-    "CONTAINS": ("CONTAINS", "Contains", "in"),
-    "STARTS_WITH": ("STARTS_WITH", "Starts with", "startswith"),
-    "ENDS_WITH": ("ENDS_WITH", "Ends with", "endswith"),
+    "CONTAINS": ("CONTAINS", "That contain", "in"),
+    "STARTS_WITH": ("STARTS_WITH", "That start with", "startswith"),
+    "ENDS_WITH": ("ENDS_WITH", "That end with", "endswith"),
 }

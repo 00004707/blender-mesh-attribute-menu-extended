@@ -1949,15 +1949,18 @@ def get_vertex_weight_attributes_enum(self, context):
     Returns:
         list: List of tuples to be used in enum
     """
-    return get_attributes_of_data_type_enum(self, context, ['FLOAT'])
+    if hasattr(self, 'b_vgindex_weights_only_floats'):
+        if not self.b_vgindex_weights_only_floats:
+            return get_attributes_of_type_enum(self, context, [], [])
+    return get_attributes_of_type_enum(self, context, ['FLOAT'], ['POINT'])
 
-def get_attributes_of_data_type_enum(self, context, data_types):
+def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POINT']):
     """Gets all attributes by data type to use in enum dropdown.
 
     Args:
         context (Reference): Blender context reference
-        data_types (list of str): All data type names to filter attributes like ['INT', 'FLOAT']
-
+        data_types (list of str): All data type names to filter attributes like ['INT', 'FLOAT'], can be empty/None for all
+        domians (list of str): All domains of specified domain, can be empty/None for all
     Returns:
         list: List of tuples to be used in enum
     """
@@ -1966,8 +1969,16 @@ def get_attributes_of_data_type_enum(self, context, data_types):
     enum_entries = []
     inv_data_entry = ("NULL", "[!] No valid attribues", "This list should contain all compatible attributes")
 
+    # Get all if empty or none
+    if not data_types or not len(data_types):
+        data_types = [dt for dt in data.attribute_data_types]
+
+    if not domains or not len(domains):
+        domains = [dt for dt in data.attribute_domains]
+    
+
     for attrib in obj.data.attributes:
-        if attrib.domain == 'POINT' and attrib.data_type in data_types:
+        if attrib.domain in domains and attrib.data_type in data_types:
             enum_entries.append((attrib.name, attrib.name, f"Use {attrib.name} as a source attribute"))
     
     if not len(enum_entries):
@@ -2002,11 +2013,27 @@ def conditional_selection_poll(self, context):
     Returns:
         boolean
     """
-    return (context.active_object
-                and context.active_object.mode == 'EDIT' 
-                and context.active_object.type == 'MESH' 
-                and context.active_object.data.attributes.active 
-                and data.EAttributeType.NOTPROCEDURAL not in get_attribute_types(context.active_object.data.attributes.active))
+    if not context.active_object:
+        self.poll_message_set("No active object")
+        return False
+    
+    elif not context.active_object.mode == 'EDIT':
+        self.poll_message_set("Object not in edit mode")
+        return False
+    
+    elif not context.active_object.type == 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+
+    elif not context.active_object.data.attributes.active:
+        self.poll_message_set("No active attribute")
+        return False
+
+    elif not data.EAttributeType.NOTPROCEDURAL not in get_attribute_types(context.active_object.data.attributes.active):
+        self.poll_message_set("Attribute cannot be selected (Non-procedural)")
+        return False
+    
+    return True
 
 def is_verbose_mode_enabled():
     """Returns a boolean if the verbose logging to console is enabled

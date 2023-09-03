@@ -537,6 +537,12 @@ class CreateAttribFromData(bpy.types.Operator):
 
     def draw(self, context):
         
+        # Make sure the enum is not empty for to_vgindex_weights_attribute_enum
+        vwa = func.get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context)
+        if self.target_attrib_domain_enum not in [a[0] for a in vwa]:
+            self.target_attrib_domain_enum = vwa[0][0]
+
+
         # get if the attrib supports batch conversion
         batch_convert_support = False if self.domain_data_type_enum == '' else data.object_data_sources[self.domain_data_type_enum].batch_convert_support
 
@@ -546,13 +552,17 @@ class CreateAttribFromData(bpy.types.Operator):
         row.prop(self, "attrib_name", text="Name")
         if self.attrib_name == '':
             row.label(text="Using auto-generated name", icon='INFO')
+        else:
+            row.label(text="") # occupy space to avoid resizing the window
 
         # Data to create the attribute from
         row.prop(self, "domain_data_type_enum", text="Data")
         
         # Source domain selector, if applicable to source attribute
-        if len(func.get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context)) > 1:
-            row.prop(self, "target_attrib_domain_enum", text="From")
+        disabler = row.row()
+        disabler.prop(self, "target_attrib_domain_enum", text="From")
+        disabler.enabled = len(func.get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context)) > 1
+
         
         # Specific data source GUI entries
 
@@ -595,10 +605,15 @@ class CreateAttribFromData(bpy.types.Operator):
         # UVMap domain selection, or from UVMap for legacy blender versions
         elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']:
             row.prop(self, "enum_uvmaps", text="UV Map")
+        
+        else:
+            row.label(text="") # occupy space to avoid resizing the window
 
         # convert all of type to attrib
         if batch_convert_support:
             row.prop(self, "b_batch_convert_enabled", text="Batch Convert All To Attributes")
+        else:
+            row.label(text="") # occupy space to avoid resizing the window
 
         # Overwrite toggle
         row.prop(self, "b_overwrite", text="Overwrite if exists")
@@ -774,7 +789,7 @@ class InvertAttribute(bpy.types.Operator):
 
         # Show the drop-down menu for invert mode types
         prop = "invert_mode_enum" if context.active_object.data.attributes.active.data_type not in ['FLOAT_COLOR', 'BYTE_COLOR'] else "color_invert_mode_enum"
-        sub_box = row.box()
+        sub_box = row.row()
         sub_box.enabled = len(func.get_attribute_invert_modes(self, context)) != 1
         sub_box.prop(self, prop, text="Invert Mode")
         
@@ -946,11 +961,8 @@ class ConvertToMeshData(bpy.types.Operator):
         name="Weighting mode",
         description="Select an option",
         items=[("STATIC", "Use float value to weight", "Use predefined float value to weight vertices"),
-               ("ATTRIBUTE", "Use float attribute to weight", "Use float attribute to weight vertices")]
+               ("ATTRIBUTE", "Use attribute to weight", "Use float attribute to weight vertices")]
     )
-    
-    # The atttribute data types in to_vgindex_source_attribute_enum
-    data_types_filter = ['FLOAT', 'INT']
 
     # The attribute to get weights from when converting to vertex group index
     to_vgindex_weights_attribute_enum: bpy.props.EnumProperty(
@@ -959,6 +971,11 @@ class ConvertToMeshData(bpy.types.Operator):
         items=func.get_vertex_weight_attributes_enum
     )
     
+    # Toggle to enable other attribute types than float to show up in a to_vgindex_weights_attribute_enum
+    b_vgindex_weights_only_floats: bpy.props.BoolProperty(name="Show only Float Attributes",
+                                               description="Disabling this will show all attribute types", 
+                                               default=True)
+
     # The UVMap to use
     uvmaps_enum: bpy.props.EnumProperty(
         name="UVMap",
@@ -1127,6 +1144,8 @@ class ConvertToMeshData(bpy.types.Operator):
     
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+    
+    last_selected_data_target = None
 
     def draw(self, context):
         obj = context.active_object
@@ -1135,83 +1154,191 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib_data_type = src_attrib.data_type
         data_target_data_type = data.object_data_targets[self.data_target_enum].data_type
         data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
-        domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
+
+        # Apply compatible domain by default or set first one in a list if it is not supported
+        if self.last_selected_data_target != self.data_target_enum:
+            self.last_selected_data_target = self.data_target_enum
+            if src_attrib_domain in [e[0] for e in data_target_compatible_domains]:
+                self.convert_to_domain_enum = src_attrib_domain
+            else:
+                self.convert_to_domain_enum = data_target_compatible_domains[0][0]
+
+        # Make sure the enum is not empty for to_vgindex_weights_attribute_enum
+        vwa = func.get_vertex_weight_attributes_enum(self, context)
+        if self.to_vgindex_weights_attribute_enum not in [a[0] for a in vwa]:
+            self.to_vgindex_weights_attribute_enum = vwa[0][0]
+
+        domain_compatible = src_attrib_domain == self.convert_to_domain_enum
         data_type_compatible = src_attrib_data_type == data_target_data_type
 
+        # Data target selector
         row = self.layout
         row.prop(self, "data_target_enum", text="Target")
 
+        # Domain selector
+        disabler = row.row()
+        disabler.enabled = len(data_target_compatible_domains) > 1
+        disabler.prop(self, "convert_to_domain_enum", text="Domain")
+        
+        # Data target toggles
+        # ----------------------------------
+
         # Setting the position attribute will not change the basis shape key, which might be unexpected.
         if self.data_target_enum in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
-            row.prop(self, 'b_apply_to_first_shape_key')
+            row.prop(self, 'b_apply_to_first_shape_key', text="Apply to \"Basis\" Shape Key as well")
+            row.label(text="")
 
-        # Inform user that the suffix will be added to avoid crashing of blender.
-        elif self.data_target_enum in ['TO_VERTEX_GROUP']:
-            row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
         # Creates basis shape key when converting to shape keys, which is probably the expected result
         elif self.data_target_enum in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
             row.prop(self, 'b_create_basis_shape_key')
+            row.label(text="")
 
         # Custom name for face maps and vertex groups
         elif self.data_target_enum in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
             row.prop(self, "attrib_name", text="Name")
+            row.label(text="")
         
-        # Show a message that normals should be, well, normalized
+        # Show a toggle for enabling auto smooth to see the result auto smooth needs to be enabled.
         elif self.data_target_enum in ['TO_SPLIT_NORMALS']:
-            row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
-
             if not obj.data.use_auto_smooth:
-                # After converting to custom split normals to see the result auto smooth needs to be enabled.
-                row.prop(self, 'b_enable_auto_smooth')
-                row.label(icon='ERROR', text=f"Custom normals are visible only with Auto Smooth")
+                row.prop(self, 'b_enable_auto_smooth', text="Enable Auto Smooth (Required to preview)")
+            else:
+                row.label(text="")
+            row.label(text="")
         
         # Show modes to set the Vertex Group index
         elif self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
             row.prop(self, 'to_vgindex_weight_mode_enum', text="Mode")
+            # Show the dropdown menu to select the attribute with weights
             if self.to_vgindex_weight_mode_enum == "ATTRIBUTE":
-                # Show the dropdown menu to select the attribute with weights
-                row.prop(self, 'to_vgindex_weights_attribute_enum', text='Attribute')
+                subrow = row.row()
+                subrow2 = subrow.row()
+                subrow2.ui_units_x = 3
+                subrow2.prop(self, 'b_vgindex_weights_only_floats', text="Float Only" if self.b_vgindex_weights_only_floats else "All", toggle=True)
+                subrow.prop(self, 'to_vgindex_weights_attribute_enum', text='')
 
-                # inform user if the weights attribute is invalid
-                if self.to_vgindex_weights_attribute_enum != "NULL":
-                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
-                    if src_weight_attrib.data_type  != 'FLOAT' or src_weight_attrib.domain  != 'POINT':
-                        if src_weight_attrib.data_type  != 'FLOAT':
-                            row.label(icon='ERROR', text=f"Weights Attribute values should be of Float data type")
-                        if src_weight_attrib.domain  != 'POINT':
-                            row.label(icon='ERROR', text=f"Weights Attribute should be stored in Vertex domain")
-                        row.label(icon='ERROR', text=f"This might not yield good results")
-                    
+            # Show slider to set the weight value
             else:
                 row.prop(self, 'to_vgindex_weight')
 
         # UVMap selector
         elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
             row.prop(self, 'uvmaps_enum', text="UVMap")
+            row.label(text="")
         
         # Show options for sculpt mode mask conversion
         elif self.data_target_enum == 'TO_SCULPT_MODE_MASK':
             row.prop(self, "b_invert_sculpt_mode_mask")
             row.prop(self, "enum_expand_sculpt_mask_mode", text='Mode')
-            
-        # Show conversion options if data type or domain of attribute is not compatible
-        if not domain_compatible or not data_type_compatible:
-            
-            # Not compatible domain
-            if not domain_compatible:   
-                row.label(icon='ERROR', text=f"This data cannot be stored in {func.get_friendly_domain_name(src_attrib_domain)}")
-                if len(data_target_compatible_domains) == 1:
-                    row.label(text=f"Will be stored in {func.get_friendly_domain_name(self.convert_to_domain_enum)}")
-                else:
-                    row.prop(self, "convert_to_domain_enum")
-            
-            # Not compatible data type
-            if not data_type_compatible:
-                row.label(icon='ERROR', text=f"This data does not store {func.get_friendly_data_type_name(src_attrib_data_type)}")
-                row.label(text=f"Converting to {func.get_friendly_data_type_name(data_target_data_type)}")
-            
-            row.label(icon='ERROR', text=f"This might not yield good results")
         
+        # leave a space to avoid resizing the window
+        else:
+            row.label(text="") 
+            row.label(text="")
+
+        
+        # Data Type and Domains table
+        # ----------------------------------
+
+        box = self.layout.box()
+        col = box.column(align=True)
+
+        # Show titles
+        row = col.row(align=True)
+        row.label(text="")
+        row.label(text="Source")
+        row.label(text="Target")
+
+        # Show first row comparing the Domains
+        row = col.row(align=True)
+        row.label(text="Domain")
+        if domain_compatible:
+            row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}")
+        else:
+            row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}", icon='ERROR')
+        row.label(text=f"{func.get_friendly_domain_name(self.convert_to_domain_enum)}")
+        
+        # Show second row comparing the Data Types
+        row = col.row(align=True)
+        row.label(text="Data Type")
+        if data_type_compatible:
+            row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}")
+        else:
+            row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}", icon='ERROR')
+        row.label(text=f"{func.get_friendly_data_type_name(data_target_data_type)}")
+
+
+        # Showa additional box for comparing "To Vertex Group Index" weighting attribute data type and domains
+        if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX'] and self.to_vgindex_weight_mode_enum == "ATTRIBUTE":
+            box = self.layout.box()
+            col = box.column(align=True)
+
+            # Show a row comparing the domains
+            row = col.row(align=True)
+            if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
+                row.label(text="Weight Domain")
+                if self.to_vgindex_weights_attribute_enum != "NULL":
+                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
+                    static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
+                    friendly_domain = func.get_friendly_domain_name(src_weight_attrib.domain) if not static_val_mode else data.attribute_domains['POINT'].friendly_name
+
+                    if src_weight_attrib.domain  != 'POINT' and not static_val_mode:
+                        row.label(text=f"{friendly_domain}", icon='ERROR')
+                    else:
+                        row.label(text=f"{friendly_domain}")
+
+                    row.label(text=f"{data.attribute_domains['POINT'].friendly_name}")
+
+            # Show a row comparing the data types
+            row = col.row(align=True)
+            if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
+                row.label(text="Weight Data Type")
+                if self.to_vgindex_weights_attribute_enum != "NULL":
+                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
+                    static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
+                    friendly_datatype = func.get_friendly_data_type_name(src_weight_attrib.data_type) if not static_val_mode else data.attribute_data_types["FLOAT"].friendly_name
+
+                    if src_weight_attrib.data_type != 'FLOAT' and not static_val_mode:
+                        row.label(text=f"{friendly_datatype}", icon='ERROR')
+                    else:
+                        row.label(text=f"{friendly_datatype}")
+
+                    row.label(text=f"{data.attribute_data_types['FLOAT'].friendly_name}")
+        
+        # Occupy space if not applicable
+        else:
+            row = self.layout.column(align=True)
+            row.label(text="")
+            row.label(text="")
+            row.label(text="")
+
+        # Info and error messages
+        # ----------------------------------
+        row = self.layout.column(align=True)
+        
+        # 1st row
+        
+        # Show error that the attribute will be converted if data type or domain is incompatible. Also for to vertex group index weighting attribute
+        if not domain_compatible or not data_type_compatible or (
+            (self.to_vgindex_weight_mode_enum == "ATTRIBUTE" and not static_val_mode) 
+            and
+            (src_weight_attrib.domain  != 'POINT' or src_weight_attrib.data_type != 'FLOAT')):
+
+            row.label(icon='ERROR', text=f"Data will be converted. Result might be unexpected.")
+        else:
+            row.label(text=f"") # leave a space to not resize the window
+
+        # 2nd row
+
+        # Show a message that normals should be, well, normalized
+        if self.data_target_enum in ['TO_SPLIT_NORMALS']:
+            row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
+
+        # Inform user that the suffix will be added to avoid crashing of blender.
+        elif self.data_target_enum in ['TO_VERTEX_GROUP']:
+            row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
+        else:
+            row.label(text=f"") # leave a space to not resize the window
         row.prop(self, 'b_delete_if_converted')
 
 class CopyAttributeToSelected(bpy.types.Operator):
@@ -1392,6 +1519,15 @@ class ConditionalSelection(bpy.types.Operator):
     # Whether to deselect the domain that meets the condition
     b_deselect: bpy.props.BoolProperty(name="Deselect", default=False)
 
+    # Whether to use single condition instead for each of the vector sub elements
+    b_single_condition_vector: bpy.props.BoolProperty(name="Single Condition", default=False)
+
+    # Whether to use color picker for color values
+    b_use_color_picker: bpy.props.BoolProperty(name="Use Color Picker", default=False)
+
+    # Whether to use single value instead of individual for each of vector sub values
+    b_single_value_vector: bpy.props.BoolProperty(name="Single Value", default=False)
+
     # All conditions for attributes containing numeric values
     attribute_comparison_condition_enum: bpy.props.EnumProperty(
         name="Condition",
@@ -1411,8 +1547,8 @@ class ConditionalSelection(bpy.types.Operator):
         name="Color Mode",
         description="Select an option",
         items=[
-            ("RGBA", "RGBA", ""),
-            ("HSVA", "HSVA", ""),
+            ("RGBA", "RGB + Alpha", ""),
+            ("HSVA", "HSV + Alpha", ""),
         ],
         default="RGBA"
     )
@@ -1422,8 +1558,8 @@ class ConditionalSelection(bpy.types.Operator):
         name="Condition",
         description="Select an option",
         items=[
-            ("AND", "Needs to meet all of above (AND)", "All of the conditions above need to be met"),
-            ("OR", "Needs to meet any of above (OR)", "Any of the conditions above need to be met"),
+            ("AND", "meeting all above conditions (AND)", "All of the conditions above need to be met"),
+            ("OR", "meeting any of above conditions (OR)", "Any of the conditions above need to be met"),
         ],
         default="AND"
     )
@@ -1431,58 +1567,44 @@ class ConditionalSelection(bpy.types.Operator):
     # ALL GUI INPUT BOXES
     val_int: bpy.props.IntProperty(name="Integer Value", default=0)
     val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
-    val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
+    val_float_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
     val_string: bpy.props.StringProperty(name="String Value", default="")
-    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=False)
-    val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
-    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_boolean: bpy.props.BoolProperty(name="Boolean Value", default=False)
+    val_float2: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
+    if etc.get_blender_support(data.attribute_data_types['INT8'].min_blender_ver, data.attribute_data_types['INT8'].unsupported_from_blender_ver):
+        val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
+    val_float_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_byte_color: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if etc.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
-
-    # The values to compare to, for each type of vector attributes.
-
-    val_float_x: bpy.props.FloatProperty(name="X", default=0.0)
-    val_float_y: bpy.props.FloatProperty(name="Y", default=0.0)
-    val_float_z: bpy.props.FloatProperty(name="Z", default=0.0)
-    val_float_w: bpy.props.FloatProperty(name="W", default=0.0)
-
-    val_int_x: bpy.props.IntProperty(name="X", default=0)
-    val_int_y: bpy.props.IntProperty(name="Y", default=0)
-    val_int_z: bpy.props.IntProperty(name="Z", default=0)
-    val_int_w: bpy.props.IntProperty(name="W", default=0)
-
-    val_float_color_x: bpy.props.FloatProperty(name="X", default=0.0, min=0.0, max=1.0)
-    val_float_color_y: bpy.props.FloatProperty(name="Y", default=0.0, min=0.0, max=1.0)
-    val_float_color_z: bpy.props.FloatProperty(name="Z", default=0.0, min=0.0, max=1.0)
-    val_float_color_w: bpy.props.FloatProperty(name="W", default=0.0, min=0.0, max=1.0)
+    if etc.get_blender_support(data.attribute_data_types['QUATERNION'].min_blender_ver, data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
+        val_quaternion: bpy.props.FloatVectorProperty(name="Quaternion Value", size=4, default=(1.0,0.0,0.0,0.0))
 
     # Toggles for enabling comparing the individual vector/color values
 
-    val_vector_x_toggle: bpy.props.BoolProperty(name="X", default=False)
-    val_vector_y_toggle: bpy.props.BoolProperty(name="Y", default=False)
-    val_vector_z_toggle: bpy.props.BoolProperty(name="Z", default=False)
-    val_vector_w_toggle: bpy.props.BoolProperty(name="W", default=False)
+    val_vector_0_toggle: bpy.props.BoolProperty(name="X", default=True)
+    val_vector_1_toggle: bpy.props.BoolProperty(name="Y", default=True)
+    val_vector_2_toggle: bpy.props.BoolProperty(name="Z", default=True)
+    val_vector_3_toggle: bpy.props.BoolProperty(name="W", default=True)
 
     # The comparision modes between each of vector/color values
 
-    vec_x_condition_enum: bpy.props.EnumProperty(
+    vec_0_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
         items=func.get_attribute_comparison_conditions_enum,
     )
-    vec_y_condition_enum: bpy.props.EnumProperty(
+    vec_1_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
         items=func.get_attribute_comparison_conditions_enum,
     )
-    vec_z_condition_enum: bpy.props.EnumProperty(
+    vec_2_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
         items=func.get_attribute_comparison_conditions_enum,
     )
-    vec_w_condition_enum: bpy.props.EnumProperty(
+    vec_3_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
         items=func.get_attribute_comparison_conditions_enum,
@@ -1545,7 +1667,7 @@ FiltIndex: {filtered_indexes}""")
                     comparison_value = self.val_float
 
             elif attrib_data_type == 'BOOLEAN':
-                    comparison_value = self.val_bool
+                    comparison_value = self.val_boolean
 
             elif attrib_data_type == 'STRING':
                 comparison_value = self.val_string
@@ -1559,23 +1681,23 @@ FiltIndex: {filtered_indexes}""")
             vals_to_cmp = []
             filtered_indexes = []
 
-            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
                 #x
-                if self.val_vector_x_toggle:
-                    condition = self.vec_x_condition_enum
+                if self.val_vector_0_toggle:
+                    condition = self.vec_0_condition_enum
                     comparison_value = self.val_float_x
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[0] for entry in attrib.data], condition, comparison_value))
 
                 #y
-                if self.val_vector_y_toggle:
-                    condition = self.vec_y_condition_enum
-                    comparison_value = self.val_float_y
+                if self.val_vector_1_toggle:
+                    condition = self.vec_1_condition_enum
+                    comparison_value = self.val_float_1
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[1] for entry in attrib.data], condition, comparison_value))
                 
-                if attrib_data_type == 'FLOAT_VECTOR' and self.val_vector_z_toggle:
+                if attrib_data_type == 'FLOAT_VECTOR' and self.val_vector_2_toggle:
                     #z
-                    condition = self.vec_z_condition_enum
-                    comparison_value = self.val_float_z
+                    condition = self.vec_2_condition_enum
+                    comparison_value = self.val_float_2
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[2] for entry in attrib.data], condition, comparison_value))
                 
                 filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
@@ -1585,7 +1707,7 @@ FiltIndex: {filtered_indexes}""")
             filtered_indexes = []
 
             # value editor for RGB/hsv values
-            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle or self.val_vector_w_toggle:
+            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle or self.val_vector_3_toggle:
                 
                 colors = []
                 for entry in attrib.data:
@@ -1600,28 +1722,28 @@ FiltIndex: {filtered_indexes}""")
                         colors.append((color[0], color[1], color[2], color[3]))
                     
                 #r
-                if self.val_vector_x_toggle:
-                    condition = self.vec_x_condition_enum
-                    comparison_value = self.val_float_color_x #if self.color_gui_mode_enum == 'VALUE' else self.val_color[0]
+                if self.val_vector_0_toggle:
+                    condition = self.vec_0_condition_enum
+                    comparison_value = self.val_float_color_0 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[0]
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[0] for c in colors], condition, comparison_value))
 
                 #g
-                if self.val_vector_y_toggle:
-                    condition = self.vec_y_condition_enum
-                    comparison_value = self.val_float_color_y #if self.color_gui_mode_enum == 'VALUE' else self.val_color[1]
+                if self.val_vector_1_toggle:
+                    condition = self.vec_1_condition_enum
+                    comparison_value = self.val_float_color_1 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[1]
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[1] for c in colors], condition, comparison_value))
                 
                 #b
-                if self.val_vector_z_toggle:
+                if self.val_vector_2_toggle:
                     
-                    condition = self.vec_z_condition_enum
-                    comparison_value = self.val_float_color_z #if self.color_gui_mode_enum == 'VALUE' else self.val_color[2]
+                    condition = self.vec_2_condition_enum
+                    comparison_value = self.val_float_color_2 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[2]
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[2] for c in colors], condition, comparison_value))
 
                 #a
-                if self.val_vector_w_toggle:
-                    condition = self.vec_w_condition_enum
-                    comparison_value = self.val_float_color_w #if self.color_gui_mode_enum == 'VALUE' else self.val_color[3]
+                if self.val_vector_3_toggle:
+                    condition = self.vec_3_condition_enum
+                    comparison_value = self.val_float_color_3 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[3]
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[3] for c in colors], condition, comparison_value))
 
                 filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
@@ -1630,17 +1752,17 @@ FiltIndex: {filtered_indexes}""")
         elif attrib_data_type in ['INT32_2D']:
             vals_to_cmp = []
             filtered_indexes = []
-            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
                 #x
-                if self.val_vector_x_toggle:
-                    condition = self.vec_x_condition_enum
-                    comparison_value = self.val_int_x
+                if self.val_vector_0_toggle:
+                    condition = self.vec_0_condition_enum
+                    comparison_value = self.val_int_0
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
 
                 #y
-                if self.val_vector_y_toggle:
-                    condition = self.vec_y_condition_enum
-                    comparison_value = self.val_int_y
+                if self.val_vector_1_toggle:
+                    condition = self.vec_1_condition_enum
+                    comparison_value = self.val_int_1
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
                 
                 # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
@@ -1661,29 +1783,29 @@ FiltIndex: {filtered_indexes}""")
         elif attrib_data_type in ['QUATERNION']:
             vals_to_cmp = []
             filtered_indexes = []
-            if self.val_vector_x_toggle or self.val_vector_y_toggle or self.val_vector_z_toggle:
+            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
                 #x
-                if self.val_vector_x_toggle:
-                    condition = self.vec_x_condition_enum
+                if self.val_vector_0_toggle:
+                    condition = self.vec_0_condition_enum
                     comparison_value = self.val_float_x
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
 
                 #y
-                if self.val_vector_y_toggle:
-                    condition = self.vec_y_condition_enum
-                    comparison_value = self.val_float_y
+                if self.val_vector_1_toggle:
+                    condition = self.vec_1_condition_enum
+                    comparison_value = self.val_float_1
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
                 
                 # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
                     #z
-                condition = self.vec_z_condition_enum
-                comparison_value = self.val_float_z
+                condition = self.vec_2_condition_enum
+                comparison_value = self.val_float_2
                 vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
 
                 # if attrib_data_type in ['QUATERNION'] and self.val_vector_w_toggle:
                     #w
-                condition = self.vec_w_condition_enum
-                comparison_value = self.val_float_w
+                condition = self.vec_3_condition_enum
+                comparison_value = self.val_float_3
                 vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
 
                 filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
@@ -1705,65 +1827,110 @@ FiltIndex: {filtered_indexes}""")
         attribute_name = obj.data.attributes.active.name
         attribute = obj.data.attributes.active
 
-        row = self.layout
+        layout = self.layout
+        dt = attribute.data_type
+        domain = attribute.domain
+        e_datatype = data.EAttributeDataType[dt]
+        gui_prop_subtype = data.attribute_data_types[dt].gui_prop_subtype
 
-        if attribute.data_type == 'BOOLEAN':
-            grid = row.grid_flow(columns=2, even_columns=True)
+        # For anything that holds a single value
+        if gui_prop_subtype in [data.EDataTypeGuiPropType.SCALAR,
+                            data.EDataTypeGuiPropType.STRING,
+                            data.EDataTypeGuiPropType.BOOLEAN]:
+
+            grid = layout.row(align=True)
+            grid.prop(self, 'b_deselect', text=f"Select {func.get_friendly_domain_name(domain, True)}" if not self.b_deselect else f"Deselect {func.get_friendly_domain_name(domain, True)}", toggle=True, invert_checkbox=True) 
             grid.prop(self, "attribute_comparison_condition_enum", text="")
-            grid.prop(self, "val_bool", text="Value")
 
-        elif attribute.data_type == 'STRING':
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "string_condition_enum", text="")
-            grid.prop(self, "val_string", text="Value")
+            # Get different text on value field
+            if e_datatype == data.EAttributeDataType.STRING:
+                text = ''
+            elif e_datatype == data.EAttributeDataType.BOOLEAN:
+                text = 'True' if self.val_boolean else 'False'
+            else:
+                text = "Value"
 
-            row.prop(self, "string_case_sensitive_bool", text="Case Sensitive")
-
-        elif attribute.data_type == 'INT':
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "attribute_comparison_condition_enum", text="")
-            grid.prop(self, "val_int", text="Value")
-
-        elif attribute.data_type == 'INT8':
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "attribute_comparison_condition_enum", text="")
-            grid.prop(self, "val_int8", text="Value")
+            grid.prop(self, f"val_{dt.lower()}", text=text, toggle=True)
+            if e_datatype == data.EAttributeDataType.STRING:
+                layout.prop(self, "b_string_case_sensitive", text="Not Case Sensitive" if not self.b_string_case_sensitive else "Case Sensitive", toggle=True)
         
-        elif attribute.data_type == 'FLOAT':
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.prop(self, "attribute_comparison_condition_enum", text="")
-            grid.prop(self, "val_float", text="Value")
+        # For vectors of any type
+        elif gui_prop_subtype in [data.EDataTypeGuiPropType.VECTOR, data.EDataTypeGuiPropType.COLOR]:
+            row = layout.row(align=True)
 
-        # VEC FLOAT2
-        elif attribute.data_type in ['FLOAT2', 'FLOAT_VECTOR']:
-
-
-            row.prop(self, "val_vector_x_toggle", text="X")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_x_toggle
-            grid.prop(self, "vec_x_condition_enum", text="")
-            grid.prop(self, "val_float_x", text="Value")
-
-
-            row.prop(self, "val_vector_y_toggle", text="Y")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_y_toggle
-            grid.prop(self, "vec_y_condition_enum", text="")
-            grid.prop(self, "val_float_y", text="Value")  
+            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR:
+                row.prop_tabs_enum(self, "color_value_type_enum")
             
+            col = layout.column(align=True)
 
-            if attribute.data_type == 'FLOAT_VECTOR':
-                row.prop(self, "val_vector_z_toggle", text="Z")
+            # Single condition/value toggles
+            row = col.row(align=True)
+            subrow = row.row(align=True)
+            subrow.ui_units_x = 3
+            subrow.label(text="") # leave a space
+            row.prop(self, f"b_single_condition_vector", toggle=True)
+            subrow = row.row(align=True)
+            if not self.b_use_color_picker:
+            #subrow.enabled = 
+                subrow.prop(self, f"b_single_value_vector", toggle=True)
+            else:
+                subrow.label(text="")
 
-                grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_z_toggle
-                grid.prop(self, "vec_z_condition_enum", text="")
-                grid.prop(self, "val_float_z", text="Value") 
-            row.prop(self, 'vector_value_cmp_type_enum')
+            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR and self.color_value_type_enum == 'HSVA':
+                    v_subelements = ['H','S','V','A']
+            else:
+                v_subelements = data.attribute_data_types[dt].vector_subelements_names 
+            
+            row2 = col.row(align=True)
 
-        # COLOR
+            # Toggles
+            row3 = row2.row(align=True)
+            subrow = row3.column(align=True)
+            for el in range(0, len(func.get_attrib_default_value(attribute))):
+                subrow.ui_units_x = 3
+                subrow.prop(self, f"val_vector_{el}_toggle", text=f"{v_subelements[el].upper()}", toggle=True)
+            
+            # Conditions
+            row3 = row2.row(align=True)
+            subrow = row3.column(align=True)
+
+            for el in range(0, len(func.get_attrib_default_value(attribute))):
+                disable_cond = not (el != 0 and self.b_single_condition_vector)
+                disabler_row = subrow.row()
+                if (getattr(self, f'val_vector_{el if not disable_cond else 0}_toggle') if not disable_cond else True) and disable_cond:
+                    disabler_row.prop(self, f"vec_{el}_condition_enum", text="")
+            
+            # Values
+            row3 = row2.row(align=True)
+            subrow = row3.column(align=True)
+
+            if not self.b_use_color_picker:
+                for el in range(0, len(func.get_attrib_default_value(attribute))):
+                    disable_cond = not (el != 0 and self.b_single_value_vector)
+                    disabler_row = subrow.row()
+                    if disable_cond:
+                        disabler_row.prop(self, f"val_{dt.lower()}", text=f" ", index=el if disable_cond else 0)
+
+
+            else:
+                for el in range(0, len(func.get_attrib_default_value(attribute))):
+                    subrow.prop(self, f"val_{dt.lower()}", text="")
+            
+            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR:
+                row = col.row(align=True)
+                subrow = row.row(align=True)
+                subrow.ui_units_x = 3
+                subrow.label(text="") # leave a space
+                row.label(text="")
+                row.prop(self, f"b_use_color_picker", toggle=True)
+            
+            
+            row = layout.row(align=True)
+            subrow = row.row(align=True)
+            subrow.prop(self, 'b_deselect', text=f"Select {func.get_friendly_domain_name(domain, True)}" if not self.b_deselect else f"Deselect {func.get_friendly_domain_name(domain, True)}", toggle=True, invert_checkbox=True)   
+            subrow.ui_units_x = 5
+            row.prop(self, 'vector_value_cmp_type_enum', text="")
+
         elif attribute.data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
                 #row.prop(self, "color_gui_mode_enum", text="Mode")
             
@@ -1783,7 +1950,7 @@ FiltIndex: {filtered_indexes}""")
                 row.prop(self, "val_vector_x_toggle", text="Red" if rgb else 'Hue')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_x_toggle
+                grid.enabled = self.val_vector_0_toggle
                 grid.prop(self, "vec_x_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_color_x", text="Value")
@@ -1791,7 +1958,7 @@ FiltIndex: {filtered_indexes}""")
                 row.prop(self, "val_vector_y_toggle", text="Green" if rgb else 'Saturation')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_y_toggle
+                grid.enabled = self.val_vector_1_toggle
                 grid.prop(self, "vec_y_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_color_y", text="Value")  
@@ -1799,7 +1966,7 @@ FiltIndex: {filtered_indexes}""")
                 row.prop(self, "val_vector_z_toggle", text="Blue" if rgb else 'Value')
 
                 grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_z_toggle
+                grid.enabled = self.val_vector_2_toggle
                 grid.prop(self, "vec_z_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_color_z", text="Value") 
@@ -1807,7 +1974,7 @@ FiltIndex: {filtered_indexes}""")
                 row.prop(self, "val_vector_w_toggle", text="Alpha")
                 
                 grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_w_toggle
+                grid.enabled = self.val_vector_3_toggle
                 grid.prop(self, "vec_w_condition_enum", text="")
                 if self.color_gui_mode_enum == 'VALUE':
                     grid.prop(self, "val_float_color_w", text="Value")
@@ -1820,7 +1987,7 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_x_toggle", text="X")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_x_toggle
+            grid.enabled = self.val_vector_0_toggle
             grid.prop(self, "vec_x_condition_enum", text="")
             grid.prop(self, "val_int_x", text="Value")
 
@@ -1828,7 +1995,7 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_y_toggle", text="Y")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_y_toggle
+            grid.enabled = self.val_vector_1_toggle
             grid.prop(self, "vec_y_condition_enum", text="")
             grid.prop(self, "val_int_y", text="Value") 
             row.prop(self, 'vector_value_cmp_type_enum') 
@@ -1856,7 +2023,7 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_x_toggle", text="X")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_x_toggle
+            grid.enabled = self.val_vector_0_toggle
             grid.prop(self, "vec_x_condition_enum", text="")
             grid.prop(self, "val_float_x", text="Value")
 
@@ -1864,7 +2031,7 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_y_toggle", text="Y")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_y_toggle
+            grid.enabled = self.val_vector_1_toggle
             grid.prop(self, "vec_y_condition_enum", text="")
             grid.prop(self, "val_float_y", text="Value") 
             
@@ -1872,7 +2039,7 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_z_toggle", text="Z")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_z_toggle
+            grid.enabled = self.val_vector_2_toggle
             grid.prop(self, "vec_z_condition_enum", text="")
             grid.prop(self, "val_float_z", text="Value") 
         
@@ -1880,13 +2047,13 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, "val_vector_w_toggle", text="W")
 
             grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_z_toggle
+            grid.enabled = self.val_vector_2_toggle
             grid.prop(self, "vec_w_condition_enum", text="")
             grid.prop(self, "val_float_w", text="Value") 
 
             row.prop(self, 'vector_value_cmp_type_enum') 
 
-        row.prop(self, 'b_deselect')         
+        # row.prop(self, 'b_deselect')         
 
 class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
     """
@@ -2212,8 +2379,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
     float_vector_val_max:bpy.props.FloatVectorProperty(name="Max", size=3, default=(1.0,1.0,1.0), description="Maximum Float Vector Value")
     
     # Vector 2D values
-    vector2d_val_min:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0), description="Minimum Vector2D Value")
-    vector2d_val_max:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0), description="Maximum Vector2D Value")
+    float2_val_min:bpy.props.FloatVectorProperty(name="Vector 2D Random Min", size=2, default=(0.0,0.0), description="Minimum Vector2D Value")
+    float2_val_max:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0), description="Maximum Vector2D Value")
     
     # 2D Integer Vector
     if etc.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
@@ -2241,9 +2408,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
         name="Color Randomize Type",
         description="Select an option",
         items=[
-            
-            ("HSVA", "Randomize HSVA", "Randomize HSVA Values"),
-            ("RGBA", "Randomize RGBA", "Randomize RGBA Values"),
+            ("RGBA", "RGB + Alpha", "RGBA"),
+            ("HSVA", "HSV + Alpha", "HSVA"),
         ],
         default="RGBA"
     )
@@ -2362,52 +2528,42 @@ class RandomizeAttributeValue(bpy.types.Operator):
         if domain != 'CORNER':
             self.b_face_corner_spill = False
         
-        
         e_dt = data.EAttributeDataType[dt]
-
-        vec_types = [data.EAttributeDataType.FLOAT_VECTOR, 
-                      data.EAttributeDataType.FLOAT2, 
-                      data.EAttributeDataType.QUATERNION,
-                      data.EAttributeDataType.INT32_2D]
-
-        col_types = [data.EAttributeDataType.BYTE_COLOR, 
-                     data.EAttributeDataType.FLOAT_COLOR]
+        gui_prop_subtype = data.attribute_data_types[dt].gui_prop_subtype
 
         # ints & floats
-        if e_dt in [data.EAttributeDataType.FLOAT, data.EAttributeDataType.INT, data.EAttributeDataType.INT8]:
+        if gui_prop_subtype == data.EDataTypeGuiPropType.SCALAR:
             col = self.layout.column(align=True)
             col.prop(self, f"{dt.lower()}_val_min", text="Min")
             col.prop(self, f"{dt.lower()}_val_max", text="Max")
 
         # vectors & colors
-        elif e_dt in vec_types + col_types:
+        elif gui_prop_subtype in [data.EDataTypeGuiPropType.VECTOR, data.EDataTypeGuiPropType.COLOR]:
             
-            vector_is_a_color = e_dt in col_types
+            vector_is_a_color = gui_prop_subtype == data.EDataTypeGuiPropType.COLOR
 
+            # Create a column layout for uh, enum toggle atm
+            row = self.layout.row(align = True)
+            col = row.column(align=True)
+            # If it's a color then show hsv rgb toggle
+            if vector_is_a_color:
+                row = col.row(align=True)
+                row.prop_tabs_enum(self, "color_randomize_type")
+
+            # Create column layout for each value
             col = self.layout.column(align=True)
-        
             row2 = col.row(align=True)
             
             # Column 1: Text
             col2 = row2.column(align=True)
-            # If it's a color then show hsv rgb toggle
-            if vector_is_a_color:
-                col2.label(text="") # leave a space
-                col2.label(text="Mode")
             col2.label(text="Min")
             col2.label(text="Max")
             col2.label(text="Enable")
+            if vector_is_a_color:
+                col2.label(text="")
 
             # Column 2: values
             col2 = row2.column(align=True)
-
-            # If it's a color then show hsv rgb toggle
-            if vector_is_a_color:
-                row = col2.row(align=True)
-                row.prop(self, "b_use_color_picker", toggle=True)
-                row = col2.row(align=True)
-                row.prop(self, "color_randomize_type", text="")
-                
 
             # Each row for min and max values
             for minmax in ['min', 'max']:
@@ -2431,13 +2587,17 @@ class RandomizeAttributeValue(bpy.types.Operator):
                     gui_vector_subel = data.attribute_data_types[dt].vector_subelements_names[i]
                 row.prop(self, f"val_vector_{str(i)}_toggle", text=gui_vector_subel.upper(), toggle=True)
             
+            row = col2.row(align=True)
+            if vector_is_a_color:
+                row.prop(self, "b_use_color_picker", toggle=True)
+
         # boolean
-        elif e_dt == data.EAttributeDataType.BOOLEAN:
+        elif gui_prop_subtype in data.EDataTypeGuiPropType.BOOLEAN:
             col = self.layout.column(align=True)
             col.prop(self, f"boolean_probability", text="Probability")
 
         # string
-        elif e_dt == data.EAttributeDataType.STRING:
+        elif gui_prop_subtype in data.EDataTypeGuiPropType.STRING:
             col = self.layout.column(align=True)
             col.prop(self, f"string_length_min", text="Min Length")
             col.prop(self, f"string_length_max", text="Max Length")
