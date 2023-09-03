@@ -58,7 +58,7 @@ def get_preferences_attrib(name:str):
     prefs = bpy.context.preferences.addons[__addon_package_name__].preferences
     return getattr(prefs, name) if hasattr(prefs, name) else None
 
-def get_blender_support(minver, minver_unsupported):
+def get_blender_support(minver = None, minver_unsupported = None):
     """Used to check if blender version is supported for any feature. Use this instead of creating an if
 
     Args:
@@ -130,10 +130,15 @@ class AddonPreferences(bpy.types.AddonPreferences):
     # ------------------------------------------
 
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
+    
+    disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
+    debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
     pseudo_profiler: bpy.props.BoolProperty(name="Enable pseudo-profiler", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
+    set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
+
     extra_context_menus: bpy.props.BoolProperty(name="Enable Extra Context Menu Entries", description="Adds extra operators to Shape Keys Menu, Vertex Group Menu and other menus", default=True)
 
     attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
@@ -213,8 +218,15 @@ class AddonPreferences(bpy.types.AddonPreferences):
         # row.label(text='Enables effects like ᶠᵃᶜᵉ', icon='INFO')
 
         box = layout.box()
-        box.label(text='Danger zone')
-        box.prop(self, 'verbose_mode')
-        box.prop(self, 'debug_operators')
-        box.prop(self, 'pseudo_profiler')
-        box.prop(self, 'disable_version_checks')
+        box.prop(self, 'debug_zone_en', toggle=True, text="Scary Spooky Skeletons zone")
+        
+        if self.debug_zone_en:
+            box = box.box()
+            box.prop(self, 'verbose_mode')
+            box.prop(self, 'debug_operators')
+            box.prop(self, 'pseudo_profiler')
+            if bpy.app.version >= (3,5,0):
+                box.prop(self, 'disable_bpy_set_attribute')
+            box.prop(self, 'disable_version_checks')
+            box.prop(self, 'set_algo_tweak')
+            

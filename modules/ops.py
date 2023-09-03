@@ -56,21 +56,50 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         etc.pseudo_profiler_init()
         obj = context.active_object
         active_attrib_name = obj.data.attributes.active.name 
-        
-        etc.pseudo_profiler("EXEC START")
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-        etc.pseudo_profiler("OBJ MODE SW")
-        
+        prop_group = context.object.MAME_PropValues
+        mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
+        dt = obj.data.attributes[active_attrib_name].data_type
 
         if func.is_verbose_mode_enabled():
             print( f"Working on {active_attrib_name} attribute" )
 
+        etc.pseudo_profiler("EXEC START")
+
+        # Use bpy.ops.mesh_attribute_set()
+        if (etc.get_blender_support((3,5,0))
+            and not prop_group.face_corner_spill
+            and not mesh_selected_modes[1]
+            and (mesh_selected_modes[0] or mesh_selected_modes[2])
+            and dt != 'STRING'
+            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):
+            
+            etc.pseudo_profiler("OPS_START")
+            if func.is_verbose_mode_enabled():
+                print( f"Using ops.mesh_attribute_set()" )
+
+            gui_value = getattr(prop_group, data.attribute_data_types[dt].gui_property_name)
+            bpy.ops.mesh.attribute_set(value_float=gui_value if dt == 'FLOAT' else func.get_attrib_default_value(datatype='FLOAT'), 
+                                       value_float_vector_2d=gui_value if dt == 'FLOAT2' else func.get_attrib_default_value(datatype='FLOAT2'),  
+                                       value_float_vector_3d=gui_value if dt == 'FLOAT_VECTOR' else func.get_attrib_default_value(datatype='FLOAT_VECTOR'),  
+                                       value_int=gui_value if dt in ['INT', 'INT8'] else func.get_attrib_default_value(datatype='INT'),
+                                       value_int_vector_2d=gui_value if dt == 'INT32_2D' else func.get_attrib_default_value(datatype='INT32_2D'),
+                                       value_color=gui_value if dt in ['FLOAT_COLOR', 'BYTE_COLOR'] else func.get_attrib_default_value(datatype='FLOAT_COLOR'),
+                                       value_bool=gui_value if dt == 'BOOLEAN' else func.get_attrib_default_value(datatype='BOOLEAN'),
+                                       value_quat=gui_value if dt == 'QUATERNION' else func.get_attrib_default_value(datatype='QUATERNION')
+                                       )
+            
+            etc.pseudo_profiler("OPS_END")
+            return {"FINISHED"}
+        
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+        etc.pseudo_profiler("OBJ MODE SW")
+    
+        
+
         attribute = obj.data.attributes[active_attrib_name] #!important
 
         # Get value from GUI
-        prop_group = context.object.MAME_PropValues
-        dt = attribute.data_type
         if dt in data.attribute_data_types:
             
             gui_value = getattr(prop_group, data.attribute_data_types[dt].gui_property_name)
@@ -93,9 +122,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             self.report({'ERROR', "Unsupported data type!"})
             bpy.ops.object.mode_set(mode='EDIT')
             return {"CANCELLED"}
-        
-        
-    
+          
 class CreateAttribFromData(bpy.types.Operator):
     """
     This operator creates a new attribute from exisitng mesh data 

@@ -146,11 +146,13 @@ def get_attrib_values(attribute, obj):
     else:
         raise etc.MeshDataReadException('get_attrib_values', f"Data type {dt} is unsupported.")
 
-def get_attrib_default_value(attribute):
+def get_attrib_default_value(attribute = None, datatype:str = None):
     """Returns the zero value for attribute data type. Does not return a list with the length of the attribute data!
 
     Args:
         attribute (Reference): Reference to the attribute
+        or
+        datatype (str): name of the datatype
     
     Raises:
         etc.MeshDataReadException: If source data type is not implemented
@@ -158,7 +160,11 @@ def get_attrib_default_value(attribute):
     Returns:
         Variable type: The default value for single attribute value
     """
-    dt = attribute.data_type
+    if datatype is not None:
+        dt = datatype
+    else:
+        dt = attribute.data_type
+
     if dt == "FLOAT":
         return 0.0 
     elif dt == "INT":
@@ -288,7 +294,8 @@ FLAT_LIST: {flat_list}
         domain = attribute.domain
         
         # FOREACH_GET_FOREACH_SET for > 25%
-        if len(on_indexes) > len(attribute.data)/4 and attribute.data_type != 'STRING':
+        foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
+        if len(on_indexes) > len(attribute.data)*foreach_get_from and attribute.data_type != 'STRING':
             etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
             
             prop_name = get_attrib_value_propname(attribute)
