@@ -45,12 +45,23 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return (context.active_object
-                and context.active_object.mode == 'EDIT' 
-                and context.active_object.type == 'MESH' 
-                and context.active_object.data.attributes.active 
-                and func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)
-                )
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
+        elif not context.active_object.mode  == 'EDIT' :
+            self.poll_message_set("Not in edit mode")
+            return False
+        elif not context.active_object.data.attributes.active  :
+            self.poll_message_set("No active attribute")
+            return False
+        elif not func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)  :
+            self.poll_message_set("Attribute is read-only or unsupported")
+            return False
+        
+        return True
 
     def execute(self, context):
         etc.pseudo_profiler_init()
@@ -339,7 +350,13 @@ class CreateAttribFromData(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        return (context.active_object is not None) and context.active_object.type == "MESH"
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
+        return True
     
     def execute(self, context):    
 
@@ -667,8 +684,16 @@ class DuplicateAttribute(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("No active attribute")
-        return context.active_object and context.active_object.data.attributes.active
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
+        elif not context.active_object.data.attributes.active  :
+            self.poll_message_set("No active attribute")
+            return False
+        return True
 
     def execute(self, context):
         obj = context.active_object
@@ -734,8 +759,16 @@ class InvertAttribute(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("No active attribute")
-        return context.active_object and context.active_object.data.attributes.active
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
+        elif not context.active_object.data.attributes.active  :
+            self.poll_message_set("No active attribute")
+            return False
+        return True
     
     def execute(self, context):
         obj = context.active_object
@@ -875,19 +908,27 @@ class RemoveAllAttribute(bpy.types.Operator):
     
     @classmethod
     def poll(self, context):
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
 
         # Check if there is any attibute that can be removed
-        if context.active_object and context.active_object.type == 'MESH':
-            for a in context.active_object.data.attributes:
-                types = func.get_attribute_types(a)
-                editable = True
-                for e in [data.EAttributeType.CANTREMOVE]:
-                    if e in types:
-                        editable = False
-                        break
-                if editable:
-                    return True
+        for a in context.active_object.data.attributes:
+            types = func.get_attribute_types(a)
+            editable = True
+            for e in [data.EAttributeType.CANTREMOVE]:
+                if e in types:
+                    editable = False
+                    break
+            if editable:
+                return True
+            
+        self.poll_message_set("No removeable attributes")
         return False
+
 
     def execute(self, context):
         obj = context.active_object
@@ -1079,8 +1120,17 @@ class ConvertToMeshData(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("No active attribute")    
-        return context.active_object and context.active_object.data.attributes.active
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
+        elif not context.active_object.data.attributes.active:
+            self.poll_message_set("No active attribute") 
+            return False
+           
+        return True
 
     def execute(self, context):
         obj = context.active_object
@@ -2207,16 +2257,17 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         if not context.active_object:
-            return False
-        
-        valid_object_types = context.active_object.type == 'MESH'
-        valid_attributes = len(context.active_object.data.attributes)
-        if not valid_object_types:
+            self.poll_message_set("No active object")
+            return False  
+        elif not context.active_object.type == 'MESH':
             self.poll_message_set("Selected object is not a mesh")
-        elif not valid_attributes:
+            return False
+        elif not len(context.active_object.data.attributes):
             self.poll_message_set("No attributes")
+            return False
 
-        return all([valid_object_types, valid_attributes])
+        return True
+
 
     def execute(self, context):
         obj = context.active_object
@@ -2460,6 +2511,9 @@ class RandomizeAttributeValue(bpy.types.Operator):
     def poll(self, context):
         if not context.active_object:
             self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Selected object is not a mesh")
             return False
         elif not context.active_object.data.attributes.active :
             self.poll_message_set("No active attribute")
