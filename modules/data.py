@@ -1053,7 +1053,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "gui_property_name",                        # The property name from MAME_PropValues class
     "gui_prop_subtype",                         # Type of the gui to display for this attribute data type (EDataTypeGuiPropType)
     "vector_subelements_names",                 # Names of subelements in a vector value, eg X Y Z or None    
-    "bpy_ops_set_attribute_param_name"          # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type
+    "bpy_ops_set_attribute_param_name",         # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type
+    "default_value"                             # The default or zero value
 
 ])
 
@@ -1068,7 +1069,8 @@ attribute_data_types = {
         gui_property_name="val_float",
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
-        bpy_ops_set_attribute_param_name="value_float"
+        bpy_ops_set_attribute_param_name="value_float",
+        default_value=0.0
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1079,7 +1081,8 @@ attribute_data_types = {
         gui_property_name="val_int",
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
-        bpy_ops_set_attribute_param_name="value_int"
+        bpy_ops_set_attribute_param_name="value_int",
+        default_value=0
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1090,7 +1093,8 @@ attribute_data_types = {
         gui_property_name="val_int8",
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
-        bpy_ops_set_attribute_param_name="value_int"
+        bpy_ops_set_attribute_param_name="value_int",
+        default_value=0
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1101,7 +1105,8 @@ attribute_data_types = {
         gui_property_name="val_vector",
         vector_subelements_names=['X','Y','Z'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
-        bpy_ops_set_attribute_param_name="value_float_vector_3d"
+        bpy_ops_set_attribute_param_name="value_float_vector_3d",
+        default_value=(0.0, 0.0, 0.0)
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1112,7 +1117,8 @@ attribute_data_types = {
         gui_property_name="val_color",
         vector_subelements_names=['R','G','B','A'],
         gui_prop_subtype=EDataTypeGuiPropType.COLOR,
-        bpy_ops_set_attribute_param_name="value_color"
+        bpy_ops_set_attribute_param_name="value_color",
+        default_value=(0.0, 0.0, 0.0, 1.0)
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1123,7 +1129,8 @@ attribute_data_types = {
         gui_property_name="val_bytecolor",
         vector_subelements_names=['R','G','B','A'],
         gui_prop_subtype=EDataTypeGuiPropType.COLOR,
-        bpy_ops_set_attribute_param_name="value_color"
+        bpy_ops_set_attribute_param_name="value_color",
+        default_value=(0.0, 0.0, 0.0, 1.0)
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1134,7 +1141,8 @@ attribute_data_types = {
         gui_property_name="val_string",
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.STRING,
-        bpy_ops_set_attribute_param_name=None
+        bpy_ops_set_attribute_param_name=None,
+        default_value=""
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1145,7 +1153,8 @@ attribute_data_types = {
         gui_property_name="val_bool",
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.BOOLEAN,
-        bpy_ops_set_attribute_param_name="value_bool"
+        bpy_ops_set_attribute_param_name="value_bool",
+        default_value=False
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1156,7 +1165,8 @@ attribute_data_types = {
         gui_property_name="val_vector2d",
         vector_subelements_names=['X','Y'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
-        bpy_ops_set_attribute_param_name="value_float_vector_2d"
+        bpy_ops_set_attribute_param_name="value_float_vector_2d",
+        default_value=(0.0, 0.0)
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1167,7 +1177,8 @@ attribute_data_types = {
         gui_property_name="val_int32_2d",
         vector_subelements_names=['X','Y'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
-        bpy_ops_set_attribute_param_name="value_int_vector_2d"
+        bpy_ops_set_attribute_param_name="value_int_vector_2d",
+        default_value=(0, 0)
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1178,7 +1189,8 @@ attribute_data_types = {
         gui_property_name="val_quaternion",
         vector_subelements_names=['X','Y','Z','W'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
-        bpy_ops_set_attribute_param_name="value_quat"
+        bpy_ops_set_attribute_param_name="value_quat",
+        default_value=(1.0, 0.0, 0.0, 0.0)
     ),
 }
 

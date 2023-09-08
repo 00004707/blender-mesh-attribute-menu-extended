@@ -163,35 +163,13 @@ def get_attrib_default_value(attribute = None, datatype:str = None):
     Returns:
         Variable type: The default value for single attribute value
     """
-    if datatype is not None:
-        dt = datatype
-    else:
-        dt = attribute.data_type
+    if attribute is not None:
+        datatype = attribute.data_type
 
-    if dt == "FLOAT":
-        return 0.0 
-    elif dt == "INT":
-        return 0 
-    elif dt == "FLOAT_VECTOR":
-        return (0.0, 0.0, 0.0) 
-    elif dt == "FLOAT_COLOR":
-        return (0.0, 0.0, 0.0, 0.0)
-    elif dt == "BYTE_COLOR":
-        return (0.0, 0.0, 0.0, 0.0)
-    elif dt == "STRING":
-        return "" 
-    elif dt == "BOOLEAN":
-        return False
-    elif dt == "FLOAT2":
-        return (0.0, 0.0)
-    elif dt == "INT32_2D":
-        return (0, 0)
-    elif dt == "QUATERNION":
-        return (1.0, 0.0, 0.0, 0.0)
-    elif dt == "INT8":
-        return 0 
+    if datatype in data.attribute_data_types:
+        return data.attribute_data_types[datatype].default_value
     else:
-        raise etc.MeshDataReadException('get_attrib_default_value', f"Data type {dt} is unsupported.")
+        raise etc.MeshDataReadException('get_attrib_default_value', f"Data type {datatype} is unsupported.")
 
 def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
     """Gets safe attribute name to avoid crashes in some instances.
