@@ -241,30 +241,43 @@ class AddonPreferences(bpy.types.AddonPreferences):
     extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
     extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=True)
 
+    quick_shelf_enable: bpy.props.BoolProperty(name="Enable Quick Shelf", description="Buttons for quicker actions", default=False)
+    quick_shelf_randomize: bpy.props.BoolProperty(name="Randomize Value", description="Adds a button to randomize value", default=False)
+    quick_shelf_convert_to_mesh_data_repeat: bpy.props.BoolProperty(name="To Mesh Data Repeat", description="Adds a button to redo last \"To mesh Data\"", default=False)
+
     def draw(self, context):
         layout = self.layout
 
+        # Features
         box = layout.box()
-        box.label(text='Features')
-        row = box.row()
-        row.prop(self, 'attribute_assign_menu')
+        box.label(text='Basic Features')
+        col = box.column()
+        row = col.row()
+        row.prop(self, 'attribute_assign_menu', toggle=True)
         row.label(text='Assign and clear buttons', icon='INFO')
 
-        if bpy.app.version >= (3,5,0):
-            row = box.row()
-            row.prop(self, 'add_set_attribute')
-            row.label(text='Set Attribute operator in dropdown menu', icon='INFO')
+        row = col.row()
+        ver_support = get_blender_support((3,5,0))
+        row.enabled = ver_support
+        row.prop(self, 'add_set_attribute', toggle=True)
+        subrow = row.row()
+        subrow.alert = not ver_support
+        subrow.label(text='Set Attribute operator in dropdown menu' if ver_support else "Not supported in current blender version", icon='INFO')
 
-        if bpy.app.version >= (3,3,0):
-            row = box.row()
-            row.prop(self, 'enhanced_enum_titles')
-            row.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries', icon='INFO')
+        row = col.row()
+        ver_support = get_blender_support((3,3,0))
+        row.enabled = ver_support
+        row.prop(self, 'enhanced_enum_titles', toggle=True)
+        subrow = row.row()
+        subrow.alert = not ver_support
+        subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
 
-
+        # # Extra context menus
         # box = layout.box()
+        # box.enabled = False
         # box.label(text='Extra Context Menu Operators')
         # row = box.row()
-        # row.prop(self, 'extra_context_menus')
+        # row.prop(self, 'extra_context_menus', toggle=True)
         # row.label(text='Extra entries for convenience', icon='INFO')
         
         # if self.extra_context_menus:
@@ -292,14 +305,22 @@ class AddonPreferences(bpy.types.AddonPreferences):
         #     row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
         #     row.prop(self, 'extra_context_menu_face_menu', toggle=True)
 
-
-
         # box = layout.box()
-        # box.label(text='Extras')
+        # box.enabled = False
+        # box.label(text='Quick Shelf')
         # row = box.row()
+        # row.prop(self, 'quick_shelf_enable', toggle=True)
+        # row.label(text='Buttons for quick actions', icon='INFO')
+        # if self.quick_shelf_enable:
+        #     col = box.column()
+        #     row = col.row()
+        #     row.prop(self, 'quick_shelf_randomize', toggle=True)
+        #     row.label(text='Assign and clear buttons', icon='INFO')
 
-        # row.prop(self, 'enhanced_enum_titles')
-        # row.label(text='Enables effects like ᶠᵃᶜᵉ', icon='INFO')
+        #     row = col.row()
+        #     row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
+        #     row.label(text='Assign and clear buttons', icon='INFO')
+
 
         # Debug Zone
         box = layout.box()
