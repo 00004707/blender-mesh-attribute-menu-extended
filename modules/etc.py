@@ -216,173 +216,227 @@ class AddonPreferences(bpy.types.AddonPreferences):
     
     # User settings (variables)
     # ------------------------------------------
-
-    enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
     
-    disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
+    # General
+    enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
+    attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
+
+    # Specials
+    add_set_attribute: bpy.props.BoolProperty(name="Add \"Set Attribute\" operator", description="Set Attribute operator in dropdown menu", default=True)
+
+    extra_context_menu_vg: bpy.props.BoolProperty(name="Vertex Groups Menu", description="Adds extra operators to Vertex Group Menu", default=True)
+    extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
+    extra_context_menu_uvmaps: bpy.props.BoolProperty(name="UVMap Menu", description="Adds extra operators to UVMap Menu", default=True)
+    extra_context_menu_fm: bpy.props.BoolProperty(name="Face Maps Menu", description="Adds extra operators to Face Maps Menu", default=True)
+    extra_context_menu_materials: bpy.props.BoolProperty(name="Materials Menu", description="Adds extra operators to Materials Menu", default=True)
+    
+    # Context
+    
+    extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
+    extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
+    extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
+    extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
+
+    # 3D View
+    extra_header_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Header", description="Adds extra operators to sculpting 3D View", default=False)
+    extra_context_menu_sculpt: bpy.props.BoolProperty(name="Mask & Face Sets Menus", description="Adds extra operators to sculpting 3D View menus", default=True)
+    extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=False)
+
+    # Quick
+    extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=False)
+    quick_shelf_enable: bpy.props.BoolProperty(name="Enable Quick Shelf", description="Buttons for quicker actions", default=False)
+    quick_shelf_randomize: bpy.props.BoolProperty(name="Randomize Value", description="Adds a button to randomize value", default=False)
+    quick_shelf_convert_to_mesh_data_repeat: bpy.props.BoolProperty(name="To Mesh Data Repeat", description="Adds a button to redo last \"To mesh Data\"", default=False)
+
+    # Debug
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
     pseudo_profiler: bpy.props.BoolProperty(name="Enable pseudo-profiler", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
     set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
+    disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
 
-    extra_context_menus: bpy.props.BoolProperty(name="Enable Extra Context Menu Entries", description="Adds extra operators to Shape Keys Menu, Vertex Group Menu and other menus", default=True)
-
-    attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
-    add_set_attribute: bpy.props.BoolProperty(name="Add \"Set Attribute\" to Specials Menu", description="Set Attribute operator in dropdown menu", default=True)
-
-    extra_context_menu_vg: bpy.props.BoolProperty(name="Vertex Groups Menu", description="Adds extra operators to Vertex Group Menu", default=True)
-    extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
-    extra_context_menu_uvmaps: bpy.props.BoolProperty(name="UVMap Menu", description="Adds extra operators to UVMap Menu", default=True)
-    extra_context_menu_fm: bpy.props.BoolProperty(name="Face Maps Menu", description="Adds extra operators to Face Maps Menu", default=True)
-    extra_context_menu_sculpt: bpy.props.BoolProperty(name="Mask & Face Sets Menus", description="Adds extra operators to sculpting 3D View menus", default=True)
-    extra_header_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Header", description="Adds extra operators to sculpting 3D View", default=True)
-    extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=True)
-    extra_context_menu_materials: bpy.props.BoolProperty(name="Materials Menu", description="Adds extra operators to Materials Menu", default=True)
-    extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
-    extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
-    extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
-    extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
-    extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=True)
-
-    quick_shelf_enable: bpy.props.BoolProperty(name="Enable Quick Shelf", description="Buttons for quicker actions", default=False)
-    quick_shelf_randomize: bpy.props.BoolProperty(name="Randomize Value", description="Adds a button to randomize value", default=False)
-    quick_shelf_convert_to_mesh_data_repeat: bpy.props.BoolProperty(name="To Mesh Data Repeat", description="Adds a button to redo last \"To mesh Data\"", default=False)
+    addonproperties_tabs: bpy.props.EnumProperty(items=[
+        ("GENERAL", "General", "General Settings"),
+        ("SPECIALS", "Specials Menus", "Specials Menus Settings"),
+        ("CONTEXT", "Context Menu", "Context Menus Settings"),
+        ("3DVIEW", "3D View", "3D View Extensions Settings"),
+        ("QUICK", "Quick Buttons", "Quick Extensions Settings"),
+        ("DEBUG", "Troubleshooting", "Troubleshooting and Debug menus"),
+    ])
 
     def draw(self, context):
         layout = self.layout
-
-        # Features
-        box = layout.box()
-        box.label(text='Basic Features')
-        col = box.column()
-        row = col.row()
-        row.prop(self, 'attribute_assign_menu', toggle=True)
-        row.label(text='Assign and clear buttons', icon='INFO')
-
-        row = col.row()
-        ver_support = get_blender_support((3,5,0))
-        row.enabled = ver_support
-        row.prop(self, 'add_set_attribute', toggle=True)
-        subrow = row.row()
-        subrow.alert = not ver_support
-        subrow.label(text='Set Attribute operator in dropdown menu' if ver_support else "Not supported in current blender version", icon='INFO')
-
-        row = col.row()
-        ver_support = get_blender_support((3,3,0))
-        row.enabled = ver_support
-        row.prop(self, 'enhanced_enum_titles', toggle=True)
-        subrow = row.row()
-        subrow.alert = not ver_support
-        subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
-
-        # # Extra context menus
-        # box = layout.box()
-        # box.enabled = False
-        # box.label(text='Extra Context Menu Operators')
-        # row = box.row()
-        # row.prop(self, 'extra_context_menus', toggle=True)
-        # row.label(text='Extra entries for convenience', icon='INFO')
-        box.label(text='Toggleable Extensions')
-        row = box.row()
-        # row.prop(self, 'extra_context_menus')
-        # row.label(text='Extra entries for convenience')
+        tabsrow = layout.row()
+        tabsrow.prop_tabs_enum(self, 'addonproperties_tabs')
         
-        if self.extra_context_menus:
-            box2 = box.box()
-            col = box2.column()
-            col.label(text='Properties Panel Extensions')
+        if self.addonproperties_tabs == 'GENERAL':
+            # General
             
+            titlebox = layout.box()
+            titlebox.label(text="General Settings")
+            
+            col = layout.column()
             row = col.row()
             row.prop(self, 'attribute_assign_menu', toggle=True)
-            row.label(text='Properites > Data > Attributes')
+            row.label(text='Assign and clear buttons', icon='INFO')
+
+            row = col.row()
+            ver_support = get_blender_support((3,3,0))
+            row.enabled = ver_support
+            row.prop(self, 'enhanced_enum_titles', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
+
+        elif self.addonproperties_tabs == 'SPECIALS':
+            titlebox = layout.box()
+            titlebox.label(text="Specials menus - extensions to the chevron menus next to selection lists")
+            
+            col = layout.column()
 
             row = col.row()
             row.prop(self, 'extra_context_menu_vg', toggle=True)
-            row.label(text='Properties > Data > Vertex Groups')
+            subrow = row.row()
+            subrow.label(text='Properties > Data > Vertex Groups', icon='INFO')
 
             row = col.row()
             row.prop(self, 'extra_context_menu_sk', toggle=True)
-            row.label(text='Properties > Data > Shape Keys')
+            subrow = row.row()
+            subrow.label(text='Properties > Data > Shape Keys', icon='INFO')
 
             row = col.row()
             row.prop(self, 'extra_context_menu_materials', toggle=True)
-            row.label(text='Properties > Material')
+            subrow = row.row()
+            subrow.label(text='Properties > Material', icon='INFO')
 
             row = col.row()
+            ver_support = get_blender_support(minver_unsupported=(3,5,0))
+            row.enabled = ver_support
+            row.prop(self, 'extra_context_menu_uvmaps', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Properties > Data > UVMaps' if ver_support else "Not supported in current blender version", icon='INFO')
+
+            row = col.row()
+            ver_support = get_blender_support(minver_unsupported=(3,5,0))
+            row.enabled = ver_support
+            row.prop(self, 'extra_context_menu_fm', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Properties > Data > Face Maps' if ver_support else "Not supported in current blender version", icon='INFO')
+
+            row = col.row()
+            ver_support = get_blender_support((3,5,0))
+            row.enabled = ver_support
             row.prop(self, 'add_set_attribute', toggle=True)
-            row.label(text='Properites > Data > Attributes')
-            
-            box2 = box.box()
-            col = box2.column()
-            col.label(text='Menu Bar/3D View Context Menu Extensions')
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Properties > Data > Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_sculpt', toggle=True)
-            row.label(text='3D View Menu Bar > Mask / Face Sets')
-            
+        elif self.addonproperties_tabs == 'CONTEXT':
+
+            titlebox = layout.box()
+            titlebox.label(text="Context Menus - Extensions to right-click menus")
+            col = layout.column()
+
             row = col.row()
             row.prop(self, 'extra_context_menu_object', toggle=True)
-            row.label(text='3D View Menu Bar > Object')
-            #row.prop(self, 'extra_context_menu_fm', toggle=True)
-            #row.prop(self, 'extra_context_menu_uvmaps', toggle=True)
-            #row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
-            #row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Object', icon='INFO')
 
             row = col.row()
             row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
-            row.label(text='3D View Menu Bar > Vertex')
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
 
             row = col.row()
             row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
-            row.label(text='3D View Menu Bar > Edge')
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
 
             row = col.row()
             row.prop(self, 'extra_context_menu_face_menu', toggle=True)
-            row.label(text='3D View Menu Bar > Face')
-
-            box2 = box.box()
-            col = box2.column()
-            col.label(text='3D View Extensions')
-            row = col.row()
-            row.prop(self, 'extra_header_sculpt', toggle=True)
-            row.label(text='3D View Menu Bar, next to Face Sets')
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Face', icon='INFO')
 
             
+        elif self.addonproperties_tabs == '3DVIEW':
+            titlebox = layout.box()
+            titlebox.label(text="3D View Extensions - extensions that are placed in the 3D viewport")
+            col = layout.column()
+            
+            row = col.row()
+            row.prop(self, 'extra_header_sculpt', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar', icon='INFO')
 
+            row = col.row()
+            row.prop(self, 'extra_context_menu_sculpt', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Mask / Face Sets', icon='INFO')
 
-        # box = layout.box()
-        # box.enabled = False
-        # box.label(text='Quick Shelf')
-        # row = box.row()
-        # row.prop(self, 'quick_shelf_enable', toggle=True)
-        # row.label(text='Buttons for quick actions', icon='INFO')
-        # if self.quick_shelf_enable:
-        #     col = box.column()
-        #     row = col.row()
-        #     row.prop(self, 'quick_shelf_randomize', toggle=True)
-        #     row.label(text='Assign and clear buttons', icon='INFO')
+            row = col.row()
+            row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View > N-Panel > Edit', icon='INFO')
+            
+        elif self.addonproperties_tabs == 'QUICK':
+            titlebox = layout.box()
+            titlebox.label(text="Quick Buttons - Extra buttons that repeat last actions or other")
+            col = layout.column()
 
-        #     row = col.row()
-        #     row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
-        #     row.label(text='Assign and clear buttons', icon='INFO')
-        # row.prop(self, 'enhanced_enum_titles')
-        # row.label(text='Enables effects like ᶠᵃᶜᵉ')
+            row = col.row()
+            row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
+            subrow = row.row()
+            subrow.label(text='Properties > Data > Geometry Data', icon='INFO')
 
+            row = col.row()
+            row.prop(self, 'quick_shelf_enable', toggle=True)
+            subrow = row.row()
+            subrow.label(text='Properties > Data > Attributes', icon='INFO')
 
-        # Debug Zone
-        box = layout.box()
-        row = box.row()
-        row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
-        row.label(text='Scary Spooky Skeletons', icon='ERROR')
+            subbox = col.box()
+            subbox.enabled = self.quick_shelf_enable
+            subbox_col = subbox.column()
+            row = subbox_col.row()
+            row.prop(self, 'quick_shelf_randomize', toggle=True)
+            subrow = row.row()
+            subrow.label(text='Randomize with same values', icon='INFO')
 
-        if self.debug_zone_en:
-            box = box.box()
-            box.prop(self, 'verbose_mode')
-            box.prop(self, 'debug_operators')
-            box.prop(self, 'pseudo_profiler')
-            box.prop(self, 'disable_bpy_set_attribute')
-            box.prop(self, 'disable_version_checks')
-            box.prop(self, 'set_algo_tweak')
+            row = subbox_col.row()
+            row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
+            subrow = row.row()
+            subrow.label(text='Re-convert to mesh data', icon='INFO')
+
+        elif self.addonproperties_tabs == 'DEBUG':
+            # Debug Zone
+            titlebox = layout.box()
+            titlebox.label(text="Troubleshooting")
+            col = layout.column(align=False)
+
+            row = col.row()
+            row.operator('mame.report_issue', text="Report Issue")
+            row.label(text='Report issue or request feature')
+            
+
+            row = col.row()
+            row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
+            row.label(text='Scary Spooky Skeletons', icon='ERROR')
+
+            if self.debug_zone_en:
+                box = layout.box()
+                box.prop(self, 'verbose_mode')
+                box.prop(self, 'debug_operators')
+                box.prop(self, 'pseudo_profiler')
+                box.prop(self, 'disable_bpy_set_attribute')
+                box.prop(self, 'disable_version_checks')
+                box.prop(self, 'set_algo_tweak')
+        
+            
+            
+            
+
+        
             
