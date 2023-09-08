@@ -103,6 +103,42 @@ class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
         self.poll_message_set("Active attribute is not on Face Corner domain")
         return False
 
+class MAMEDisable(bpy.types.Operator):
+    """
+    Addon disabler
+    """
+
+    bl_idname = "mame.disable"
+    bl_label = "Disable Addon"
+    bl_description = ""
+    bl_options = {'REGISTER', 'INTERNAL'}
+    
+    def execute(self, context):
+        bpy.ops.preferences.addon_disable(module=__addon_package_name__)
+        return {'FINISHED'}
+    
+    @classmethod
+    def poll(self, context):
+        return True
+
+class MAMEBlenderUpdate(bpy.types.Operator):
+    """
+    Addon Opens url to update blender
+    """
+
+    bl_idname = "mame.update_blender"
+    bl_label = "Update blender"
+    bl_description = ""
+    bl_options = {'REGISTER', 'INTERNAL'}
+    
+    def execute(self, context):
+        bpy.ops.wm.url_open(url="https://www.blender.org/download/")
+        return {'FINISHED'}
+    
+    @classmethod
+    def poll(self, context):
+        return True
+
 # Profiler
 # ------------------------------
 
@@ -119,6 +155,26 @@ def pseudo_profiler(info_string:str):
 # ------------------------------------------
 # Preferences
 
+class AddonPreferencesUnsupportedBlenderVer(bpy.types.AddonPreferences):
+    """
+    Addon preferences for unsupported blender version
+    """
+
+    bl_idname = __addon_package_name__
+
+    def draw(self, context):
+        layout = self.layout
+
+        if bpy.app.version < (3,1,0):
+                
+            row = layout.row()
+            row.alert = True
+            row.label(text="This addon requires blender version 3.1.0 or higher, and has not been loaded.", icon='ERROR')
+            row = layout.row()
+            row.operator("mame.update_blender", icon="BLENDER")
+            srow = row.row()
+            srow.alert = True
+            srow.operator("mame.disable", icon="CANCEL")
 class AddonPreferences(bpy.types.AddonPreferences):
     """
     Addon preferences definition

@@ -21,6 +21,8 @@ bl_info = {
     "tracker_url": "https://github.com/00004707/blender-mesh-attribute-menu-extended/issues",
 }
 
+req_bl_ver = bl_info["blender"]
+
 # Fix for reloading all addon files in blender
 import importlib
 
@@ -50,6 +52,8 @@ Please use funciton in func file to set active attribute, as setting the obj.dat
 # Class Registration
 # ------------------------------------------
 
+unsupported_ver_classes = [etc.AddonPreferencesUnsupportedBlenderVer, etc.MAMEBlenderUpdate, etc.MAMEDisable]
+
 # Main
 classes = [
     etc.AddonPreferences,
@@ -77,30 +81,40 @@ classes += [debug.MAMETestAll, debug.MAMECreateAllAttributes]
 # ------------------------------------------
 
 def register():
-    for c in classes:
-        bpy.utils.register_class(c)
 
-    # GUI Extensions
-    bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
-    bpy.types.MESH_MT_attribute_context_menu.append(
-        gui.attribute_context_menu_extension
-    )
+    if bpy.app.version < req_bl_ver:
+        for c in unsupported_ver_classes:
+            bpy.utils.register_class(c)
+    else:
+        for c in classes:
+            bpy.utils.register_class(c)
 
-    # Per-object Property Values
-    bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(
-        type=data.MAME_PropValues
-    )
+        # GUI Extensions
+        bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
+        bpy.types.MESH_MT_attribute_context_menu.append(
+            gui.attribute_context_menu_extension
+        )
+
+        # Per-object Property Values
+        bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(
+            type=data.MAME_PropValues
+        )
 
 
 def unregister():
-    # GUI Extensions
-    bpy.types.DATA_PT_mesh_attributes.remove(gui.attribute_assign_panel)
-    bpy.types.MESH_MT_attribute_context_menu.remove(
-        gui.attribute_context_menu_extension
-    )
 
-    for c in classes:
-        bpy.utils.unregister_class(c)
+    if bpy.app.version < req_bl_ver:
+        for c in unsupported_ver_classes:
+            bpy.utils.unregister_class(c)
+    else:
+        # GUI Extensions
+        bpy.types.DATA_PT_mesh_attributes.remove(gui.attribute_assign_panel)
+        bpy.types.MESH_MT_attribute_context_menu.remove(
+            gui.attribute_context_menu_extension
+        )
+
+        for c in classes:
+            bpy.utils.unregister_class(c)
 
 
 if __name__ == "__main__":
