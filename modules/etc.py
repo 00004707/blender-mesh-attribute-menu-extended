@@ -43,6 +43,15 @@ class MeshDataWriteException(Exception):
         self.message = message
         super().__init__("[WRITE] " + self.function_name + ": " + self.message)
 
+class GenericFunctionParameterError(Exception):
+    """
+    Exception thrown when input parameter of a function is invalid
+    """
+    def __init__(self, function_name, message=""):
+        self.function_name = function_name
+        self.message = message
+        super().__init__("[PARAM] " + self.function_name + ": " + self.message)
+
 # Extra Functions
 # ------------------------------
 
