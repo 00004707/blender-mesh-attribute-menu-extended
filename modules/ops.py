@@ -2464,8 +2464,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
     b_string_lowercase: bpy.props.BoolProperty(name="Lowercase letters", default=True, description="Whether to use lowercase letters")
     b_string_numbers: bpy.props.BoolProperty(name="Numbers", default=False, description="Whether to use numbers")
     b_string_specials: bpy.props.BoolProperty(name="Special characters", default=False, description="Whether to use special characters like #$%^&")
-    string_length_min:bpy.props.IntProperty(name="Min Length", default=0, min=0)
-    string_length_max:bpy.props.IntProperty(name="Max Length", default=10, min=0)
+    string_val_min:bpy.props.IntProperty(name="Min Length", default=0, min=0)
+    string_val_max:bpy.props.IntProperty(name="Max Length", default=10, min=0)
     b_use_specified_characters: bpy.props.BoolProperty(name="Use specific characters", 
                                                   default=False,
                                                   description="Use specific characters in the characters field")
@@ -2666,15 +2666,15 @@ class RandomizeAttributeValue(bpy.types.Operator):
                 row.prop(self, "b_use_color_picker", toggle=True)
 
         # boolean
-        elif gui_prop_subtype in data.EDataTypeGuiPropType.BOOLEAN:
+        elif gui_prop_subtype == data.EDataTypeGuiPropType.BOOLEAN:
             col = self.layout.column(align=True)
             col.prop(self, f"boolean_probability", text="Probability")
 
         # string
-        elif gui_prop_subtype in data.EDataTypeGuiPropType.STRING:
+        elif gui_prop_subtype == data.EDataTypeGuiPropType.STRING:
             col = self.layout.column(align=True)
-            col.prop(self, f"string_length_min", text="Min Length")
-            col.prop(self, f"string_length_max", text="Max Length")
+            col.prop(self, f"string_val_min", text="Min Length")
+            col.prop(self, f"string_val_max", text="Max Length")
             
             row = self.layout.row(align=True)
             row.prop(self, "b_use_specified_characters", toggle=True)
