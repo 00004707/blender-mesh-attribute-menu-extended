@@ -112,6 +112,9 @@ class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
         self.poll_message_set("Active attribute is not on Face Corner domain")
         return False
 
+# Utility operators
+# -----------------------------
+
 class MAMEDisable(bpy.types.Operator):
     """
     Addon disabler
@@ -203,6 +206,7 @@ class AddonPreferencesUnsupportedBlenderVer(bpy.types.AddonPreferences):
             srow = row.row()
             srow.alert = True
             srow.operator("mame.disable", icon="CANCEL")
+
 class AddonPreferences(bpy.types.AddonPreferences):
     """
     Addon preferences definition
@@ -232,7 +236,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
     extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
     extra_context_menu_uvmaps: bpy.props.BoolProperty(name="UVMap Menu", description="Adds extra operators to UVMap Menu", default=True)
     extra_context_menu_fm: bpy.props.BoolProperty(name="Face Maps Menu", description="Adds extra operators to Face Maps Menu", default=True)
-    extra_context_menu_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Menus", description="Adds extra operators to sculpting 3D View", default=True)
+    extra_context_menu_sculpt: bpy.props.BoolProperty(name="Mask & Face Sets Menus", description="Adds extra operators to sculpting 3D View menus", default=True)
+    extra_header_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Header", description="Adds extra operators to sculpting 3D View", default=True)
     extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=True)
     extra_context_menu_materials: bpy.props.BoolProperty(name="Materials Menu", description="Adds extra operators to Materials Menu", default=True)
     extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
@@ -279,31 +284,73 @@ class AddonPreferences(bpy.types.AddonPreferences):
         # row = box.row()
         # row.prop(self, 'extra_context_menus', toggle=True)
         # row.label(text='Extra entries for convenience', icon='INFO')
+        box.label(text='Toggleable Extensions')
+        row = box.row()
+        # row.prop(self, 'extra_context_menus')
+        # row.label(text='Extra entries for convenience')
         
-        # if self.extra_context_menus:
-        #     box2 = box.box()
-        #     col = box2.column()
-        #     col.label(text='All individual context menu extensions')
+        if self.extra_context_menus:
+            box2 = box.box()
+            col = box2.column()
+            col.label(text='Properties Panel Extensions')
             
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_vg', toggle=True)
-        #     row.prop(self, 'extra_context_menu_sk', toggle=True)
-        #     row.prop(self, 'extra_context_menu_uvmaps', toggle=True)
+            row = col.row()
+            row.prop(self, 'attribute_assign_menu', toggle=True)
+            row.label(text='Properites > Data > Attributes')
 
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_fm', toggle=True)
-        #     row.prop(self, 'extra_context_menu_sculpt', toggle=True)
-        #     row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
+            row = col.row()
+            row.prop(self, 'extra_context_menu_vg', toggle=True)
+            row.label(text='Properties > Data > Vertex Groups')
 
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_materials', toggle=True)
-        #     row.prop(self, 'extra_context_menu_object', toggle=True)
-        #     row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
+            row = col.row()
+            row.prop(self, 'extra_context_menu_sk', toggle=True)
+            row.label(text='Properties > Data > Shape Keys')
 
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
-        #     row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
-        #     row.prop(self, 'extra_context_menu_face_menu', toggle=True)
+            row = col.row()
+            row.prop(self, 'extra_context_menu_materials', toggle=True)
+            row.label(text='Properties > Material')
+
+            row = col.row()
+            row.prop(self, 'add_set_attribute', toggle=True)
+            row.label(text='Properites > Data > Attributes')
+            
+            box2 = box.box()
+            col = box2.column()
+            col.label(text='Menu Bar/3D View Context Menu Extensions')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_sculpt', toggle=True)
+            row.label(text='3D View Menu Bar > Mask / Face Sets')
+            
+            row = col.row()
+            row.prop(self, 'extra_context_menu_object', toggle=True)
+            row.label(text='3D View Menu Bar > Object')
+            #row.prop(self, 'extra_context_menu_fm', toggle=True)
+            #row.prop(self, 'extra_context_menu_uvmaps', toggle=True)
+            #row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
+            #row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
+            row.label(text='3D View Menu Bar > Vertex')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
+            row.label(text='3D View Menu Bar > Edge')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_face_menu', toggle=True)
+            row.label(text='3D View Menu Bar > Face')
+
+            box2 = box.box()
+            col = box2.column()
+            col.label(text='3D View Extensions')
+            row = col.row()
+            row.prop(self, 'extra_header_sculpt', toggle=True)
+            row.label(text='3D View Menu Bar, next to Face Sets')
+
+            
+
 
         # box = layout.box()
         # box.enabled = False
@@ -320,6 +367,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
         #     row = col.row()
         #     row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
         #     row.label(text='Assign and clear buttons', icon='INFO')
+        # row.prop(self, 'enhanced_enum_titles')
+        # row.label(text='Enables effects like ᶠᵃᶜᵉ')
 
 
         # Debug Zone
