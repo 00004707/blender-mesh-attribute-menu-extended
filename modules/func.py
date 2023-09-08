@@ -244,7 +244,13 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
 
     guess it's a call to finally learn how to program and count for real
     """
-    
+
+    if value is None:
+        raise etc.MeshDataWriteException("set_attribute_values", f"Input value is NONE")
+
+
+    is_list = type(value) == list or type(value) == np.ndarray
+
     # Foreach_set
     # Note: Strings do not support FOREACH_SET
     if is_verbose_mode_enabled():
@@ -254,7 +260,9 @@ ATTRIBUTE: {attribute.name}
 VALUE: {value}
 ON_INDEXES: {on_indexes}
 FLAT_LIST: {flat_list}              
+ON_INDEX_FROM_LIST: {is_list}
 """)
+    
 
     if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and attribute.data_type != 'STRING' :
         etc.pseudo_profiler("FOR_EACH_START")
@@ -265,14 +273,13 @@ FLAT_LIST: {flat_list}
         # create storage
         if flat_list:
             storage = value
-        elif type(value) is list:
+        elif type(value) in [list, np.ndarray]:
             if len(value) != len(attribute.data):
-                print(f"INPUT DATA INVALID LEN {len(value)} EXPECTED {len(attribute.data)} VALUES:\n{value}")
-                raise etc.MeshDataWriteException("set_attribute_values", "Invalid input value data length.")
+                raise etc.MeshDataWriteException("set_attribute_values", f"Invalid input value data length. Input {len(value)}, expected {len(attribute.data)}")
             
             # convert to single dimension list if of vector type
             if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
-                storage = value.flatten()
+                storage = np.array(value).flatten()
                 etc.pseudo_profiler("1D LIST CREATED")
             else:
                 storage = value
@@ -297,39 +304,39 @@ FLAT_LIST: {flat_list}
         foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
         if len(on_indexes) > len(attribute.data)*foreach_get_from and attribute.data_type != 'STRING':
             etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
-            
             prop_name = get_attrib_value_propname(attribute)
-            storage = np.repeat(value, len(attribute.data))
+            
+            if is_list and len(value) < len(on_indexes):
+                raise etc.MeshDataWriteException("set_attribute_values", f"Value input list is shorter [{len(value)}] than index list that the values are supposed to be set on [{len(on_indexes)}]")
+
+            example_attribute_domain_value = value[0] if is_list else value
+            storage = np.repeat(example_attribute_domain_value, len(attribute.data))
             attribute.data.foreach_get(prop_name, storage)
-            if type(value) == tuple:
-                for i in on_indexes:
-                    for l in range(0, len(value)):
-                        storage[i*len(value)+l] = value[l]
+            
+            if type(example_attribute_domain_value) in [tuple, list, np.ndarray]:
+                for i, id in enumerate(on_indexes):
+                    for l in range(0, len(example_attribute_domain_value)):
+                        storage[id*len(example_attribute_domain_value)+l] = value[i][l] if is_list else value[l]
             else:
-                storage[on_indexes] = value
+                for i, id in enumerate(on_indexes):
+                    storage[id] = value[i]
             attribute.data.foreach_set(prop_name, storage)
 
         # For loop for < 25% mesh selected
         else:
             etc.pseudo_profiler("SET_VAL_ON_SELECTION_START")
             if prop == "vector":
-                for i in on_indexes:
-                    attribute.data[i].vector = value
+                for i, id in enumerate(on_indexes):
+                    attribute.data[id].vector = value[i] if is_list else value
             elif prop == "color":
-                for i in on_indexes:
-                    attribute.data[i].color = value
+                for i, id in enumerate(on_indexes):
+                    attribute.data[id].color = value[i] if is_list else value
             else: # "value"
-                for i in on_indexes:
-                    attribute.data[i].value = value
+                for i, id in enumerate(on_indexes):
+                    attribute.data[id].value = value[i] if is_list else value
 
             etc.pseudo_profiler("SET_VAL_ON_SELECTION_END")
-                
-            # This would be very nice, but it's slow
-            # for i in on_indexes:
-            #     if type(value) is list:
-            #         setattr(attribute.data[i], prop, value[i%len(value)]) 
-            #     else:
-            #         setattr(attribute.data[i], prop, value) 
+            
                     
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
     """Assigns a single value to all selected domain in edit mode.
