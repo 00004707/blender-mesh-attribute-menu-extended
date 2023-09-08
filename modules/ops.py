@@ -1464,35 +1464,31 @@ class CopyAttributeToSelected(bpy.types.Operator):
         elif a.domain == 'EDGE':
             return len(obj.data.edges)
         elif a.domain == 'FACE':
-            return len(obj.data.faces)
+            return len(obj.data.polygons)
         else:
             return len(obj.data.loops)
 
     @classmethod
     def poll(self, context):
         if not context.active_object:
+            self.poll_message_set("No active object")
             return False
         
         active_attrib = context.active_object.data.attributes.active
-        selected_more_than_one_obj = len(context.selected_objects) > 1 
-        valid_object_types = True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]
-        
-        # Check if the attribute can be copied
-        if active_attrib:
-            valid_attribute = not bool(len([atype for atype in func.get_attribute_types(active_attrib) if atype in [data.EAttributeType.INTERNAL, data.EAttributeType.READONLY]]))
-        else:
-            valid_attribute = False
 
         if not active_attrib:
             self.poll_message_set("No active attribute")
-        elif not selected_more_than_one_obj:
-            self.poll_message_set("Select multiple objects")  
-        elif not valid_object_types:
+            return False
+        elif not len(context.selected_objects) > 1:
+            self.poll_message_set("Select multiple objects") 
+            return False
+        elif not True not in [obj.type != 'MESH' for obj in bpy.context.selected_objects]:
             self.poll_message_set("One of selected objects is not a mesh")
-        elif not valid_attribute:
-            self.poll_message_set("Can't copy this attribute")
-
-        return all([selected_more_than_one_obj, active_attrib, valid_object_types, valid_attribute])
+        # Check if the attribute can be copied
+        elif any([atype == static_data.EAttributeType.READONLY for atype in func.get_attribute_types(active_attrib)]):
+            self.poll_message_set("This attribute is read-only")
+            return False
+        return True
 
     def execute(self, context):
         obj = context.active_object
@@ -1517,6 +1513,8 @@ class CopyAttributeToSelected(bpy.types.Operator):
         
             # check if present in target mesh
             if src_attrib_name in [a.name for a in sel_obj.data.attributes]:
+                if func.is_verbose_mode_enabled():
+                    print(f"Attribute {src_attrib.name} exists on target")
                 sel_obj_attr = sel_obj.data.attributes[src_attrib_name]
 
                 # overwrite if present?
@@ -1524,17 +1522,19 @@ class CopyAttributeToSelected(bpy.types.Operator):
                     continue
                 
                 #overwrite different type?
-                not_same_type = sel_obj_attr.domain != src_attrib.domain or sel_obj_attr.data_type != src_attrib.domain
+                not_same_type = sel_obj_attr.domain != src_attrib.domain or sel_obj_attr.data_type != src_attrib.data_type
                 if not_same_type and not self.b_overwrite_different_type:
+                    if func.is_verbose_mode_enabled():
+                        print(f"Attribute {src_attrib.name} is not the same type as {sel_obj_attr.name}, {sel_obj_attr.domain}!={src_attrib.domain} or {sel_obj_attr.data_type}!={src_attrib.data_type}")
                     continue
                 
                 # remove current if overwriting
                 elif not_same_type:
                     sel_obj.data.attributes.remove(sel_obj_attr)
-                    
-            # create new attribute with target settings
-            sel_obj_attr = sel_obj.data.attributes.new(name=src_attrib_name, type=src_attrib.data_type, domain=src_attrib.domain)
-            
+
+            else:
+                sel_obj_attr = sel_obj.data.attributes.new(name=src_attrib_name, type=src_attrib.data_type, domain=src_attrib.domain)
+                
             # size check
 
             # check if the target mesh has different amount of faces/verts/etc.
@@ -1545,7 +1545,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
             elif sel_obj_attr.domain == 'EDGE':
                 target_size = len(sel_obj.data.edges)
             elif sel_obj_attr.domain == 'FACE':
-                target_size = len(sel_obj.data.faces)
+                target_size = len(sel_obj.data.polygons)
             else:
                 target_size = len(sel_obj.data.loops)
             
@@ -1595,7 +1595,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
             func.set_attribute_values(sel_obj_attr, target_a_vals)
 
-        obj.data.update()
+            sel_obj.data.update()
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
