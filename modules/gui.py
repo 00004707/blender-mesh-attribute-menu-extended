@@ -59,8 +59,11 @@ def attribute_assign_panel(self, context):
                     prop_group = context.object.MAME_PropValues
 
                     # Check for supported types
-                    if dt not in data.attribute_data_types:
-                        layout.label(text="This attribute type is not supported.")
+                    if not func.get_attribute_compatibility_check(ob.data.attributes.active):
+                        sublayout = layout.column()
+                        sublayout.alert = True
+                        sublayout.label(text="This attribute type is not supported by MAME addon.", icon='ERROR')
+                        sublayout.operator('mame.report_issue')
                     else:
                         col = layout.row()
                         #col.split = 0.5

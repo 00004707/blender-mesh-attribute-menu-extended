@@ -139,6 +139,25 @@ class MAMEBlenderUpdate(bpy.types.Operator):
     def poll(self, context):
         return True
 
+class MAMEReportIssue(bpy.types.Operator):
+    """
+    Reports issue with the addon
+    """
+
+    bl_idname = "mame.report_issue"
+    bl_label = "Report Issue"
+    bl_description = "Open github page to report the issue"
+    bl_options = {'REGISTER', 'INTERNAL'}
+    
+    def execute(self, context):
+        bpy.ops.wm.url_open(url="https://github.com/00004707/blender-mesh-attribute-menu-extended/issues")
+        return {'FINISHED'}
+    
+    @classmethod
+    def poll(self, context):
+        return True
+
+
 # Profiler
 # ------------------------------
 

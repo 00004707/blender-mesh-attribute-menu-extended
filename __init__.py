@@ -71,7 +71,8 @@ classes = [
     ops.AttributeResolveNameCollisions,
     ops.ReadValueFromSelectedDomains,
     ops.RandomizeAttributeValue,
-    etc.FakeFaceCornerSpillDisabledOperator
+    etc.FakeFaceCornerSpillDisabledOperator,
+    etc.MAMEReportIssue
 ]
 
 # Debug
