@@ -1052,7 +1052,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "supported_comparison_modes",               # Supported comparison modes, from attribute_comparison_modes
     "gui_property_name",                        # The property name from MAME_PropValues class
     "gui_prop_subtype",                         # Type of the gui to display for this attribute data type (EDataTypeGuiPropType)
-    "vector_subelements_names"                  # Names of subelements in a vector value, eg X Y Z or None    
+    "vector_subelements_names",                 # Names of subelements in a vector value, eg X Y Z or None    
+    "bpy_ops_set_attribute_param_name"          # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type
 
 ])
 
@@ -1066,7 +1067,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_float",
         vector_subelements_names=None,
-        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
+        bpy_ops_set_attribute_param_name="value_float"
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1076,7 +1078,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int",
         vector_subelements_names=None,
-        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
+        bpy_ops_set_attribute_param_name="value_int"
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1086,7 +1089,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int8",
         vector_subelements_names=None,
-        gui_prop_subtype=EDataTypeGuiPropType.SCALAR
+        gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
+        bpy_ops_set_attribute_param_name="value_int"
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1096,7 +1100,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_vector",
         vector_subelements_names=['X','Y','Z'],
-        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
+        bpy_ops_set_attribute_param_name="value_float_vector_3d"
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1106,7 +1111,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_color",
         vector_subelements_names=['R','G','B','A'],
-        gui_prop_subtype=EDataTypeGuiPropType.COLOR
+        gui_prop_subtype=EDataTypeGuiPropType.COLOR,
+        bpy_ops_set_attribute_param_name="value_color"
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1116,7 +1122,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_bytecolor",
         vector_subelements_names=['R','G','B','A'],
-        gui_prop_subtype=EDataTypeGuiPropType.COLOR
+        gui_prop_subtype=EDataTypeGuiPropType.COLOR,
+        bpy_ops_set_attribute_param_name="value_color"
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1126,7 +1133,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_string",
         vector_subelements_names=None,
-        gui_prop_subtype=EDataTypeGuiPropType.STRING
+        gui_prop_subtype=EDataTypeGuiPropType.STRING,
+        bpy_ops_set_attribute_param_name=None
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1136,7 +1144,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ'],
         gui_property_name="val_bool",
         vector_subelements_names=None,
-        gui_prop_subtype=EDataTypeGuiPropType.BOOLEAN
+        gui_prop_subtype=EDataTypeGuiPropType.BOOLEAN,
+        bpy_ops_set_attribute_param_name="value_bool"
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1146,7 +1155,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_vector2d",
         vector_subelements_names=['X','Y'],
-        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
+        bpy_ops_set_attribute_param_name="value_float_vector_2d"
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1156,7 +1166,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_int32_2d",
         vector_subelements_names=['X','Y'],
-        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
+        bpy_ops_set_attribute_param_name="value_int_vector_2d"
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1166,7 +1177,8 @@ attribute_data_types = {
         supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
         gui_property_name="val_quaternion",
         vector_subelements_names=['X','Y','Z','W'],
-        gui_prop_subtype=EDataTypeGuiPropType.VECTOR
+        gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
+        bpy_ops_set_attribute_param_name="value_quat"
     ),
 }
 

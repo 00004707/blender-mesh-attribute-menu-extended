@@ -142,7 +142,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     extra_context_menus: bpy.props.BoolProperty(name="Enable Extra Context Menu Entries", description="Adds extra operators to Shape Keys Menu, Vertex Group Menu and other menus", default=True)
 
     attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
-    add_set_attribute: bpy.props.BoolProperty(name="Add Set Attribute to Menu", description="Set Attribute operator in dropdown menu", default=True)
+    add_set_attribute: bpy.props.BoolProperty(name="Add \"Set Attribute\" to Specials Menu", description="Set Attribute operator in dropdown menu", default=True)
 
     extra_context_menu_vg: bpy.props.BoolProperty(name="Vertex Groups Menu", description="Adds extra operators to Vertex Group Menu", default=True)
     extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
@@ -217,16 +217,18 @@ class AddonPreferences(bpy.types.AddonPreferences):
         # row.prop(self, 'enhanced_enum_titles')
         # row.label(text='Enables effects like ᶠᵃᶜᵉ', icon='INFO')
 
+        # Debug Zone
         box = layout.box()
-        box.prop(self, 'debug_zone_en', toggle=True, text="Scary Spooky Skeletons zone")
-        
+        row = box.row()
+        row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
+        row.label(text='Scary Spooky Skeletons', icon='ERROR')
+
         if self.debug_zone_en:
             box = box.box()
             box.prop(self, 'verbose_mode')
             box.prop(self, 'debug_operators')
             box.prop(self, 'pseudo_profiler')
-            if bpy.app.version >= (3,5,0):
-                box.prop(self, 'disable_bpy_set_attribute')
+            box.prop(self, 'disable_bpy_set_attribute')
             box.prop(self, 'disable_version_checks')
             box.prop(self, 'set_algo_tweak')
             

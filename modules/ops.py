@@ -78,26 +78,19 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
         # Use bpy.ops.mesh_attribute_set()
         if (etc.get_blender_support((3,5,0))
-            and not prop_group.face_corner_spill
-            and not mesh_selected_modes[1]
-            and (mesh_selected_modes[0] or mesh_selected_modes[2])
-            and dt != 'STRING'
-            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):
+            and not (prop_group.face_corner_spill and mesh_selected_modes[1])               # Face corner spill feature is not supported by the operator
+            and data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None  # Strings are unsupported by this, oh well
+            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):               # Preferences toggle
             
             etc.pseudo_profiler("OPS_START")
             if func.is_verbose_mode_enabled():
                 print( f"Using ops.mesh_attribute_set()" )
 
-            gui_value = getattr(prop_group, data.attribute_data_types[dt].gui_property_name)
-            bpy.ops.mesh.attribute_set(value_float=gui_value if dt == 'FLOAT' else func.get_attrib_default_value(datatype='FLOAT'), 
-                                       value_float_vector_2d=gui_value if dt == 'FLOAT2' else func.get_attrib_default_value(datatype='FLOAT2'),  
-                                       value_float_vector_3d=gui_value if dt == 'FLOAT_VECTOR' else func.get_attrib_default_value(datatype='FLOAT_VECTOR'),  
-                                       value_int=gui_value if dt in ['INT', 'INT8'] else func.get_attrib_default_value(datatype='INT'),
-                                       value_int_vector_2d=gui_value if dt == 'INT32_2D' else func.get_attrib_default_value(datatype='INT32_2D'),
-                                       value_color=gui_value if dt in ['FLOAT_COLOR', 'BYTE_COLOR'] else func.get_attrib_default_value(datatype='FLOAT_COLOR'),
-                                       value_bool=gui_value if dt == 'BOOLEAN' else func.get_attrib_default_value(datatype='BOOLEAN'),
-                                       value_quat=gui_value if dt == 'QUATERNION' else func.get_attrib_default_value(datatype='QUATERNION')
-                                       )
+            params = {}
+            paramname = data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
+            params[paramname] = getattr(prop_group, data.attribute_data_types[dt].gui_property_name) 
+
+            bpy.ops.mesh.attribute_set(**params)
             
             etc.pseudo_profiler("OPS_END")
             return {"FINISHED"}
