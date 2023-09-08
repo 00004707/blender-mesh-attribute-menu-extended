@@ -76,6 +76,11 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
         etc.pseudo_profiler("EXEC START")
 
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[active_attrib_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
         # Use bpy.ops.mesh_attribute_set()
         if (etc.get_blender_support((3,5,0))
             and not (prop_group.face_corner_spill and mesh_selected_modes[1])               # Face corner spill feature is not supported by the operator
@@ -693,6 +698,11 @@ class DuplicateAttribute(bpy.types.Operator):
         attrib_name = obj.data.attributes.active.name
         current_mode = context.active_object.mode
         
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[attrib_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
         # All attribute actions should be performed in object mode
         bpy.ops.object.mode_set(mode='OBJECT')
         src_attrib = obj.data.attributes[attrib_name] #!important
@@ -767,6 +777,12 @@ class InvertAttribute(bpy.types.Operator):
         obj = context.active_object
         src_attrib_name = obj.data.attributes.active.name
         current_mode = context.active_object.mode
+
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[src_attrib_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
 
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -1130,6 +1146,12 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib_name = obj.data.attributes.active.name
         current_mode = context.active_object.mode
 
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[src_attrib_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
+
         bpy.ops.object.mode_set(mode='OBJECT')
 
         src_attrib = obj.data.attributes[src_attrib_name] # !important
@@ -1476,6 +1498,13 @@ class CopyAttributeToSelected(bpy.types.Operator):
         obj = context.active_object
         current_mode = obj.mode
         src_attrib_name = obj.data.attributes.active.name
+
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[src_attrib_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
+
         bpy.ops.object.mode_set(mode='OBJECT')
         src_attrib = obj.data.attributes[src_attrib_name] # !important
         a_vals = func.get_attrib_values(src_attrib, obj)
@@ -2343,6 +2372,11 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         obj = context.active_object
         active_attribute_name = obj.data.attributes.active.name
         
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[active_attribute_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
+
         bpy.ops.object.mode_set(mode='OBJECT')
 
         attribute = obj.data.attributes[active_attribute_name]
@@ -2559,6 +2593,11 @@ class RandomizeAttributeValue(bpy.types.Operator):
         obj = context.active_object
         active_attribute_name = obj.data.attributes.active.name
         current_mode = context.active_object.mode
+
+        # Compatibility Check
+        if not func.get_attribute_compatibility_check(obj.data.attributes[active_attribute_name]):
+            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+            return {'CANCELLED'}
 
         bpy.ops.object.mode_set(mode='OBJECT')
 

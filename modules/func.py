@@ -376,7 +376,6 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
         value (list or value): The value or values to set
         on_indexes (list, optional): Indexes to set the value on. Defaults to []. Duplicates WILL NOT be checked
         flat_list (bool, optional): Only for setting ALL values. Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
-
     Raises:
         etc.MeshDataWriteException: On failure
 
@@ -1345,7 +1344,6 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
-
 def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     """Sets mesh data from selected attribute
 
@@ -2200,6 +2198,10 @@ def conditional_selection_poll(self, context):
 
     elif not data.EAttributeType.NOTPROCEDURAL not in get_attribute_types(context.active_object.data.attributes.active):
         self.poll_message_set("Attribute cannot be selected (Non-procedural)")
+        return False
+    
+    elif not get_attribute_compatibility_check(context.active_object.data.attributes.active):
+        self.poll_message_set("Attribute is unsupported in this addon version")
         return False
     
     return True
