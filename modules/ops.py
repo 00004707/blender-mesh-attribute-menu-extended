@@ -2520,6 +2520,41 @@ class RandomizeAttributeValue(bpy.types.Operator):
         #     return False
         return True
 
+    def gui_values_check(self, context):
+        active_attribute = context.active_object.data.attributes.active
+        dt = data.EAttributeDataType[active_attribute.data_type]
+        
+        # Strings check
+        if dt == data.EAttributeDataType.STRING:
+            if self.b_use_specified_characters:
+                return bool(len(self.val_string))
+            else:
+                len_valid = (self.string_val_max - self.string_val_min) > 0 
+                random_types_valid = any(self.b_string_lowercase,
+                                         self.b_string_capital,
+                                         self.b_string_numbers,
+                                         self.b_string_specials)
+                if not len_valid:
+                    self.report({"ERROR"}, "Invalid string length")
+                    return False
+                elif not random_types_valid:
+                    self.report({"ERROR"}, "No random character types selected")
+                    return False
+                
+        # Vectors/colors check
+        elif data.attribute_data_types[dt].gui_prop_subtype == data.EDataTypeGuiPropType.VECTOR:
+            any_toggle_on = []
+            for i in range(0, len(data.attribute_data_types[dt].vector_subelements_names)):\
+                any_toggle_on.append(getattr(self, f'val_vector_{i}_toggle'))
+            
+            if not any(any_toggle_on):
+                self.report({"ERROR"}, "No selected vector/color subelements to randomize")
+                return False
+
+        # SELECTION CHECK IS IN EXECUTE TO AVOID RUNNING EXPENSIVE FUNCTIONS TWICE
+        return True
+
+
     def execute(self, context):
         obj = context.active_object
         active_attribute_name = obj.data.attributes.active.name
@@ -2531,66 +2566,91 @@ class RandomizeAttributeValue(bpy.types.Operator):
         prop_group = context.object.MAME_PropValues
         domain = obj.data.attributes[active_attribute_name].domain
         dt = attribute.data_type
-
-        # Avoid executing code for face corner spill
-        if domain != 'CORNER':
-            self.b_face_corner_spill = False
         
+        # General checks:
+
+        # Check user input validity
+        if not self.gui_values_check(context):
+            return {'CANCELLED'}
+
         # Do not assign on selection if not in edit mode
         if current_mode != 'EDIT':
             self.b_on_selection = False
 
-        # Get storage size to read attribute values
-            if domain == 'POINT':
-                storage_size = len(obj.data.vertices)
-            elif domain == 'EDGE':
-                storage_size = len(obj.data.edges)
-            elif domain == 'FACE':
-                storage_size = len(obj.data.faces)
-            else:
-                storage_size = len(obj.data.loops)
-        
+        # Avoid executing code for face corner spill
+        if domain != 'CORNER' and not self.b_on_selection:
+            self.b_face_corner_spill = False
+
+        # Clear the string to not trigger any code
+        if not self.b_use_specified_characters:
+            self.val_string = ""
+
+        # Actual function code:
+
+        # Get domain ids for selection
         if self.b_on_selection:
             on_domains = func.get_mesh_selected_domain_indexes(obj, domain, self.b_face_corner_spill)
+            if not len(on_domains):
+                self.report({"ERROR"}, "No selection in edit mode. (\"on selected\" mode was used)")
+                bpy.ops.object.mode_set(mode=current_mode)
+                return {'CANCELLED'}
+
         else:
-            on_domains = np.zeros(storage_size, dtype=np.bool)
+            on_domains = np.arange(0, len(attribute.data))
 
-        storage = []
+        # Get values set in UI
+        rnd_min = None
+        rnd_max = None
+        e_dt = data.EAttributeDataType[dt]
+        if e_dt in [data.EAttributeDataType.FLOAT,
+                    data.EAttributeDataType.INT,
+                    data.EAttributeDataType.INT8,
+                    data.EAttributeDataType.INT32_2D,
+                    data.EAttributeDataType.FLOAT2,
+                    data.EAttributeDataType.FLOAT_COLOR,
+                    data.EAttributeDataType.FLOAT_VECTOR,
+                    data.EAttributeDataType.BYTE_COLOR,
+                    data.EAttributeDataType.QUATERNION,
+                    data.EAttributeDataType.STRING]:
+            rnd_min = getattr(self, f"{dt.lower()}_val_min")
+            rnd_max = getattr(self, f"{dt.lower()}_val_max")
         
-        if not dt == 'CORNER' or not self.b_face_corner_spill:
-            for i in range(0, len(on_domains)):
-                storage.append(func.get_random_attribute_of_data_type(context, dt))
-        else:
-            
-            # Get vertices of face corners
-            vtx_ids = np.zeros(storage_size, dtype=np.int)
-            obj.data.loops.foreach_get('vertex_index', vtx_ids)
-
-            # Create storage for data
-            storage = np.zeros(storage_size, dtype=np.bool)
-
-            # Get unique vertex indexes from those
-            if self.b_on_selection:
-                vtx_ids = vtx_ids[on_domains]
-                u_vtx_ids = np.unique(vtx_ids)                
-            else:
-                u_vtx_ids = range(0, len(obj.data.vertices))
-            
-            # Set different value where that vertex is set
-            for u_vtx in u_vtx_ids:
-                val = func.get_random_attribute_of_data_type(context, dt)
-                for i in np.where(vtx_ids==u_vtx):
-                    storage[i] = val
-
-                
-        func.set_attribute_values(attribute, storage, on_domains)
         
+        # Read current values
+        storage = func.get_attrib_values(attribute, obj)
+        if func.is_verbose_mode_enabled():
+            print(f"Current values:{np.array(storage)}")
+
+        # Get random values list
+        rnd_vals = func.get_random_attribute_of_data_type(context, 
+                                                              dt, 
+                                                              len(on_domains),
+                                                              no_list=False,
+                                                              randomize_once=self.b_single_random_value,
+                                                              range_min=rnd_min,
+                                                              range_max=rnd_max,
+                                                              bool_probability=self.boolean_probability/100,
+                                                              color_randomize_type=self.color_randomize_type,
+                                                              string_capital=self.b_string_capital,
+                                                              string_lowercase=self.b_string_lowercase,
+                                                              string_numbers=self.b_string_numbers,
+                                                              string_special=self.b_string_specials,
+                                                              string_custom=self.val_string,
+                                                              b_vec_0=self.val_vector_0_toggle,
+                                                              b_vec_1=self.val_vector_1_toggle,
+                                                              b_vec_2=self.val_vector_2_toggle,
+                                                              b_vec_3=self.val_vector_3_toggle,
+                                                              src_attribute=attribute,
+                                                              obj=obj)
+        if func.is_verbose_mode_enabled():
+            print(f"Randomized values:{rnd_vals}")
+
+        # Set the values
+        func.set_attribute_values(attribute, rnd_vals, on_domains)
+        
+        obj.data.update()
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
-# REMINER ABOUT HSVA AND RGBA TOGGLES
-# check if string has 0 min and 0 max
-# check if toggle for specified characters was set and if the input is valid idk if emoji will work
-# same if all toggles were unticked ins tring
 
     def draw(self,context):
         
@@ -2706,8 +2766,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
 
         # Do not show face corner spill on attributes not stored in face corners
         sub_row = row.row(align=True)
-        sub_row.enabled = domain == 'CORNER'
-        sub_row.prop(self, "b_face_corner_spill", text="Face Corner Spill", toggle=True)
+        sub_row.enabled = domain == 'CORNER' and self.b_on_selection
+        sub_row.prop(self, "b_face_corner_spill", text="Selection Face Corner Spill", toggle=True)
 
         # Row for toggles 2
         row = self.layout.row(align=True)

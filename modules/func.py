@@ -19,6 +19,9 @@ import math
 from . import etc
 from . import data
 import numpy as np
+import random
+import colorsys
+import string 
 
 # Attribute related
 # ------------------------------------------
@@ -207,9 +210,161 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
 
     return attribute_name
 
-def get_random_attribute_of_data_type(context, data_type:str):
-    return
+def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list = False, src_attribute = None, obj = None, randomize_once = False, **kwargs):
+    """Returns a list or a single random value of specified data type.
 
+    Args:
+        obj (Reference): 3D Object Reference
+        data_type (str): Data type string
+        count (int): count, set higher than 1 to get a list
+        no_list (boolean): Force return a single value instead of a list
+        src_attribute (reference): If only a part of the vector has to be randomized the attribute has to be passed 
+        obj (reference): If only a part of the vector has to be randomized the object reference has to be passed 
+        randomize_once (bool): For lists, returns a single random value repeated for whole length of the list
+        
+        kwargs: (If applicable)
+        * range_min                 The minimum random value or length for string
+        * range_min                 The maximum random value or length for string
+        * bool_probability          The percentage chance of getting a true value
+        * string_capital            Whether to use captial letters in strings
+        * string_lowercase          Whether to use lowercase letters in strings
+        * string_numbers            Whether to use numbers in strings
+        * string_special            Whether to use special characters in strings
+        * string_custom             Use characters from input range (overrides previous toggles)
+        * color_randomize_type      str RGBA HSVA
+
+    Returns:
+        list or variable type: random value(s)
+    """
+    
+    # Float
+    if data_type == 'FLOAT':            
+        if no_list:
+            random.seed()
+            return random.uniform(kwargs['range_min'], kwargs['range_max'])
+        elif randomize_once:
+            random.seed()
+            return np.repeat(random.uniform(kwargs['range_min'], kwargs['range_max']), count)
+        else:
+            return np.random.uniform(low=kwargs['range_min'], high=kwargs['range_max'], size=count)
+        
+    # Integers
+    elif data_type in ['INT', 'INT8']:
+        if no_list:
+            random.seed()
+            return random.randint(kwargs['range_min'], kwargs['range_max'])
+        elif randomize_once:
+            random.seed()
+            return np.repeat(random.randint(kwargs['range_min'], kwargs['range_max']), count)
+        else:
+            return np.random.randint(low=kwargs['range_min'], high=kwargs['range_max'], size=count)
+    
+    # Vectors with float sub-elements
+    elif data_type in ["FLOAT_VECTOR", "QUATERNION", "INT32_2D", "FLOAT_COLOR", "BYTE_COLOR", 'FLOAT2']:
+        
+        # support for single values implemented btw
+        
+        if no_list or randomize_once:
+            substack_len = 1
+        else:
+            substack_len = count
+
+        use_hsv = kwargs['color_randomize_type'] == 'HSVA' and data_type in ["FLOAT_COLOR", "BYTE_COLOR"]
+        v_size = len(data.attribute_data_types[data_type].vector_subelements_names)
+        stacks = []
+
+        v_toggles = []
+        for i in range(0, v_size):
+            v_toggles.append(kwargs[f'b_vec_{i}'])
+
+        if not all(v_toggles) or not no_list or use_hsv:
+            og_vals = get_attrib_values(src_attribute, obj)
+
+        if use_hsv:
+            for i, subelement in enumerate(og_vals):
+                print(subelement[0])
+                og_vals[i] = color_vector_to_hsv(subelement)
+
+        for subelement in range(0, v_size):
+
+
+            if v_toggles[subelement]:
+                # integer subeleemnts
+                if data_type in ["INT32_2D"]:
+                    stacks.append(np.random.randint(low=kwargs[f'range_min'][subelement], high=kwargs[f'range_max'][subelement], size=substack_len))
+
+                # float subelements 
+                else:
+                    value = np.random.uniform(low=kwargs[f'range_min'][subelement], high=kwargs[f'range_max'][subelement], size=substack_len)
+
+                    stacks.append(value)
+            else:
+                stacks.append([i[subelement] for i in og_vals])
+
+        val = np.column_stack(stacks)
+        
+        if use_hsv:
+            for i, el in enumerate(val):
+                print(f'converting {el}')
+                val[i] = color_vector_to_rgb(el)
+        if no_list:
+            return val[0]
+        elif randomize_once:
+            return [(val[0]), ] * count
+        else:
+            return val
+
+    # String
+    elif data_type == "STRING":
+        min_len = kwargs['range_min']
+        max_len = kwargs['range_max']
+        custom_str = kwargs['string_custom']
+        characters = []
+        if custom_str is not None and custom_str !=  "":
+            characters = np.array(list(custom_str)).tile(ceil(max_len/len(custom_str)))
+        else:
+            if kwargs['string_capital']:
+                characters += string.ascii_uppercase
+            if kwargs['string_lowercase']:
+                characters += string.ascii_lowercase
+            if kwargs['string_numbers']:
+                characters += string.digits
+            if kwargs['string_special']:
+                characters += string.printable[62:95]
+
+        def getrndstr(chars, max, min):
+            len = round((max-min) * random.random()) + min
+            start_id = random.randint(0, max-len)
+            
+            random.shuffle(chars)
+            value = ''.join(chars[start_id:start_id+len+1])
+            if is_verbose_mode_enabled:
+                print(f"MINLEN: {min}, MAXLEN:{max}, LEN:{len}, Generated string: {value}")
+            return value
+        
+            
+        if no_list:
+            return getrndstr(characters, max_len, min_len)
+        elif randomize_once:
+            return np.repeat(getrndstr(characters, max_len, min_len), count)
+        else:
+            a = []
+            for i in range(0, count):
+                a.append(getrndstr(characters, max_len, min_len))
+            return a
+    
+    # Boolean
+    elif data_type == "BOOLEAN":
+        if no_list:
+            random.seed()
+            return random.uniform(0.0, 1.0) <= kwargs['bool_probability']
+        elif randomize_once:
+            random.seed()
+            return np.repeat(random.uniform(0.0, 1.0) <= kwargs['bool_probability'], count)
+        else:
+            return [e <= kwargs['bool_probability'] for e in np.random.uniform(low=0.0, high=1.0, size=count)]
+    else:
+        raise etc.GenericFunctionParameterError("get_random_attribute_of_data_type", f"Data type invalid: \"{data_type}\"")
 # set
 
 def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
@@ -2056,6 +2211,13 @@ def is_verbose_mode_enabled():
         bool
     """
     return etc.get_preferences_attrib('verbose_mode')
+
+def color_vector_to_hsv(color):
+    return tuple(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + (color[3],)
+
+def color_vector_to_rgb(color):
+    return tuple(colorsys.hsv_to_rgb(color[0], color[1], color[2])) + (color[3],)
+
 def get_attribute_compatibility_check(attribute):
     """Returns true if the attribute is compatible with this addon.
 
