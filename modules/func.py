@@ -2049,3 +2049,14 @@ def is_verbose_mode_enabled():
         bool
     """
     return etc.get_preferences_attrib('verbose_mode')
+def get_attribute_compatibility_check(attribute):
+    """Returns true if the attribute is compatible with this addon.
+
+    Returns:
+        bool
+    """
+    if attribute.data_type not in data.attribute_data_types:
+        return False
+    elif attribute.domain not in data.attribute_domains:
+        return False
+    return True
