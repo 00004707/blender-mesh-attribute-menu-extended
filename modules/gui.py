@@ -149,5 +149,114 @@ def shape_keys_context_menu_extension(self, context):
     """
 
     self.layout.operator_context = "INVOKE_DEFAULT"
+
+def sculpt_mode_mask_menu_extension(self, context):
+    """
+    Extra entries in sculpt mode mask menu on the menu bar
+    """
     
+    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.operator('mesh.attribute_quick_from_current_sculpt_mask', icon='MESH_DATA') 
+        self.layout.operator('mesh.attribute_quick_sculpt_mask_from_active_attribute', icon='MOD_MASK')
+
+
+def sculpt_mode_face_sets_menu_extension(self, context):
+    """
+    Extra entries in sculpt mode face sets menu on the menu bar
+    """
+
+    self.layout.operator_context = "INVOKE_DEFAULT"
+    self.layout.operator('mesh.attribute_quick_from_face_sets', icon='MESH_DATA') 
+    self.layout.operator('mesh.attribute_quick_face_sets_from_attribute', icon='FACE_MAPS')
+
+class SculptMode3DViewHeaderSettings(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_select_test"
+    bl_label = "Settings"
+
+    def draw(self, context):
+        layout = self.layout
+        prop_group = context.object.MAME_PropValues
+        layout.prop(prop_group, "qops_sculpt_mode_attribute_show_unsupported")
+
+
+
+def sculpt_mode_3dview_header_extension(self, context):
+    if bpy.context.mode == 'SCULPT':
+        if etc.get_preferences_attrib('extra_header_sculpt'):
+            prop_group = context.object.MAME_PropValues
+            box = self.layout.box()
+            row = box.row(align=True)
+
+            row.ui_units_x = 14.0
+
+            box2 = row.box()
+            box2.ui_units_x = 1.0
+            box2.prop(prop_group, "enum_sculpt_mode_attribute_mode_toggle", text="")
+
+            box2 = row.box()
+            box2.ui_units_x = 3.7
+            box2.prop(prop_group, "enum_sculpt_mode_attribute_selector", text="")
+
+            row.operator("mesh.mame_attribute_sculpt_mode_apply", text="", icon='ZOOM_PREVIOUS')
+            row.operator("mesh.mame_attribute_sculpt_mode_extend", text="", icon='ZOOM_IN')
+            row.operator("mesh.mame_attribute_sculpt_mode_subtract", text="", icon='ZOOM_OUT')
+            row.operator("mesh.mame_attribute_sculpt_mode_invert", text="", icon='SELECT_SUBTRACT')
+            row.operator("mesh.mame_attribute_sculpt_mode_new", text="", icon='FILE_NEW')
+            row.operator("mesh.mame_attribute_sculpt_mode_remove", text="", icon='PANEL_CLOSE')
+            row.operator("mesh.mame_attribute_sculpt_mode_overwrite", text="", icon='COPYDOWN')
+            
+            row.menu('VIEW3D_MT_select_test', text='', text_ctxt='', translate=True, icon='SETTINGS')
+
+def vertex_groups_context_menu_extension(self,context):
+    
+    if etc.get_preferences_attrib('extra_context_menu_vg'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_vertex_group', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_all_vertex_groups', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_vertex_group_assignment', icon='MESH_DATA')
+    
+    
+
+def shape_keys_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_sk'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_shape_key', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_offset_from_shape_key', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_all_shape_keys', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_offset_from_all_shape_keys', icon='MESH_DATA')
+
+
+def material_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_materials'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_material_assignment', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_material_index', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_material_slot_assignment', icon='MESH_DATA')
+    
+
+def vertex_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_vertex_menu'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+
+def edge_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_edge_menu'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+
+
+def face_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_face_menu'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+
+
+def object_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_object'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
 

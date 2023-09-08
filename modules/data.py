@@ -7,6 +7,7 @@ Data
 import bpy
 from collections import namedtuple
 from . import etc
+from . import func
 
 # Defines object data sourc,e
 ObjectDataSource = namedtuple("MeshDataSource", [
@@ -1037,6 +1038,38 @@ attribute_domains = {
     ),
 }
 
+# Everything that would create a circular import
+def get_sculpt_mode_mask_attribs(self, context):
+    
+    inv_data_entry = ("NULL", "No Valid Attributes", "")
+    e = []
+    attribs = context.active_object.data.attributes
+    prop_group = context.object.MAME_PropValues
+
+    # Toggle for setting masks or face sets
+    if prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+        target_domain = 'POINT'
+        target_dt = 'FLOAT'
+    else:
+        target_domain = 'FACE'
+        target_dt = 'INT'
+
+
+    for attribute in attribs:
+        if attribute.domain == target_domain and attribute.data_type == target_dt:
+            e.append((attribute.name, attribute.name, f"Use {attribute.name} to modify sculpt mode mask"))
+    
+    if prop_group.qops_sculpt_mode_attribute_show_unsupported:
+        for i, attribute in enumerate(attribs):
+            if not (attribute.domain == target_domain and attribute.data_type == target_dt):
+                e.append((attribute.name, attribute.name, f"Use {attribute.name} to modify sculpt mode mask", 'ERROR', i))
+    
+    
+    if not len(e):
+        return [inv_data_entry]
+    return e
+
+
 class MAME_PropValues(bpy.types.PropertyGroup):
     """
     All editable props in GUI
@@ -1094,3 +1127,21 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
     val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
     val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)
+
+    enum_sculpt_mode_attribute_selector: bpy.props.EnumProperty(
+        name="Source Attribute",
+        description="Select an option",
+        items=get_sculpt_mode_mask_attribs
+    )
+
+    enum_sculpt_mode_attribute_mode_toggle: bpy.props.EnumProperty(
+        name="Mode Toggle",
+        description="Select an option",
+        items=[("MASK", "Mask", "Use attribute to modify mask", 'MOD_MASK', 0),
+               ("FACE_SETS", "Face Set", "Use attribute to modify Face Maps", "FACE_MAPS", 1),],
+        default="MASK",
+    )
+
+    qops_sculpt_mode_attribute_show_unsupported: bpy.props.BoolProperty(name="Show all attributes", default=False)
+
+
