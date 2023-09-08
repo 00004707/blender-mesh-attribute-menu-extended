@@ -88,7 +88,7 @@ def get_enhanced_enum_titles_enabled():
     Returns:
         boolean: True if supported
     """
-    if bpy.app.version >= (3,3,0):
+    if get_blender_support((3,3,0)):
         return get_preferences_attrib('enhanced_enum_titles')
     else:
         return False
