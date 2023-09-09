@@ -116,7 +116,7 @@ classes += [
     quick_ops.QuickAttributeNode,
     quick_ops.QuickUVMapToAttribute,
     quick_ops.QuickFaceMapAssignmentToAttribute,
-    quick_ops.QuickFaceMapIndexToAttribute
+    quick_ops.QuickFaceMapIndexToAttribute,
 ]
 
 def register():
@@ -144,6 +144,7 @@ def register():
         bpy.types.VIEW3D_MT_edit_mesh_faces.append(gui.face_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_edges.append(gui.edge_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_groups_context_menu_extension)
+        bpy.types.DATA_PT_uv_texture.append(gui.uvmaps_context_menu_extension)
 
 def unregister():
 
@@ -169,6 +170,7 @@ def unregister():
         bpy.types.VIEW3D_MT_edit_mesh_edges.remove(gui.edge_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_groups_context_menu_extension)
         bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
+        bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
 
 if __name__ == "__main__":
     register()

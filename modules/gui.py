@@ -262,3 +262,11 @@ def object_context_menu_extension(self,context):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
 
+
+def uvmaps_context_menu_extension(self,context):
+    if etc.get_preferences_attrib('extra_context_menu_uvmaps') and etc.get_blender_support(minver_unsupported=(3,5,0)):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        # self.layout.separator()
+        col = self.layout.column()
+        self.layout.operator('mesh.attribute_quick_from_uvmap', icon='MESH_DATA')
+

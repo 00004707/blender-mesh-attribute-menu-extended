@@ -349,7 +349,6 @@ class QuickAllMaterialAssignmentToAttribute(bpy.types.Operator):
         args['enum_materials'] = str(list(bpy.data.materials).index(obj.active_material))
         return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
-
 class QuickAllMaterialSlotAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_all_from_material_slot_assignment"
     bl_label = "All to Attribute from slot assignment"
@@ -385,12 +384,34 @@ class QuickUVMapToAttribute(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        obj = context.active_object
+
+        if not obj:
+            self.poll_message_set("No active object")
+            return False
+        elif obj.type != 'MESH':
+            self.poll_message_set("Object is not a mesh")
+            return False
+        elif not len(obj.data.uv_layers):
+            self.poll_message_set("No UVMaps")
+            return False
+        elif not obj.data.uv_layers.active:
+            self.poll_message_set("No active UVMap")
+            return False
+        return True
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "UVMAP"
+        args['target_attrib_domain_enum'] = 'CORNER'
+        args['b_batch_convert_enabled'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_uvmaps'] = str(obj.data.uv_layers.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
     
 # Quick Face Maps
 
