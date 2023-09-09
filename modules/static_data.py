@@ -1077,12 +1077,50 @@ class EAttributeDataType(Enum):
     INT32_2D = 9
     QUATERNION = 10
 
+# Defines the type of GUI input to show 
 class EDataTypeGuiPropType(Enum):
     SCALAR = 0          #int float int8
     VECTOR = 1          #float vector, vector 2d, quaternion
     COLOR  = 3          # float color byte color
     STRING = 4          # string
     BOOLEAN = 5         # boolean
+
+# Defines all supported node editors
+class ENodeEditor(Enum):
+    UNSUPPORTED = 0
+    GEOMETRY_NODES = 1
+    SHADER = 2
+    ANIMATION_NODES = 3
+
+# Defines an node editor
+NodeEditor = namedtuple("NodeEditor", [
+    "gui_friendly_name",
+    "gui_description",
+    "enum",
+    "icon"
+])
+
+# Contains info about all node editors
+node_editors = {
+    "ShaderNodeTree": NodeEditor(
+            gui_friendly_name="Shader Editor",
+            gui_description="Shader Edtior",
+            enum=ENodeEditor.SHADER,
+            icon="MATERIAL"
+        ),
+    "GeometryNodeTree": NodeEditor(
+            gui_friendly_name="Geometry Nodes Editor",
+            gui_description="Geometry Nodes Editor",
+            enum=ENodeEditor.GEOMETRY_NODES,
+            icon="GEOMETRY_NODES"
+        ),
+    "an_AnimationNodeTree": NodeEditor(
+            gui_friendly_name="Animation Nodes Editor",
+            gui_description="Animation Nodes Editor",
+            enum=ENodeEditor.ANIMATION_NODES,
+            icon="ONIONSKIN_ON"
+        ), #OUTLINER_DATA_POINTCLOUD
+}
 
 # Define mesh data type entries
 AttributeDataType = namedtuple("AttributeDataType", [
@@ -1095,8 +1133,10 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "gui_prop_subtype",                         # Type of the gui to display for this attribute data type (EDataTypeGuiPropType)
     "vector_subelements_names",                 # Names of subelements in a vector value, eg X Y Z or None    
     "bpy_ops_set_attribute_param_name",         # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type
-    "default_value"                             # The default or zero value
-
+    "default_value",                            # The default or zero value
+    "compatible_node_editors",                  # The supported node editors, ENodeEditor enum
+    "geonodes_attribute_node_datatype",         # The name of the data type used in Named Attribute node in Geometry nodes. 'FLOAT', 'INT', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BOOLEAN', 'QUATERNION'
+    "animnodes_attribute_node_datatype",        # The name of the data type used in Get Custom Attribute node in Animation nodes. ('INT', 'FLOAT', 'FLOAT2', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'BOOLEAN')
 ])
 
 # Defines all supported mesh data types
@@ -1111,7 +1151,10 @@ attribute_data_types = {
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
         bpy_ops_set_attribute_param_name="value_float",
-        default_value=0.0
+        default_value=0.0,
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT",
+        animnodes_attribute_node_datatype="FLOAT"
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1123,7 +1166,10 @@ attribute_data_types = {
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
         bpy_ops_set_attribute_param_name="value_int",
-        default_value=0
+        default_value=0,
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="INT",
+        animnodes_attribute_node_datatype="INT"
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1135,7 +1181,10 @@ attribute_data_types = {
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.SCALAR,
         bpy_ops_set_attribute_param_name="value_int",
-        default_value=0
+        default_value=0,
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="INT",
+        animnodes_attribute_node_datatype="INT"
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1147,7 +1196,10 @@ attribute_data_types = {
         vector_subelements_names=['X','Y','Z'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
         bpy_ops_set_attribute_param_name="value_float_vector_3d",
-        default_value=(0.0, 0.0, 0.0)
+        default_value=(0.0, 0.0, 0.0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT_VECTOR",
+        animnodes_attribute_node_datatype="FLOAT_VECTOR"
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1159,7 +1211,10 @@ attribute_data_types = {
         vector_subelements_names=['R','G','B','A'],
         gui_prop_subtype=EDataTypeGuiPropType.COLOR,
         bpy_ops_set_attribute_param_name="value_color",
-        default_value=(0.0, 0.0, 0.0, 1.0)
+        default_value=(0.0, 0.0, 0.0, 1.0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT_COLOR",
+        animnodes_attribute_node_datatype="FLOAT_COLOR"
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1171,7 +1226,10 @@ attribute_data_types = {
         vector_subelements_names=['R','G','B','A'],
         gui_prop_subtype=EDataTypeGuiPropType.COLOR,
         bpy_ops_set_attribute_param_name="value_color",
-        default_value=(0.0, 0.0, 0.0, 1.0)
+        default_value=(0.0, 0.0, 0.0, 1.0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT_COLOR",
+        animnodes_attribute_node_datatype="BYTE_COLOR"
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1183,7 +1241,10 @@ attribute_data_types = {
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.STRING,
         bpy_ops_set_attribute_param_name=None,
-        default_value=""
+        default_value="",
+        compatible_node_editors=[],
+        geonodes_attribute_node_datatype="",
+        animnodes_attribute_node_datatype=""
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1195,7 +1256,10 @@ attribute_data_types = {
         vector_subelements_names=None,
         gui_prop_subtype=EDataTypeGuiPropType.BOOLEAN,
         bpy_ops_set_attribute_param_name="value_bool",
-        default_value=False
+        default_value=False,
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="BOOLEAN",
+        animnodes_attribute_node_datatype="BOOLEAN"
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1207,7 +1271,10 @@ attribute_data_types = {
         vector_subelements_names=['X','Y'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
         bpy_ops_set_attribute_param_name="value_float_vector_2d",
-        default_value=(0.0, 0.0)
+        default_value=(0.0, 0.0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT_VECTOR",
+        animnodes_attribute_node_datatype="FLOAT2"
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1219,7 +1286,10 @@ attribute_data_types = {
         vector_subelements_names=['X','Y'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
         bpy_ops_set_attribute_param_name="value_int_vector_2d",
-        default_value=(0, 0)
+        default_value=(0, 0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
+        geonodes_attribute_node_datatype="FLOAT_VECTOR",
+        animnodes_attribute_node_datatype="FLOAT2"
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1231,7 +1301,10 @@ attribute_data_types = {
         vector_subelements_names=['X','Y','Z','W'],
         gui_prop_subtype=EDataTypeGuiPropType.VECTOR,
         bpy_ops_set_attribute_param_name="value_quat",
-        default_value=(1.0, 0.0, 0.0, 0.0)
+        default_value=(1.0, 0.0, 0.0, 0.0),
+        compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],
+        geonodes_attribute_node_datatype="QUATERNION",
+        animnodes_attribute_node_datatype=""
     ),
 }
 

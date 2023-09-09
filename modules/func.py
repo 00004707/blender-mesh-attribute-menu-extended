@@ -2256,3 +2256,69 @@ def get_attribute_compatibility_check(attribute):
     elif attribute.domain not in static_data.attribute_domains:
         return False
     return True
+
+
+def get_node_editor_type(area, use_id = False, return_enum=False):
+    """
+    Returns an enum of ENodeEditor for given area
+    """
+    if use_id:
+        area = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
+
+    if area.type != 'NODE_EDITOR':
+        return None
+    elif return_enum:
+        if area.spaces[0].tree_type in static_data.node_editors:
+            return static_data.node_editors[area.spaces[0].tree_type].enum
+        else:
+            return None
+    else:
+        return area.spaces[0].tree_type
+        
+
+def get_node_editor_areas(ids=False):
+    """
+    Returns all areas that are node editors
+    """
+    areas = []
+    for w, window in enumerate(bpy.context.window_manager.windows):
+        for a, area in enumerate(window.screen.areas):
+            if area.type == 'NODE_EDITOR':
+                areas.append((w, a)) if ids else areas.append(area)
+
+    return areas
+
+def get_area_node_tree(area, useid = False):
+    if useid:
+        area = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
+
+    return area.spaces[0].node_tree
+
+def get_supported_areas_for_attribute(attribute, ids = False):
+    """
+    Gets supported node editors for specified attribute to create attribute node in.
+    """
+
+    areas = get_node_editor_areas(True) # returns tuple window id area id
+    
+    attribute_suppported_area_types = static_data.attribute_data_types[attribute.data_type].compatible_node_editors
+    supported_areas = []
+    for area in areas:
+        arearef = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
+
+        if get_node_editor_type(arearef, return_enum=True) in attribute_suppported_area_types:
+            supported_areas.append(area if ids else arearef)
+
+    
+    return supported_areas
+
+def get_node_tree_parent(node_tree, tree_type = None):
+
+    if tree_type in [None, static_data.ENodeEditor.SHADER]:
+        for mat in bpy.data.materials:
+            if mat.node_tree == node_tree:
+                return mat
+    elif tree_type in [None, static_data.ENodeEditor.GEOMETRY_NODES]:
+        for gn in bpy.data.node_groups:
+            if gn.node_tree == node_tree:
+                return gn

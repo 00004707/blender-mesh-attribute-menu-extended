@@ -247,7 +247,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     quick_shelf_enable: bpy.props.BoolProperty(name="Enable Quick Shelf", description="Buttons for quicker actions", default=False)
     quick_shelf_randomize: bpy.props.BoolProperty(name="Randomize Value", description="Adds a button to randomize value", default=False)
     quick_shelf_convert_to_mesh_data_repeat: bpy.props.BoolProperty(name="To Mesh Data Repeat", description="Adds a button to redo last \"To mesh Data\"", default=False)
-
+    quick_attribute_node_enable: bpy.props.BoolProperty(name="Enable Quick Node", description="Buttons for to create attribute nodes in node editors", default=True)
     # Debug
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
@@ -409,6 +409,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
             subrow = row.row()
             subrow.label(text='Re-convert to mesh data', icon='INFO')
+            
+            row = col.row()
+            row.prop(self, 'quick_attribute_node_enable', toggle=True)
+            subrow = row.row()
+            subrow.label(text='Create Attribute Nodes Quickly', icon='INFO')
 
         elif self.addonproperties_tabs == 'DEBUG':
             # Debug Zone

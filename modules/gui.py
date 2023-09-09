@@ -103,6 +103,48 @@ def attribute_assign_panel(self, context):
                 row.operator("mame.create_all_attribs", text="attrib test")
 
 
+        # Quick Attribute Node Menu
+        box = layout.box()
+        row = box.row()
+
+        if etc.get_preferences_attrib("quick_attribute_node_enable"):
+            row.label(text="Quick Attribute Node")
+            
+            obj = context.active_object
+            if obj and obj.data.attributes.active:
+
+                areas = func.get_supported_areas_for_attribute(obj.data.attributes.active, ids=True)
+
+                if len(areas):
+                    col = box.grid_flow(columns=2, align=True, even_columns=True)
+                    for i, area in enumerate(areas):
+                        node_editor_icon = static_data.node_editors[func.get_node_editor_type(area, use_id=True)].icon
+                        nt = func.get_area_node_tree(area, useid=True)
+                        parent = func.get_node_tree_parent(nt)
+                        if parent is None:
+                            parentname = nt.name
+                        else:
+                            parentname = parent.name
+                        subrow = col.row(align=True)
+                        op = subrow.operator("mesh.attribute_create_attribute_node", text=f"{i+1}: {parentname}", icon=node_editor_icon)
+                        op.windowid = area[0]
+                        op.areaid = area[1]
+                elif not func.get_node_editor_areas():
+                    box.label(text="No node editors open", icon='ERROR') 
+                else:
+                   box.label(text="None of Node Editors support this attribute", icon='ERROR') 
+
+            else:
+                box.label(text="No active attribute", icon='ERROR')
+
+            if etc.get_preferences_attrib('debug_operators'):
+                areas = func.get_node_editor_areas()
+                col = box.column(align=True)
+                for i, area in enumerate(areas):
+                    col.label(text=f"{i+1}: {func.get_node_editor_type(area)}")
+        
+
+
 def attribute_context_menu_extension(self, context):
     """
     Extra entries in ^ menu
