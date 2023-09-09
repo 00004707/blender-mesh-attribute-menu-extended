@@ -130,7 +130,7 @@ def attribute_assign_panel(self, context):
                         op.windowid = area[0]
                         op.areaid = area[1]
                 elif not func.get_node_editor_areas():
-                    box.label(text="No node editors open", icon='ERROR') 
+                    box.label(text="No node editors are open", icon='ERROR') 
                 else:
                    box.label(text="None of Node Editors support this attribute", icon='ERROR') 
 
