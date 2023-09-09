@@ -457,25 +457,10 @@ class QuickSculptModeInvertAttribute(bpy.types.Operator):
 # Quick nodes
 
 
-class QuickNamedAttributeNodeGN(bpy.types.Operator):
-    bl_idname = "mesh.attribute_create_named_attribute_gn"
-    bl_label = "Create Named Attribute Node (Geometry Nodes)"
-    bl_description = "Creates a Named Attribute node in active geometry nodes editor"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
-
-class QuickNamedAttributeNodeShader(bpy.types.Operator):
-    bl_idname = "mesh.attribute_create_named_attribute_shader"
-    bl_label = "Create Named Attribute Node (Shader)"
-    bl_description = "Creates a Named Attribute node in active shader editor"
+class QuickAttributeNode(bpy.types.Operator):
+    bl_idname = "mesh.attribute_create_attribute_node"
+    bl_label = "Create Attribute Node"
+    bl_description = "Creates Attribute node in active nodes editor"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod

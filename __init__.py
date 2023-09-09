@@ -110,7 +110,7 @@ classes += [
     quick_ops.QuickSculptModeNewAttribute,
     quick_ops.QuickSculptModeOverwriteAttribute,
     quick_ops.QuickSculptModeInvertAttribute,
-    quick_ops.QuickNamedAttributeNode,
+    quick_ops.QuickAttributeNode,
     quick_ops.QuickUVMapToAttribute,
     quick_ops.QuickFaceMapAssignmentToAttribute,
     quick_ops.QuickFaceMapIndexToAttribute
