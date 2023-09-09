@@ -101,6 +101,7 @@ classes += [
     quick_ops.QuickVertexGroupToAttribute,
     quick_ops.QuickAllVertexGroupToAttributes,
     quick_ops.QuickVertexGroupAssignmentToAttribute,
+    quick_ops.QuickAllVertexGroupAssignmentToAttributes,
     quick_ops.QuickMaterialAssignmentToAttribute,
     quick_ops.QuickMaterialIndexToAttribute,
     quick_ops.QuickMaterialSlotAssignmentToAttribute,
@@ -141,7 +142,7 @@ def register():
         bpy.types.VIEW3D_MT_object.append(gui.object_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_faces.append(gui.face_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_edges.append(gui.edge_context_menu_extension)
-        bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_context_menu_extension)
+        bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_groups_context_menu_extension)
 
 def unregister():
 
@@ -165,7 +166,7 @@ def unregister():
         bpy.types.VIEW3D_MT_object.remove(gui.object_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_faces.remove(gui.face_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_edges.remove(gui.edge_context_menu_extension)
-        bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_context_menu_extension)
+        bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_groups_context_menu_extension)
         bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
 
 if __name__ == "__main__":

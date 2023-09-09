@@ -114,7 +114,6 @@ class QuickShapeKeyOffsetToAttribute(bpy.types.Operator):
         args['enum_shape_keys_offset_target'] = str(obj.active_shape_key_index)
         return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
-
 class QuickAllShapeKeyOffsetToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_offset_from_all_shape_keys"
     bl_label = "All to Attributes as offsets from Basis"
@@ -141,51 +140,112 @@ class QuickAllShapeKeyOffsetToAttributes(bpy.types.Operator):
 
 # Quick Vertex Groups
 
+def vertexgrouppoll(self, context):
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    elif not len(obj.vertex_groups):
+        self.poll_message_set("No vertex groups")
+        return False
+    return True
+
 class QuickVertexGroupToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group"
-    bl_label = "Convert to Vertex Float Attribute"
+    bl_label = "To Attribute"
     bl_description = "Converts active Vertex Group to Vertex Float Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return vertexgrouppoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_FROM_VERTEX_GROUP"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_vertex_groups'] = str(obj.vertex_groups.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
     
 class QuickAllVertexGroupToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_all_vertex_groups"
-    bl_label = "Convert all to Vertex Float Attributes"
+    bl_label = "All Attributes"
     bl_description = "Converts all Vertex Groups to Vertex Float Attributes"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return vertexgrouppoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_FROM_VERTEX_GROUP"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_vertex_groups'] = str(obj.vertex_groups.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 class QuickVertexGroupAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group_assignment"
-    bl_label = "Convert to Vertex Boolean Attribute from assignment"
+    bl_label = "To Attribute from assignment"
     bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return vertexgrouppoll(self, context)
 
     def execute(self, context):
-        return 
-    
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_IS_IN_VERTEX_GROUP"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_vertex_groups'] = str(obj.vertex_groups.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
+class QuickAllVertexGroupAssignmentToAttributes(bpy.types.Operator):
+    bl_idname = "mesh.attribute_quick_all_from_vertex_group_assignment"
+    bl_label = "All to Attribute from assignment"
+    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(self, context):
+        return vertexgrouppoll(self, context)
+
+    def execute(self, context):
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_IS_IN_VERTEX_GROUP"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_vertex_groups'] = str(obj.vertex_groups.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
 # Quick Material
 
 class QuickMaterialAssignmentToAttribute(bpy.types.Operator):
