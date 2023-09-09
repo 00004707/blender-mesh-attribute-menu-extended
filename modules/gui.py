@@ -87,8 +87,8 @@ def attribute_assign_panel(self, context):
                         #Selection buttons
                         sub = col.row(align=True)
                         sub.operator_context = 'EXEC_DEFAULT'
-                        sub.operator("mesh.attribute_zero_value_select", text=f"Select")
-                        sub.operator("mesh.attribute_zero_value_deselect", text=f"Deselect")
+                        sub.operator("mesh.attribute_select_button", text=f"Select")
+                        sub.operator("mesh.attribute_deselect_button", text=f"Deselect")
                         
                         
                         sub = col.row(align=True)

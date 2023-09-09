@@ -812,3 +812,74 @@ class QuickAttributeNode(bpy.types.Operator):
         node.location = node_spawn_location
 
         return {'FINISHED'}
+
+
+# Select and deselect buttons
+
+
+class SelectDomainButton(bpy.types.Operator):
+    """
+    Used in gui to select domains with non-zero value
+    """
+    bl_idname = "mesh.attribute_select_button"
+    bl_label = "Select"
+    bl_description = "Select attribute domains"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    deselect: bpy.props.BoolProperty(name="deselet", default=False)
+
+    def execute(self, context):
+        prop_group = context.object.MAME_PropValues
+        select_nonzero = prop_group.val_select_non_zero_toggle
+
+        dt = context.active_object.data.attributes.active.data_type
+        params = {}
+        params['b_deselect'] = self.deselect
+        params['b_single_condition_vector'] = True
+        params['b_use_color_picker'] =  False
+        params['b_single_value_vector'] = False
+        # select true booleans though
+        params['attribute_comparison_condition_enum'] = 'NEQ' if select_nonzero and dt != 'BOOLEAN' else 'EQ'
+        params['b_string_case_sensitive'] = True
+        params['color_value_type_enum'] = 'RGBA'
+        params['vector_value_cmp_type_enum'] = 'AND'
+        
+        # compare all for vectors
+        if static_data.attribute_data_types[dt].gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR, 
+                                                                     static_data.EDataTypeGuiPropType.COLOR]:
+            for i in range(0,len(static_data.attribute_data_types[dt].vector_subelements_names)):
+                params[f'val_vector_{i}_toggle'] = True
+
+        # do not compare alpha
+        if static_data.attribute_data_types[dt].gui_prop_subtype in [static_data.EDataTypeGuiPropType.COLOR]:
+            params['val_vector_3_toggle'] = False
+        params['vec_0_condition_enum'] = 'NEQ' if select_nonzero else 'EQ'
+
+        if select_nonzero:
+            params[f'val_{dt.lower()}'] = func.get_attrib_default_value(datatype=dt)
+        else:
+            params[f'val_{dt.lower()}'] = getattr(prop_group, f'val_{dt.lower()}')
+
+        return  bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', **params)
+
+
+    @classmethod
+    def poll(self, context):
+        return func.conditional_selection_poll(self, context)
+
+class DeSelectDomainButton(bpy.types.Operator):
+    """
+    Used in gui to deselect domains with non-zero value
+    """
+    bl_idname = "mesh.attribute_deselect_button"
+    bl_label = "Deselect"
+    bl_description = "Deselect attribute domains"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        return  bpy.ops.mesh.attribute_select_button('EXEC_DEFAULT', 
+                                                     deselect=True)
+
+    @classmethod
+    def poll(self, context):
+        return func.conditional_selection_poll(self, context)
