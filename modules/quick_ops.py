@@ -547,16 +547,21 @@ class QuickAttributeNode(bpy.types.Operator):
         node_tree = self.area.spaces[0].node_tree
         
         node_spawn_location = region.view2d.region_to_view(region.width / 2,  region.height / 2)
+        # Widen the node if the name is long
         
+        extra_width = max(0,(len(attribute.name) - 10) * 9)
+
 
         if node_tree_type == static_data.ENodeEditor.GEOMETRY_NODES:
             node = node_tree.nodes.new("GeometryNodeInputNamedAttribute")
             node.inputs[0].default_value = attribute.name
             node.data_type = static_data.attribute_data_types[attribute.data_type].geonodes_attribute_node_datatype
+            node.width = node.width + extra_width
         elif node_tree_type == static_data.ENodeEditor.SHADER:
             node = node_tree.nodes.new("ShaderNodeAttribute")
             node.attribute_type = 'GEOMETRY'
             node.attribute_name = attribute.name
+            node.width = node.width + extra_width
         # elif node_tree_type == static_data.ENodeEditor.ANIMATION_NODES:
         #     node = node_tree.nodes.new("an_GetCustomAttributeNode")
         #     node.inputs[1].value = attribute.name
