@@ -243,8 +243,9 @@ def material_context_menu_extension(self,context):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
         self.layout.operator('mesh.attribute_quick_from_material_assignment', icon='MESH_DATA')
-        self.layout.operator('mesh.attribute_quick_from_material_index', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_all_from_material_assignment', icon='MESH_DATA')
         self.layout.operator('mesh.attribute_quick_from_material_slot_assignment', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_all_from_material_slot_assignment', icon='MESH_DATA')
 
 def edge_context_menu_extension(self,context):
     if etc.get_preferences_attrib('extra_context_menu_edge_menu'):

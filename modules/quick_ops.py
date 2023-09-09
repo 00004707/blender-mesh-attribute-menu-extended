@@ -248,50 +248,131 @@ class QuickAllVertexGroupAssignmentToAttributes(bpy.types.Operator):
 
 # Quick Material
 
+def materialpoll(self, context):
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    elif not len(bpy.data.materials):
+        self.poll_message_set("No Materials")
+        return False
+    elif not obj.active_material:
+        self.poll_message_set("No active Material")
+        return False
+    return True
+
+def materialslotpoll(self, context):
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    elif not len(obj.material_slots):
+        self.poll_message_set("No Material Slots")
+        return False
+    return True
+
 class QuickMaterialAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_material_assignment"
-    bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_label = "To Attribute from assignment"
+    bl_description = "Converts Material assignent to Face Boolean Attribute"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return materialpoll(self, context)
 
     def execute(self, context):
-        return 
-    
-class QuickMaterialIndexToAttribute(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_material_index"
-    bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_IS_MATERIAL_ASSIGNED"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_materials'] = str(list(bpy.data.materials).index(obj.active_material))
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 class QuickMaterialSlotAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_material_slot_assignment"
-    bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_label = "To Attribute from slot assignment"
+    bl_description = "Converts Material Slot assignent to Face Boolean Attribute"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
         self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return materialslotpoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_IS_MATERIAL_SLOT_ASSIGNED"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_material_slots'] = str(obj.active_material_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
+class QuickAllMaterialAssignmentToAttribute(bpy.types.Operator):
+    bl_idname = "mesh.attribute_quick_all_from_material_assignment"
+    bl_label = "All to Attribute from assignment"
+    bl_description = "Converts Material assignent to Face Boolean Attributes"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        return materialpoll(self, context)
+
+    def execute(self, context):
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_IS_MATERIAL_ASSIGNED"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_materials'] = str(list(bpy.data.materials).index(obj.active_material))
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
+
+class QuickAllMaterialSlotAssignmentToAttribute(bpy.types.Operator):
+    bl_idname = "mesh.attribute_quick_all_from_material_slot_assignment"
+    bl_label = "All to Attribute from slot assignment"
+    bl_description = "Converts Material Slots assignent to Face Boolean Attributes"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        return materialslotpoll(self, context)
+
+    def execute(self, context):
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_IS_MATERIAL_SLOT_ASSIGNED"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_material_slots'] = str(obj.active_material_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
 
 # Quick UV
 
