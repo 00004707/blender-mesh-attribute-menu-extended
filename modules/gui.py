@@ -164,13 +164,6 @@ def attribute_context_menu_extension(self, context):
     #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
 
-def shape_keys_context_menu_extension(self, context):
-    """
-    Extra entries in ^ shape keys menu 
-    """
-
-    self.layout.operator_context = "INVOKE_DEFAULT"
-
 def sculpt_mode_mask_menu_extension(self, context):
     """
     Extra entries in sculpt mode mask menu on the menu bar

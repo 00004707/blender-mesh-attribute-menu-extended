@@ -9,80 +9,135 @@ from . import static_data
 
 # Quick Shape Key
 
+def quickshapekeypoll(self, context):
+    """
+    Poll function for all shape key quick ops
+    """
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    elif obj.data.shape_keys is None:
+        self.poll_message_set("No shape keys")
+        return False
+    return True
+
+def dirtyquickshapekeypoll():
+    """
+    Dirty poll for same checks but without self reference
+    """
+
+    try:
+        quickshapekeypoll(None, bpy.context)
+    except AttributeError:
+        return False
+
+def get_first_shape_key_name():
+    obj = bpy.context.active_object
+
+    if not dirtyquickshapekeypoll():
+        return ""
+    else:
+        return obj.data.shape_keys.key_blocks[0].name
+
 class QuickShapeKeyToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_shape_key"
-    bl_label = "Convert to Vertex Vector Attribute"
+    bl_label = "To Attribute"
     bl_description = "Converts active Shape Key to Vertex Vector Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return quickshapekeypoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_SHAPE_KEY_POSITION"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = False
+        args['b_offset_from_offset_to_toggle'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_shape_keys'] = str(obj.active_shape_key_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 class QuickAllShapeKeyToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_all_shape_keys"
-    bl_label = "Convert all to Vertex Vector Attributes"
+    bl_label = "All to Attributes"
     bl_description = "Converts all Shape Keys to Vertex Vector Attributes"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return quickshapekeypoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_SHAPE_KEY_POSITION"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = True
+        args['b_offset_from_offset_to_toggle'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_shape_keys'] = str(obj.active_shape_key_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
     
 class QuickShapeKeyOffsetToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_offset_from_shape_key"
-    bl_label = "Convert to Vertex Vector Attribute as offset"
-    bl_description = "Converts active Shape Key offset to Vertex Vector Attribute"
+    bl_label = f"To Attribute as offset from Basis"
+    bl_description = "Converts active Shape Key offset to Vertex Vector Attribute as an offset from Basis Shape Key"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return quickshapekeypoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_SHAPE_KEY_POSITION_OFFSET"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = False
+        args['b_offset_from_offset_to_toggle'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_shape_keys'] = str(0)
+        args['enum_shape_keys_offset_target'] = str(obj.active_shape_key_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
-class QuickAllShapeKeyToAttributes(bpy.types.Operator):
-    bl_idname = "mesh.attribute_quick_from_all_shape_keys"
-    bl_label = "Convert all to Vertex Vector Attributes as offsets"
-    bl_description = "Converts all Shape Keys to Vertex Vector Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
-
-    def execute(self, context):
-        return 
 
 class QuickAllShapeKeyOffsetToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_offset_from_all_shape_keys"
-    bl_label = "Convert all to Vertex Vector Attributes as offsets"
+    bl_label = "All to Attributes as offsets from Basis"
     bl_description = "Converts all Shape Keys offsets to Vertex Vector Attributes"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return quickshapekeypoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "VERT_SHAPE_KEY_POSITION_OFFSET"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = True
+        args['b_offset_from_offset_to_toggle'] = True
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_shape_keys'] = str(obj.active_shape_key_index)
+        args['enum_shape_keys_offset_target'] = str(0)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 # Quick Vertex Groups
 
