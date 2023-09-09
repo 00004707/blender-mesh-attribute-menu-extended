@@ -127,8 +127,6 @@ def register():
         # GUI Extensions
         bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
         bpy.types.MESH_MT_attribute_context_menu.append(gui.attribute_context_menu_extension)
-        bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
-        bpy.types.MESH_MT_attribute_context_menu.append(gui.attribute_context_menu_extension)
         bpy.types.VIEW3D_MT_mask.append(gui.sculpt_mode_mask_menu_extension)
         bpy.types.VIEW3D_MT_face_sets.append(gui.sculpt_mode_face_sets_menu_extension)
         bpy.types.VIEW3D_MT_editor_menus.append(gui.sculpt_mode_3dview_header_extension)
@@ -151,7 +149,6 @@ def unregister():
 
 
         # GUI Extensions
-        bpy.types.DATA_PT_mesh_attributes.remove(gui.attribute_assign_panel)
         bpy.types.DATA_PT_mesh_attributes.remove(gui.attribute_assign_panel)
         bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
         bpy.types.VIEW3D_MT_mask.remove(gui.sculpt_mode_mask_menu_extension)
