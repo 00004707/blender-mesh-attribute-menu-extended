@@ -89,7 +89,7 @@ class QuickAllShapeKeyOffsetToAttributes(bpy.types.Operator):
 class QuickVertexGroupToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group"
     bl_label = "Convert to Vertex Float Attribute"
-    bl_description = "Converts active vertex group to Vertex Float Attribute"
+    bl_description = "Converts active Vertex Group to Vertex Float Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -104,7 +104,7 @@ class QuickVertexGroupToAttribute(bpy.types.Operator):
 class QuickAllVertexGroupToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_all_vertex_groups"
     bl_label = "Convert all to Vertex Float Attributes"
-    bl_description = "Converts all vertex groups to Vertex Float Attributes"
+    bl_description = "Converts all Vertex Groups to Vertex Float Attributes"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -119,7 +119,7 @@ class QuickAllVertexGroupToAttributes(bpy.types.Operator):
 class QuickVertexGroupAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group_assignment"
     bl_label = "Convert to Vertex Boolean Attribute from assignment"
-    bl_description = "Converts vertex group verte assignent to Vertex Boolean Attribute"
+    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -136,7 +136,7 @@ class QuickVertexGroupAssignmentToAttribute(bpy.types.Operator):
 class QuickMaterialAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_material_assignment"
     bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts vertex group verte assignent to Vertex Boolean Attribute"
+    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -151,7 +151,7 @@ class QuickMaterialAssignmentToAttribute(bpy.types.Operator):
 class QuickMaterialIndexToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_material_index"
     bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts vertex group verte assignent to Vertex Boolean Attribute"
+    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -166,7 +166,7 @@ class QuickMaterialIndexToAttribute(bpy.types.Operator):
 class QuickMaterialSlotAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_material_slot_assignment"
     bl_label = "Convert to Face Boolean Attribute from assignment"
-    bl_description = "Converts vertex group verte assignent to Vertex Boolean Attribute"
+    bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -180,71 +180,55 @@ class QuickMaterialSlotAssignmentToAttribute(bpy.types.Operator):
 
 # Quick UV
 
-# class QuickUVMapToAttribute(bpy.types.Operator):
-#     # this is for pre blender 3.5
-#     bl_idname = "mesh.attribute_quick_from_uvmap"
-#     bl_label = "Convert UVMap to Vector 2D Attribute"
-#     bl_description = "Converts active UVMap to Vector 2D Attribute"
-#     bl_options = {'REGISTER', 'UNDO'}
+class QuickUVMapToAttribute(bpy.types.Operator):
+    # this is for pre blender 3.5
+    bl_idname = "mesh.attribute_quick_from_uvmap"
+    bl_label = "Convert UVMap to Vector 2D Attribute"
+    bl_description = "Converts active UVMap to Vector 2D Attribute"
+    bl_options = {'REGISTER', 'UNDO'}
 
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Not implemented yet...")
+        # check if its a mesh
+        return False
 
-#     def execute(self, context):
-#         return 
+    def execute(self, context):
+        return 
     
-# class QuickAllUVMapToAttributes(bpy.types.Operator):
-#     # this is for pre blender 3.5
-#     bl_idname = "mesh.attribute_quick_from_all_uvmaps"
-#     bl_label = "Convert all UVMaps to Vector 2D Attributes"
-#     bl_description = "Converts all UVMaps to Vector 2D Attributes"
-#     bl_options = {'REGISTER', 'UNDO'}
-
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
-
-#     def execute(self, context):
-#         return 
-
 # Quick Face Maps
 
-# class QuickFaceMapAssignmentToAttribute(bpy.types.Operator):
-#     # this is for pre blender 4.0
-#     bl_idname = "mesh.attribute_quick_from_face_map"
-#     bl_label = "Convert Face Map assignment to Boolean Face Attribute"
-#     bl_description = "Convert assignment of active Face Map to Boolean Face Attribute"
-#     bl_options = {'REGISTER', 'UNDO'}
+class QuickFaceMapAssignmentToAttribute(bpy.types.Operator):
+    # this is for pre blender 4.0
+    bl_idname = "mesh.attribute_quick_from_face_map"
+    bl_label = "Convert Face Map assignment to Boolean Face Attribute"
+    bl_description = "Convert assignment of active Face Map to Boolean Face Attribute"
+    bl_options = {'REGISTER', 'UNDO'}
 
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Not implemented yet...")
+        # check if its a mesh
+        return False
 
-#     def execute(self, context):
-#         return 
+    def execute(self, context):
+        return 
     
-# class QuickFaceMapIndexToAttribute(bpy.types.Operator):
-#     # this is for pre blender 4.0
-#     bl_idname = "mesh.attribute_quick_from_face_map_index"
-#     bl_label = "Convert Face Map index assignment to Integer Face Attribute"
-#     bl_description = "Converts Face Map index assignment to Integer Face Attribute"
-#     bl_options = {'REGISTER', 'UNDO'}
+class QuickFaceMapIndexToAttribute(bpy.types.Operator):
+    # this is for pre blender 4.0
+    bl_idname = "mesh.attribute_quick_from_face_map_index"
+    bl_label = "Convert Face Map index assignment to Integer Face Attribute"
+    bl_description = "Converts Face Map index assignment to Integer Face Attribute"
+    bl_options = {'REGISTER', 'UNDO'}
 
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Not implemented yet...")
+        # check if its a mesh
+        return False
 
-#     def execute(self, context):
-#         return 
+    def execute(self, context):
+        return 
 
 # Quick Sculpt Masks
 
@@ -469,26 +453,26 @@ class QuickSculptModeInvertAttribute(bpy.types.Operator):
         return 
 
 
-#
+
 # Quick nodes
-#
 
-# class QuickNamedAttributeNodeGN(bpy.types.Operator):
-#     bl_idname = "mesh.attribute_create_named_attribute_gn"
-#     bl_label = "Create Named Attribute Node (Geometry Nodes)"
-#     bl_description = "Creates a Named Attribute node in active geometry nodes editor"
-#     bl_options = {'REGISTER', 'UNDO'}
 
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         # check if its a mesh
-#         return False
+class QuickNamedAttributeNodeGN(bpy.types.Operator):
+    bl_idname = "mesh.attribute_create_named_attribute_gn"
+    bl_label = "Create Named Attribute Node (Geometry Nodes)"
+    bl_description = "Creates a Named Attribute node in active geometry nodes editor"
+    bl_options = {'REGISTER', 'UNDO'}
 
-#     def execute(self, context):
-#         return 
+    @classmethod
+    def poll(self, context):
+        self.poll_message_set("Not implemented yet...")
+        # check if its a mesh
+        return False
 
-# class QuickNamedAttributeNodeShader(bpy.types.Operator):
+    def execute(self, context):
+        return 
+
+class QuickNamedAttributeNodeShader(bpy.types.Operator):
     bl_idname = "mesh.attribute_create_named_attribute_shader"
     bl_label = "Create Named Attribute Node (Shader)"
     bl_description = "Creates a Named Attribute node in active shader editor"
