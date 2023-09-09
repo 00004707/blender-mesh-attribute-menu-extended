@@ -24,7 +24,7 @@ def quickshapekeypoll(self, context):
     elif obj.data.shape_keys is None:
         self.poll_message_set("No shape keys")
         return False
-    elif not obj.active_shape_key_index:
+    elif obj.active_shape_key_index is None:
         self.poll_message_set("No active shape key")
         return False
     return True
@@ -155,7 +155,7 @@ def vertexgrouppoll(self, context):
     elif not len(obj.vertex_groups):
         self.poll_message_set("No vertex groups")
         return False
-    elif not obj.vertex_groups.active_index:
+    elif obj.vertex_groups.active_index  is None:
         self.poll_message_set("No active vertex group")
         return False
     return True
@@ -266,7 +266,7 @@ def materialpoll(self, context):
     elif not len(bpy.data.materials):
         self.poll_message_set("No Materials")
         return False
-    elif not obj.active_material:
+    elif obj.active_material is None:
         self.poll_message_set("No active Material")
         return False
     return True
@@ -401,7 +401,7 @@ class QuickUVMapToAttribute(bpy.types.Operator):
         elif not len(obj.data.uv_layers):
             self.poll_message_set("No UVMaps")
             return False
-        elif not obj.data.uv_layers.active:
+        elif obj.data.uv_layers.active is None:
             self.poll_message_set("No active UVMap")
             return False
         return True
@@ -413,7 +413,7 @@ class QuickUVMapToAttribute(bpy.types.Operator):
         args['attrib_name'] = ""
         args['domain_data_type_enum'] = "UVMAP"
         args['target_attrib_domain_enum'] = 'CORNER'
-        args['b_batch_convert_enabled'] = True
+        args['b_batch_convert_enabled'] = False
         args['b_overwrite'] = True
         args['b_enable_name_formatting'] = True
         args['enum_uvmaps'] = str(obj.data.uv_layers.active_index)
