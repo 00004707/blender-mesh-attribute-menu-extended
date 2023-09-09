@@ -451,7 +451,7 @@ ON_INDEX_FROM_LIST: {is_list}
                         storage[id*len(example_attribute_domain_value)+l] = value[i][l] if is_list else value[l]
             else:
                 for i, id in enumerate(on_indexes):
-                    storage[id] = value[i]
+                    storage[id] = value[i] if is_list else value
             attribute.data.foreach_set(prop_name, storage)
 
         # For loop for < 25% mesh selected
