@@ -392,23 +392,23 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.label(text='Properties > Data > Geometry Data', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'quick_shelf_enable', toggle=True)
-            subrow = row.row()
-            subrow.label(text='Properties > Data > Attributes', icon='INFO')
+            # row = col.row()
+            # row.prop(self, 'quick_shelf_enable', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='Properties > Data > Attributes', icon='INFO')
 
-            subbox = col.box()
-            subbox.enabled = self.quick_shelf_enable
-            subbox_col = subbox.column()
-            row = subbox_col.row()
-            row.prop(self, 'quick_shelf_randomize', toggle=True)
-            subrow = row.row()
-            subrow.label(text='Randomize with same values', icon='INFO')
+            # subbox = col.box()
+            # subbox.enabled = self.quick_shelf_enable
+            # subbox_col = subbox.column()
+            # row = subbox_col.row()
+            # row.prop(self, 'quick_shelf_randomize', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='Randomize with same values', icon='INFO')
 
-            row = subbox_col.row()
-            row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
-            subrow = row.row()
-            subrow.label(text='Re-convert to mesh data', icon='INFO')
+            # row = subbox_col.row()
+            # row.prop(self, 'quick_shelf_convert_to_mesh_data_repeat', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='Re-convert to mesh data', icon='INFO')
             
             row = col.row()
             row.prop(self, 'quick_attribute_node_enable', toggle=True)
