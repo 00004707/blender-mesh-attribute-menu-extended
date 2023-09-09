@@ -489,20 +489,38 @@ class QuickFaceMapIndexToAttribute(bpy.types.Operator):
 
 # Quick Sculpt Masks
 
+def sculpt_facemap_poll(self, context):
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    return True
+
 class QuickCurrentSculptMaskToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_current_sculpt_mask"
-    bl_label = "Current Mask to Float Attribute"
+    bl_label = "Current Mask to Attribute"
     bl_description = "Converts Sculpt Mask to Float Vertex Attribute"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return sculpt_facemap_poll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "SCULPT_MODE_MASK"
+        args['target_attrib_domain_enum'] = 'POINT'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = False
+        args['b_enable_name_formatting'] = True
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 class QuickActiveAttributeToSculptMask(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_sculpt_mask_from_active_attribute"
@@ -512,29 +530,41 @@ class QuickActiveAttributeToSculptMask(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return sculpt_facemap_poll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['b_delete_if_converted'] = False
+        args['data_target_enum'] = "TO_SCULPT_MODE_MASK"
+        args['convert_to_domain_enum'] = 'POINT'
+        return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
 
 # Quick Face Sets
 
 class QuickFaceSetsToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_face_sets"
-    bl_label = "Face Sets to Integer Attribute"
+    bl_label = "Face Sets to Attribute"
     bl_description = "Converts Face Sets to Integer Vertex Attribute"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return sculpt_facemap_poll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "SCULPT_MODE_FACE_SETS"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = False
+        args['b_enable_name_formatting'] = True
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
 
 class QuickActiveAttributeToFaceSets(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_face_sets_from_attribute"
@@ -544,12 +574,17 @@ class QuickActiveAttributeToFaceSets(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return sculpt_facemap_poll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['b_delete_if_converted'] = False
+        args['data_target_enum'] = "TO_SCULPT_MODE_FACE_SETS"
+        args['convert_to_domain_enum'] = 'FACE'
+        return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
+
 
 # Quick Sculpt Mode Menu
 

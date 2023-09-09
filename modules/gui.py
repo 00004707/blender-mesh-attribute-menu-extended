@@ -171,6 +171,7 @@ def sculpt_mode_mask_menu_extension(self, context):
     
     if etc.get_preferences_attrib('extra_context_menu_sculpt'):
         self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
         self.layout.operator('mesh.attribute_quick_from_current_sculpt_mask', icon='MESH_DATA') 
         self.layout.operator('mesh.attribute_quick_sculpt_mask_from_active_attribute', icon='MOD_MASK')
 
@@ -178,10 +179,11 @@ def sculpt_mode_face_sets_menu_extension(self, context):
     """
     Extra entries in sculpt mode face sets menu on the menu bar
     """
-
-    self.layout.operator_context = "INVOKE_DEFAULT"
-    self.layout.operator('mesh.attribute_quick_from_face_sets', icon='MESH_DATA') 
-    self.layout.operator('mesh.attribute_quick_face_sets_from_attribute', icon='FACE_MAPS')
+    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_face_sets', icon='MESH_DATA') 
+        self.layout.operator('mesh.attribute_quick_face_sets_from_attribute', icon='FACE_MAPS')
 
 class SculptMode3DViewHeaderSettings(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_select_test"
