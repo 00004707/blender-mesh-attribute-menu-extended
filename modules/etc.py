@@ -232,10 +232,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
     
     # Context
     
-    extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
-    extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
-    extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
-    extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
+    # extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
+    # extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
+    # extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
+    # extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
 
     # 3D View
     extra_header_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Header", description="Adds extra operators to sculpting 3D View", default=False)
@@ -260,7 +260,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
         ("SPECIALS", "Specials Menus", "Specials Menus Settings"),
-        ("CONTEXT", "Context Menu", "Context Menus Settings"),
+        #("CONTEXT", "Context Menu", "Context Menus Settings"),
         ("3DVIEW", "3D View", "3D View Extensions Settings"),
         ("QUICK", "Quick Buttons", "Quick Extensions Settings"),
         ("DEBUG", "Troubleshooting", "Troubleshooting and Debug menus"),
@@ -268,10 +268,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
 
     def draw(self, context):
         layout = self.layout
-        tabsrow = layout.row()
-        tabsrow.prop_tabs_enum(self, 'addonproperties_tabs')
         
-        if self.addonproperties_tabs == 'GENERAL':
+        def draw_general(layout):
             # General
             
             titlebox = layout.box()
@@ -290,7 +288,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow.alert = not ver_support
             subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
 
-        elif self.addonproperties_tabs == 'SPECIALS':
+        def draw_specials(layout):
             titlebox = layout.box()
             titlebox.label(text="Specials menus - extensions to the chevron menus next to selection lists")
             
@@ -335,34 +333,32 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
 
-        elif self.addonproperties_tabs == 'CONTEXT':
+        #def draw_context(layout):
+        #     titlebox = layout.box()
+        #     titlebox.label(text="Context Menus - Extensions to right-click menus")
+        #     col = layout.column()
 
-            titlebox = layout.box()
-            titlebox.label(text="Context Menus - Extensions to right-click menus")
-            col = layout.column()
+        #     row = col.row()
+        #     row.prop(self, 'extra_context_menu_object', toggle=True)
+        #     subrow = row.row()
+        #     subrow.label(text='3D View Menu Bar > Object', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_object', toggle=True)
-            subrow = row.row()
-            subrow.label(text='3D View Menu Bar > Object', icon='INFO')
+        #     row = col.row()
+        #     row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
+        #     subrow = row.row()
+        #     subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
-            subrow = row.row()
-            subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
+        #     row = col.row()
+        #     row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
+        #     subrow = row.row()
+        #     subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
-            subrow = row.row()
-            subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
+        #     row = col.row()
+        #     row.prop(self, 'extra_context_menu_face_menu', toggle=True)
+        #     subrow = row.row()
+        #     subrow.label(text='3D View Menu Bar > Face', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_face_menu', toggle=True)
-            subrow = row.row()
-            subrow.label(text='3D View Menu Bar > Face', icon='INFO')
-
-            
-        elif self.addonproperties_tabs == '3DVIEW':
+        def draw_3dview(layout):
             titlebox = layout.box()
             titlebox.label(text="3D View Extensions - extensions that are placed in the 3D viewport")
             col = layout.column()
@@ -377,20 +373,20 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.label(text='3D View Menu Bar > Mask / Face Sets', icon='INFO')
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
-            subrow = row.row()
-            subrow.label(text='3D View > N-Panel > Edit', icon='INFO')
-            
-        elif self.addonproperties_tabs == 'QUICK':
+            # row = col.row()
+            # row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='3D View > N-Panel > Edit', icon='INFO')
+
+        def draw_quick(layout):
             titlebox = layout.box()
             titlebox.label(text="Quick Buttons - Extra buttons that repeat last actions or other")
             col = layout.column()
 
-            row = col.row()
-            row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
-            subrow = row.row()
-            subrow.label(text='Properties > Data > Geometry Data', icon='INFO')
+            # row = col.row()
+            # row.prop(self, 'extra_context_menu_geometry_data', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='Properties > Data > Geometry Data', icon='INFO')
 
             # row = col.row()
             # row.prop(self, 'quick_shelf_enable', toggle=True)
@@ -415,8 +411,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.label(text='Create Attribute Nodes Quickly', icon='INFO')
 
-        elif self.addonproperties_tabs == 'DEBUG':
-            # Debug Zone
+        def draw_debug(layout):
+                        # Debug Zone
             titlebox = layout.box()
             titlebox.label(text="Troubleshooting")
             col = layout.column(align=False)
@@ -439,6 +435,38 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'disable_version_checks')
                 box.prop(self, 'set_algo_tweak')
         
+
+        # Toggle this to enable tabs layout
+        tabs_enabled = True
+
+        if tabs_enabled:
+            tabsrow = layout.row()
+            tabsrow.prop_tabs_enum(self, 'addonproperties_tabs')
+            if self.addonproperties_tabs == 'GENERAL':
+                draw_general(layout)
+            elif self.addonproperties_tabs == 'SPECIALS':
+                draw_specials(layout)
+            # elif self.addonproperties_tabs == 'CONTEXT':
+            #    draw_context(layout)
+            elif self.addonproperties_tabs == '3DVIEW':
+                draw_3dview(layout)
+            elif self.addonproperties_tabs == 'QUICK':
+                draw_quick(layout)
+            elif self.addonproperties_tabs == 'DEBUG':
+                draw_debug(layout)
+        else:
+            draw_general(layout)
+            layout.separator()
+            draw_specials(layout)
+            # layout.separator()
+            # draw_context(layout)
+            layout.separator()
+            draw_3dview(layout)
+            layout.separator()
+            draw_quick(layout)
+            layout.separator()
+            draw_debug(layout)            
+
             
             
             
