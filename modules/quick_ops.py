@@ -48,7 +48,7 @@ class QuickShapeKeyToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_shape_key"
     bl_label = "To Attribute"
     bl_description = "Converts active Shape Key to Vertex Vector Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -71,7 +71,7 @@ class QuickAllShapeKeyToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_all_shape_keys"
     bl_label = "All to Attributes"
     bl_description = "Converts all Shape Keys to Vertex Vector Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -94,7 +94,7 @@ class QuickShapeKeyOffsetToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_offset_from_shape_key"
     bl_label = f"To Attribute as offset from Basis"
     bl_description = "Converts active Shape Key offset to Vertex Vector Attribute as an offset from Basis Shape Key"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -118,7 +118,7 @@ class QuickAllShapeKeyOffsetToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_offset_from_all_shape_keys"
     bl_label = "All to Attributes as offsets from Basis"
     bl_description = "Converts all Shape Keys offsets to Vertex Vector Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -158,7 +158,7 @@ class QuickVertexGroupToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group"
     bl_label = "To Attribute"
     bl_description = "Converts active Vertex Group to Vertex Float Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -181,7 +181,7 @@ class QuickAllVertexGroupToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_all_vertex_groups"
     bl_label = "All Attributes"
     bl_description = "Converts all Vertex Groups to Vertex Float Attributes"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -204,7 +204,7 @@ class QuickVertexGroupAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_vertex_group_assignment"
     bl_label = "To Attribute from assignment"
     bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -227,7 +227,7 @@ class QuickAllVertexGroupAssignmentToAttributes(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_all_from_vertex_group_assignment"
     bl_label = "All to Attribute from assignment"
     bl_description = "Converts Vertex Group vertex assignent to Vertex Boolean Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -381,7 +381,7 @@ class QuickUVMapToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_uvmap"
     bl_label = "Convert UVMap to Vector 2D Attribute"
     bl_description = "Converts active UVMap to Vector 2D Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -399,7 +399,7 @@ class QuickFaceMapAssignmentToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_face_map"
     bl_label = "Convert Face Map assignment to Boolean Face Attribute"
     bl_description = "Convert assignment of active Face Map to Boolean Face Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -415,7 +415,7 @@ class QuickFaceMapIndexToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_face_map_index"
     bl_label = "Convert Face Map index assignment to Integer Face Attribute"
     bl_description = "Converts Face Map index assignment to Integer Face Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -432,7 +432,7 @@ class QuickCurrentSculptMaskToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_current_sculpt_mask"
     bl_label = "Current Mask to Float Attribute"
     bl_description = "Converts Sculpt Mask to Float Vertex Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -447,7 +447,7 @@ class QuickActiveAttributeToSculptMask(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_sculpt_mask_from_active_attribute"
     bl_label = "Active Attribute to Mask"
     bl_description = "Converts Active Mesh Attribute to Sculpt Mode Face Sets"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -464,7 +464,7 @@ class QuickFaceSetsToAttribute(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_from_face_sets"
     bl_label = "Face Sets to Integer Attribute"
     bl_description = "Converts Face Sets to Integer Vertex Attribute"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -479,7 +479,7 @@ class QuickActiveAttributeToFaceSets(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_face_sets_from_attribute"
     bl_label = "Active Attribute to Face Sets"
     bl_description = "Converts Active Mesh Attribute to Sculpt Mode Face Sets"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
@@ -500,7 +500,7 @@ class QuickSculptModeApplyAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_apply"
     bl_label = "Active Attribute to Mask/FaceSet"
     bl_description = "Converts Active Mesh Attribute to Sculpt Mode Face Sets or Mask"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
