@@ -421,37 +421,71 @@ class QuickUVMapToAttribute(bpy.types.Operator):
     
 # Quick Face Maps
 
+def facemappoll(self, context):
+    obj = context.active_object
+
+    if not obj:
+        self.poll_message_set("No active object")
+        return False
+    elif obj.type != 'MESH':
+        self.poll_message_set("Object is not a mesh")
+        return False
+    elif not hasattr(obj, 'face_maps') or not len(obj.face_maps):
+        self.poll_message_set("No Face Maps")
+        return False
+    elif obj.face_maps.active_index is None:
+        self.poll_message_set("No active shape key")
+        return False
+    return True
+
 class QuickFaceMapAssignmentToAttribute(bpy.types.Operator):
     # this is for pre blender 4.0
     bl_idname = "mesh.attribute_quick_from_face_map"
-    bl_label = "Convert Face Map assignment to Boolean Face Attribute"
+    bl_label = "To Attribute from assignment"
     bl_description = "Convert assignment of active Face Map to Boolean Face Attribute"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return facemappoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_FROM_FACE_MAP"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_face_maps'] = str(obj.face_maps.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
     
 class QuickFaceMapIndexToAttribute(bpy.types.Operator):
     # this is for pre blender 4.0
     bl_idname = "mesh.attribute_quick_from_face_map_index"
-    bl_label = "Convert Face Map index assignment to Integer Face Attribute"
+    bl_label = "To Attribute from index"
     bl_description = "Converts Face Map index assignment to Integer Face Attribute"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
         self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        return facemappoll(self, context)
 
     def execute(self, context):
-        return 
+        obj = context.active_object
+        
+        args = {}
+        args['attrib_name'] = ""
+        args['domain_data_type_enum'] = "FACE_MAP_INDEX"
+        args['target_attrib_domain_enum'] = 'FACE'
+        args['b_batch_convert_enabled'] = False
+        args['b_overwrite'] = True
+        args['b_enable_name_formatting'] = True
+        args['enum_face_maps'] = str(obj.face_maps.active_index)
+        return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
 
 # Quick Sculpt Masks
 

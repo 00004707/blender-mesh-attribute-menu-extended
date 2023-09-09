@@ -145,6 +145,8 @@ def register():
         bpy.types.VIEW3D_MT_edit_mesh_edges.append(gui.edge_context_menu_extension)
         bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_groups_context_menu_extension)
         bpy.types.DATA_PT_uv_texture.append(gui.uvmaps_context_menu_extension)
+        if bpy.app.version < (4,0,0):
+            bpy.types.DATA_PT_face_maps.append(gui.facemaps_context_menu_extension)
 
 def unregister():
 
@@ -171,6 +173,8 @@ def unregister():
         bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_groups_context_menu_extension)
         bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
         bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
+        if bpy.app.version < (4,0,0):
+            bpy.types.DATA_PT_face_maps.remove(gui.facemaps_context_menu_extension)
 
 if __name__ == "__main__":
     register()
