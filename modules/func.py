@@ -2306,8 +2306,12 @@ def get_supported_areas_for_attribute(attribute, ids = False):
     for area in areas:
         arearef = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
 
-        if get_node_editor_type(arearef, return_enum=True) in attribute_suppported_area_types:
-            supported_areas.append(area if ids else arearef)
+        node_editor_type = get_node_editor_type(arearef, return_enum=True)
+        if node_editor_type in attribute_suppported_area_types:
+            if node_editor_type == static_data.ENodeEditor.GEOMETRY_NODES and not etc.get_blender_support(minver=(3,2,0)):
+                continue
+            else:
+                supported_areas.append(area if ids else arearef)
 
     
     return supported_areas

@@ -1112,7 +1112,7 @@ node_editors = {
             gui_friendly_name="Geometry Nodes Editor",
             gui_description="Geometry Nodes Editor",
             enum=ENodeEditor.GEOMETRY_NODES,
-            icon="GEOMETRY_NODES"
+            icon="GEOMETRY_NODES" if etc.get_blender_support(minver=(3,3,0)) else "NODE"
         ),
     "an_AnimationNodeTree": NodeEditor(
             gui_friendly_name="Animation Nodes Editor",
