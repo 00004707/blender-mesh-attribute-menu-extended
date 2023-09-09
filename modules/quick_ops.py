@@ -24,6 +24,9 @@ def quickshapekeypoll(self, context):
     elif obj.data.shape_keys is None:
         self.poll_message_set("No shape keys")
         return False
+    elif not obj.active_shape_key_index:
+        self.poll_message_set("No active shape key")
+        return False
     return True
 
 def dirtyquickshapekeypoll():
@@ -151,6 +154,9 @@ def vertexgrouppoll(self, context):
         return False
     elif not len(obj.vertex_groups):
         self.poll_message_set("No vertex groups")
+        return False
+    elif not obj.vertex_groups.active_index:
+        self.poll_message_set("No active vertex group")
         return False
     return True
 
