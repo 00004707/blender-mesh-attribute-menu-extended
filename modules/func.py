@@ -468,8 +468,7 @@ ON_INDEX_FROM_LIST: {is_list}
                     attribute.data[id].value = value[i] if is_list else value
 
             etc.pseudo_profiler("SET_VAL_ON_SELECTION_END")
-            
-                    
+                          
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
     """Assigns a single value to all selected domain in edit mode.
 
@@ -1146,12 +1145,29 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     # SELECTED VERTS IN UV EDITOR
     elif data_type == "SELECTED_VERTICES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
-        return [vs.value for vs in obj.data.attributes[f".vs.{uvmap_name}"].data]
+        attribute_name = f".vs.{uvmap_name}"
+        if attribute_name in obj.data.attributes:
+            return [es.value for es in obj.data.attributes[attribute_name].data]
+        else:
+            return [False] * len(obj.data.loops)
     
     # SELECTED EDGES IN UV EDITOR
     elif data_type == "SELECTED_EDGES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
-        return [es.value for es in obj.data.attributes[f".es.{uvmap_name}"].data]
+        attribute_name = f".es.{uvmap_name}"
+        if attribute_name in obj.data.attributes:
+            return [es.value for es in obj.data.attributes[attribute_name].data]
+        else:
+            return [False] * len(obj.data.loops)
+
+    # SELECTED EDGES IN UV EDITOR
+    elif data_type == "PINNED_VERTICES_IN_UV_EDITOR":
+        uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        attribute_name = f".pn.{uvmap_name}"
+        if attribute_name in obj.data.attributes:
+            return [es.value for es in obj.data.attributes[attribute_name].data]
+        else:
+            return [False] * len(obj.data.loops)
     
     else:
         raise etc.MeshDataReadException("get_mesh_data", f"Invalid domain data type ({data_type}) or this data is not available on this domain ({source_domain})")
@@ -1597,26 +1613,35 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     # TO SELECTED VERTICES IN UV EDITOR
     elif data_target == "TO_SELECTED_VERTICES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        attribute_name = f'.vs.{uvmap_name}'
+
+        if not attribute_name in obj.data.attributes:
+            obj.data.attributes.new(attribute_name, 'BOOLEAN', 'CORNER')
 
         for i, val in enumerate(a_vals):
-            obj.data.attributes[f'.vs.{uvmap_name}'].data[i].value = val
+            obj.data.attributes[attribute_name].data[i].value = val
 
     # TO SELECTED EDGES IN UV EDITOR
     elif data_target == "TO_SELECTED_EDGES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        attribute_name = f'.es.{uvmap_name}'
+
+        if not attribute_name in obj.data.attributes:
+            obj.data.attributes.new(attribute_name, 'BOOLEAN', 'CORNER')
 
         for i, val in enumerate(a_vals):
-            obj.data.attributes[f'.es.{uvmap_name}'].data[i].value = val
+            obj.data.attributes[attribute_name].data[i].value = val
 
     # TO PINNED VERTICES IN UV EDITOR
     elif data_target == "TO_PINNED_VERTICES_IN_UV_EDITOR":
         uvmap_name = obj.data.uv_layers[int(kwargs['uvmap_index'])].name
+        attribute_name = f'.pn.{uvmap_name}'
 
-        if not '.pn.{uvmap_name}' in obj.data.attributes:
-            obj.data.attributes.new('.es.{uvmap_name}', 'BOOLEAN', 'CORNER')
+        if not attribute_name in obj.data.attributes:
+            obj.data.attributes.new(attribute_name, 'BOOLEAN', 'CORNER')
 
         for i, val in enumerate(a_vals):
-            obj.data.attributes[f'.pn.{uvmap_name}'].data[i].value = val
+            obj.data.attributes[attribute_name].data[i].value = val
 
     # NONE OF ABOVE
     # -----------------------------
