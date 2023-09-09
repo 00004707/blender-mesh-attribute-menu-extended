@@ -673,48 +673,65 @@ object_data_sources = {
         icon= "UV"
     ),
 
-    # "INSERT_SEPARATOR_SPECIAL": None,
+    "INSERT_SEPARATOR_SPECIAL": None,
 
     # # SPECIAL
     # --------------------------------------
     
     # data len == len(loops) for both, idk how to proceed with this 
 
-    # "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
-    #     enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Vertices (UV Editor)",
-    #     enum_gui_friendly_name_no_special_characters="",
-    #   enum_gui_description="Create boolean vertex attribute from selected vertices in UV Editor",
-    #     attribute_auto_name="Selected {uvmap} UV Vertices",
-    #     attribute_domain_on_default='POINT',
-    #     domains_supported=['POINT'],
-    #     data_type='BOOLEAN',
-    #     min_blender_ver=None,
-    #     unsupported_from_blender_ver=None,
-    #     batch_convert_support=False,
-    #     valid_data_sources = ['MESH'],
-    #   icon= ""
-    # ),
+    "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
+        enum_gui_friendly_name="Selected Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name_no_special_characters="Selected Vertices in UV Editor",
+        enum_gui_description="Create Selected Vertices attribute from selected UVMap",
+        attribute_auto_name="UVMap Selected Vertices",
+        attribute_domain_on_default='CORNER',
+        domains_supported=['CORNER'],
+        data_type='BOOLEAN',
+        min_blender_ver=(3,5,0),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['MESH'],
+        icon= "UV"
+    ),
 
-    # "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
-    #     enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Edges (UV Editor)",
-    #     enum_gui_friendly_name_no_special_characters="",
-    #   enum_gui_description="Create boolean edge attribute from selected edges in UV Editor",
-    #     attribute_auto_name="Selected {uvmap} UV Edges",
-    #     attribute_domain_on_default='EDGE',
-    #     domains_supported=['EDGE'],
-    #     data_type='BOOLEAN',
-    #     min_blender_ver=None,
-    #     unsupported_from_blender_ver=None,
-    #     batch_convert_support=False,
-    #     valid_data_sources = ['MESH'],
-    #   icon= ""
-    # ),
+
+    "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
+        enum_gui_friendly_name="Selected Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name_no_special_characters="Selected Edges in UV Editor",
+        enum_gui_description="Create Selected Edges attribute from selected UVMap",
+        attribute_auto_name="UVMap Selected Edges",
+        attribute_domain_on_default='CORNER',
+        domains_supported=['CORNER'],
+        data_type='BOOLEAN',
+        min_blender_ver=(3,5,0),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['MESH'],
+        icon= "UV"
+    ),
+
+    "PINNED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
+        enum_gui_friendly_name="Pinned Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name_no_special_characters="Pinned Vertices in UV Editor",
+        enum_gui_description="Create Pinned Vertices attribute from selected UVMap",
+        attribute_auto_name="UVMap Pinned Vertices",
+        attribute_domain_on_default='CORNER',
+        domains_supported=['CORNER'],
+        data_type='BOOLEAN',
+        min_blender_ver=(3,5,0),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['MESH'],
+        icon= "UV"
+    ),
 
 }
 
 # Defines an object data target
 ObjectDataTarget = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",
+    "enum_gui_friendly_name_no_special_characters",
     "enum_gui_description",
     "domains_supported",
     "data_type",
@@ -735,7 +752,8 @@ object_data_targets = {
     #POINT EDGE FACE
     # --------------------------------------
     "TO_VISIBLE": ObjectDataTarget(
-            enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Visible In Edit Mode",
+            enum_gui_friendly_name="To Visible In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Visible In Edit Mode",
             enum_gui_description="Convert this attribute to visible in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -746,7 +764,8 @@ object_data_targets = {
         ),
 
     "TO_HIDDEN": ObjectDataTarget(
-            enum_gui_friendly_name="To Hidden In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Hidden In Edit Mode",
+            enum_gui_friendly_name="To Hidden In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Hidden In Edit Mode",
             enum_gui_description="Convert this attribute to hidden in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -757,7 +776,8 @@ object_data_targets = {
         ),
 
     "TO_SELECTED": ObjectDataTarget(
-            enum_gui_friendly_name="To Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Selected In Edit Mode",
+            enum_gui_friendly_name="To Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Selected In Edit Mode",
             enum_gui_description="Convert this attribute to selected in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -768,7 +788,8 @@ object_data_targets = {
         ),
 
     "TO_NOT_SELECTED": ObjectDataTarget(
-            enum_gui_friendly_name="To Not Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Not Selected In Edit Mode",
+            enum_gui_friendly_name="To Not Selected In Edit Mode ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Not Selected In Edit Mode",
             enum_gui_description="Convert this attribute to selected in edit mode",
             
             domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -783,7 +804,8 @@ object_data_targets = {
     "INSERT_SEPARATOR_VE": None,  
 
     "TO_MEAN_BEVEL_WEIGHT": ObjectDataTarget(
-            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Mean Bevel Weight",
+            enum_gui_friendly_name="To Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name_no_special_characters="To Mean Bevel Weight",
             enum_gui_description="Convert this attribute to bevel weight",
             
             domains_supported=['POINT', 'EDGE'],
@@ -794,7 +816,8 @@ object_data_targets = {
         ),
 
     "TO_MEAN_CREASE": ObjectDataTarget(
-            enum_gui_friendly_name="To Mean Crease ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Mean Crease",
+            enum_gui_friendly_name="To Mean Crease ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name_no_special_characters="To Mean Crease",
             enum_gui_description="Convert this attribute to mean crease",
             
             domains_supported=['POINT', 'EDGE'],
@@ -809,7 +832,8 @@ object_data_targets = {
     "INSERT_SEPARATOR_VC": None,  
 
     'TO_SPLIT_NORMALS': ObjectDataTarget(
-            enum_gui_friendly_name="To Split Normals ⁻ ᵛᵉʳᵗᵉˣ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "To Split Normals",
+            enum_gui_friendly_name="To Split Normals ⁻ ᵛᵉʳᵗᵉˣ ᶜᵒʳⁿᵉʳ",
+            enum_gui_friendly_name_no_special_characters="To Split Normals",
             enum_gui_description="Convert this attribute to split normals",
             
             domains_supported=['POINT', 'CORNER'],
@@ -824,7 +848,8 @@ object_data_targets = {
     "INSERT_NEWLINE_V": None, 
 
     "TO_POSITION": ObjectDataTarget(
-            enum_gui_friendly_name="To Position ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "To Position",
+            enum_gui_friendly_name="To Position ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name_no_special_characters="To Position",
             enum_gui_description="Convert this attribute to mesh positon",
             
             domains_supported=['POINT'],
@@ -835,7 +860,8 @@ object_data_targets = {
         ),
 
     "TO_SCULPT_MODE_MASK": ObjectDataTarget(
-            enum_gui_friendly_name="To Sculpt Mode Mask ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "To Sculpt Mode Mask",
+            enum_gui_friendly_name="To Sculpt Mode Mask ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name_no_special_characters="To Sculpt Mode Mask",
             enum_gui_description="Convert this attribute to sculpt mode mask",
             
             domains_supported=['POINT'],
@@ -846,7 +872,8 @@ object_data_targets = {
         ),
 
     "TO_VERTEX_GROUP": ObjectDataTarget(
-            enum_gui_friendly_name="To Vertex Group  ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "To Vertex Group",
+            enum_gui_friendly_name="To Vertex Group  ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name_no_special_characters="To Vertex Group",
             enum_gui_description="Convert this attribute to vertex group",
             
             domains_supported=['POINT'],
@@ -857,7 +884,8 @@ object_data_targets = {
         ),
         
     "TO_SHAPE_KEY": ObjectDataTarget(
-            enum_gui_friendly_name="To Shape Key ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "To Shape Key",
+            enum_gui_friendly_name="To Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name_no_special_characters="To Shape Key",
             enum_gui_description="Convert this attribute to mesh shape key",
             
             domains_supported=['POINT'],
@@ -868,7 +896,8 @@ object_data_targets = {
         ),
 
     "TO_VERTEX_GROUP_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="To Vertex Group Index ⁻ ᵛᵉʳᵗᵉˣ" if etc.get_enhanced_enum_titles_enabled() else "To Vertex Group Index",
+            enum_gui_friendly_name="To Vertex Group Index ⁻ ᵛᵉʳᵗᵉˣ",
+            enum_gui_friendly_name_no_special_characters="To Vertex Group Index",
             enum_gui_description="Convert this attribute to vertex group index for use with armatures",
             domains_supported=['POINT'],
             data_type='INT',
@@ -882,7 +911,8 @@ object_data_targets = {
     "INSERT_SEPARATOR_E": None, 
 
     "TO_SEAM": ObjectDataTarget(
-            enum_gui_friendly_name="To Seams ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Seams",
+            enum_gui_friendly_name="To Seams ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name_no_special_characters="To Seams",
             enum_gui_description="Convert this attribute to edge seams",
             domains_supported=['EDGE'],
             data_type='BOOLEAN',
@@ -892,7 +922,8 @@ object_data_targets = {
         ),
 
     "TO_SHARP": ObjectDataTarget(
-            enum_gui_friendly_name="To Sharp ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Sharp",
+            enum_gui_friendly_name="To Sharp ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name_no_special_characters="To Sharp",
             enum_gui_description="Convert this attribute to edge sharps",         
             domains_supported=['EDGE'],
             data_type='BOOLEAN',
@@ -902,7 +933,8 @@ object_data_targets = {
         ),
 
     "TO_FREESTYLE_MARK": ObjectDataTarget(
-            enum_gui_friendly_name="To Freestyle Mark ⁻ ᵉᵈᵍᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Freestyle Mark",
+            enum_gui_friendly_name="To Freestyle Mark ⁻ ᵉᵈᵍᵉ",
+            enum_gui_friendly_name_no_special_characters="To Freestyle Mark",
             enum_gui_description="Convert this attribute to edge freestyle mark",
             
             domains_supported=['EDGE'],
@@ -917,7 +949,8 @@ object_data_targets = {
     "INSERT_NEWLINE_F": None, 
 
     "TO_FACE_SHADE_SMOOTH": ObjectDataTarget(
-            enum_gui_friendly_name="To Face Shade Smooth ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Face Shade Smooth",
+            enum_gui_friendly_name="To Face Shade Smooth ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Face Shade Smooth",
             enum_gui_description="Convert this attribute to face shade smooth",
             
             domains_supported=['FACE'],
@@ -928,7 +961,8 @@ object_data_targets = {
         ),
 
     "TO_FACE_MAP": ObjectDataTarget(
-            enum_gui_friendly_name="To Face Map ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Face Map",
+            enum_gui_friendly_name="To Face Map ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Face Map",
             enum_gui_description="Convert this attribute to face map",
             
             domains_supported=['FACE'],
@@ -939,7 +973,8 @@ object_data_targets = {
         ),
 
     "TO_SCULPT_MODE_FACE_SETS": ObjectDataTarget(
-            enum_gui_friendly_name="To Sculpt Mode Face Sets ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Sculpt Mode Face Sets",
+            enum_gui_friendly_name="To Sculpt Mode Face Sets ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Sculpt Mode Face Sets",
             enum_gui_description="Convert this attribute to Sculpt Mode Face Sets",
             
             domains_supported=['FACE'],
@@ -950,7 +985,8 @@ object_data_targets = {
         ),
 
     "TO_MATERIAL_SLOT_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="To Material Slot Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "To Material Slot Index",
+            enum_gui_friendly_name="To Material Slot Index ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="To Material Slot Index",
             enum_gui_description="Convert this attribute to Material Slot Index",
             
             domains_supported=['FACE'],
@@ -961,7 +997,8 @@ object_data_targets = {
         ),
 
     "TO_FACE_MAP_INDEX": ObjectDataTarget(
-            enum_gui_friendly_name="Set Face Map Index ⁻ ᶠᵃᶜᵉ" if etc.get_enhanced_enum_titles_enabled() else "Set Face Map Index",
+            enum_gui_friendly_name="Set Face Map Index ⁻ ᶠᵃᶜᵉ",
+            enum_gui_friendly_name_no_special_characters="Set Face Map Index",
             enum_gui_description="Convert this attribute to set face map index",
             
             domains_supported=['FACE'],
@@ -976,7 +1013,8 @@ object_data_targets = {
     "INSERT_SEPARATOR_FC": None, 
 
     "TO_UVMAP": ObjectDataTarget(
-            enum_gui_friendly_name="To UVMap ⁻ ᶜᵒʳⁿᵉʳ" if etc.get_enhanced_enum_titles_enabled() else "To UVMap",
+            enum_gui_friendly_name="To UVMap ⁻ ᶜᵒʳⁿᵉʳ",
+            enum_gui_friendly_name_no_special_characters="To UVMap",
             enum_gui_description="Convert this attribute to UVMap",
             
             domains_supported=['CORNER'],
@@ -988,37 +1026,40 @@ object_data_targets = {
 
     # # SPECIAL
     # --------------------------------------
-    # "INSERT_SEPARATOR_SPECIAL": None, 
+    "INSERT_SEPARATOR_SPECIAL": None, 
 
-    # "TO_SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
-    #         enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Vertices (UV Editor)",
-    #         enum_gui_description="Convert this attribute to selected vertices in UV Editor Panel",
-    #         domains_supported=['POINT'],
-    #         data_type='BOOLEAN',
-    #         min_blender_ver=None,
-    #         unsupported_from_blender_ver=None,
-    #         icon="",
-    #     ),    
+    "TO_SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
+            enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name_no_special_characters="Selected UV Vertices (UV Editor)",
+            enum_gui_description="Convert this attribute to selected vertices in UV Editor Panel",
+            domains_supported=['CORNER'],
+            data_type='BOOLEAN',
+            min_blender_ver=(3,5,0),
+            unsupported_from_blender_ver=None,
+            icon="UV",
+        ),    
     
-    # "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
-    #         enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "Selected UV Edges (UV Editor)",
-    #         enum_gui_description="Convert this attribute to selected edges in UV Editor Panel",
-    #         domains_supported=['EDGE'],
-    #         data_type='BOOLEAN',
-    #         min_blender_ver=None,
-    #         unsupported_from_blender_ver=None,
-    #         icon="",
-    #     ),    
+    "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
+            enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name_no_special_characters="Selected UV Edges (UV Editor)",
+            enum_gui_description="Convert this attribute to selected edges in UV Editor Panel",
+            domains_supported=['CORNER'],
+            data_type='BOOLEAN',
+            min_blender_ver=(3,5,0),
+            unsupported_from_blender_ver=None,
+            icon="UV",
+        ),    
 
-    # "TO_PINNED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
-    #         enum_gui_friendly_name="Pinned UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ" if etc.get_enhanced_enum_titles_enabled() else "SPinned UV Vertices (UV Editor)",
-    #         enum_gui_description="Convert this attribute to pinned vertices in UV Editor Panel",
-    #         domains_supported=['POINT'],
-    #         data_type='BOOLEAN',
-    #         min_blender_ver=None,
-    #         unsupported_from_blender_ver=None,
-    #         icon="",
-    #     ),    
+    "TO_PINNED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
+            enum_gui_friendly_name="Pinned UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name_no_special_characters="Pinned UV Vertices (UV Editor)",
+            enum_gui_description="Convert this attribute to pinned vertices in UV Editor Panel",
+            domains_supported=['CORNER'],
+            data_type='BOOLEAN',
+            min_blender_ver=(3,5,0),
+            unsupported_from_blender_ver=None,
+            icon="UV",
+        ),    
 
 }
 
@@ -1245,66 +1286,6 @@ convert_attribute_modes = {
         unsupported_from_blender_ver=None,
     ),
 }
-# Everything that would create a circular import
-def get_sculpt_mode_mask_attribs(self, context):
-    
-    inv_data_entry = ("NULL", "No Valid Attributes", "")
-    e = []
-    attribs = context.active_object.data.attributes
-    prop_group = context.object.MAME_PropValues
-
-    # Toggle for setting masks or face sets
-    if prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
-        target_domain = 'POINT'
-        target_dt = 'FLOAT'
-    else:
-        target_domain = 'FACE'
-        target_dt = 'INT'
-
-
-    for attribute in attribs:
-        if attribute.domain == target_domain and attribute.data_type == target_dt:
-            e.append((attribute.name, attribute.name, f"Use {attribute.name} to modify sculpt mode mask"))
-    
-    if prop_group.qops_sculpt_mode_attribute_show_unsupported:
-        for i, attribute in enumerate(attribs):
-            if not (attribute.domain == target_domain and attribute.data_type == target_dt):
-                e.append((attribute.name, attribute.name, f"Use {attribute.name} to modify sculpt mode mask", 'ERROR', i))
-    
-    
-    if not len(e):
-        return [inv_data_entry]
-    return e
-
-
-class MAME_PropValues(bpy.types.PropertyGroup):
-    """
-    All input entries in GUI
-    """
-
-    # Assign attribute value in edit mode entries
-    # -------------------------------------------------
-
-    val_int: bpy.props.IntProperty(name="Integer Value", default=0)
-    val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
-    val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
-    val_string: bpy.props.StringProperty(name="String Value", default="")
-    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
-    val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    if etc.get_blender_support(attribute_data_types['INT8'].min_blender_ver, attribute_data_types['INT8'].unsupported_from_blender_ver):
-        val_int8: bpy.props.IntProperty(name="8-bit Integer Value", min=-128, max=127, default=0)
-    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    if etc.get_blender_support(attribute_data_types['INT32_2D'].min_blender_ver, attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
-        val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
-    if etc.get_blender_support(attribute_data_types['QUATERNION'].min_blender_ver, attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
-        val_quaternion: bpy.props.FloatVectorProperty(name="Quaternion Value", size=4, default=(1.0,0.0,0.0,0.0))
-    
-    # Assign/select options
-    # -------------------------------------------------
-
-    face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
-    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Select buttons will select/deselect "non-zero" values instead')
 
 # All attribute types. Used to limit operator scope
 # Some of them might be unused for now
@@ -1624,24 +1605,7 @@ attribute_comparison_modes = {
     "ENDS_WITH": ("ENDS_WITH", "That end with", "endswith"),
 }
 
-val_random_colorvalue_toggle: bpy.props.BoolProperty(name="Randomize Alpha", default=True)
-val_random_min_alpha:bpy.props.FloatProperty(name="Float Random Min", default=0.0)
-val_random_max_alpha:bpy.props.FloatProperty(name="Float Random Min", default=1.0)
 
-enum_sculpt_mode_attribute_selector: bpy.props.EnumProperty(
-    name="Source Attribute",
-    description="Select an option",
-    items=get_sculpt_mode_mask_attribs
-)
 
-enum_sculpt_mode_attribute_mode_toggle: bpy.props.EnumProperty(
-    name="Mode Toggle",
-    description="Select an option",
-    items=[("MASK", "Mask", "Use attribute to modify mask", 'MOD_MASK', 0),
-            ("FACE_SETS", "Face Set", "Use attribute to modify Face Maps", "FACE_MAPS", 1),],
-    default="MASK",
-)
-
-qops_sculpt_mode_attribute_show_unsupported: bpy.props.BoolProperty(name="Show all attributes", default=False)
 
 

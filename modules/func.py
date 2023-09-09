@@ -17,7 +17,7 @@ import bpy
 import bmesh
 import math
 from . import etc
-from . import data
+from . import static_data
 import numpy as np
 import random
 import colorsys
@@ -42,13 +42,13 @@ def get_attribute_types(attribute):
 
     # check for hidden
     if attribute.name.startswith('.'):
-        at.append(data.EAttributeType.HIDDEN)
+        at.append(static_data.EAttributeType.HIDDEN)
 
     # check for presets
-    if attribute.name in data.defined_attributes.keys():
-            at += data.defined_attributes[attribute.name].types
+    if attribute.name in static_data.defined_attributes.keys():
+            at += static_data.defined_attributes[attribute.name].types
     else:
-        at.append(data.EAttributeType.NORMAL)
+        at.append(static_data.EAttributeType.NORMAL)
 
     return at
 
@@ -61,7 +61,7 @@ def get_is_attribute_valid_for_manual_val_assignment(attribute):
     Returns:
         list: List of data.EAttributeType
     """
-    return not bool(len([atype for atype in get_attribute_types(attribute) if atype in [data.EAttributeType.READONLY, data.EAttributeType.NOTPROCEDURAL]]))
+    return not bool(len([atype for atype in get_attribute_types(attribute) if atype in [static_data.EAttributeType.READONLY, static_data.EAttributeType.NOTPROCEDURAL]]))
 
 def get_attrib_value_propname(attribute):
     """Gets the property name of attribute value. Some values are stored in .vector others in .value etc.
@@ -166,8 +166,8 @@ def get_attrib_default_value(attribute = None, datatype:str = None):
     if attribute is not None:
         datatype = attribute.data_type
 
-    if datatype in data.attribute_data_types:
-        return data.attribute_data_types[datatype].default_value
+    if datatype in static_data.attribute_data_types:
+        return static_data.attribute_data_types[datatype].default_value
     else:
         raise etc.MeshDataReadException('get_attrib_default_value', f"Data type {datatype} is unsupported.")
 
@@ -248,7 +248,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
             substack_len = count
 
         use_hsv = kwargs['color_randomize_type'] == 'HSVA' and data_type in ["FLOAT_COLOR", "BYTE_COLOR"]
-        v_size = len(data.attribute_data_types[data_type].vector_subelements_names)
+        v_size = len(static_data.attribute_data_types[data_type].vector_subelements_names)
         stacks = []
 
         v_toggles = []
@@ -1710,8 +1710,8 @@ def get_friendly_data_type_name(data_type_raw):
     Returns:
         str: Friendly string
     """
-    if data_type_raw in data.attribute_data_types:
-        return data.attribute_data_types[data_type_raw].friendly_name
+    if data_type_raw in static_data.attribute_data_types:
+        return static_data.attribute_data_types[data_type_raw].friendly_name
     else:
         return data_type_raw
 
@@ -1895,7 +1895,7 @@ def get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context
         list: List of tuples to be used in enum
     """
     items = []
-    domains_supported = data.object_data_sources[self.domain_data_type_enum].domains_supported
+    domains_supported = static_data.object_data_sources[self.domain_data_type_enum].domains_supported
 
     
     if 'POINT' in domains_supported:
@@ -1946,23 +1946,23 @@ def get_source_data_enum(self, context, include_separators=True):
         list: List of tuples to be used as enum entries
     """
     e = []
-    for i, item in enumerate(data.object_data_sources):
+    for i, item in enumerate(static_data.object_data_sources):
         if "INSERT_SEPARATOR" in item and include_separators:
             e.append((None))
         elif "INSERT_NEWLINE" in item and include_separators:
              e.append(("","","","",i))
         else:
-            minver = data.object_data_sources[item].min_blender_ver
-            unsupported_from = data.object_data_sources[item].unsupported_from_blender_ver
+            minver = static_data.object_data_sources[item].min_blender_ver
+            unsupported_from = static_data.object_data_sources[item].unsupported_from_blender_ver
 
             if etc.get_enhanced_enum_titles_enabled():
-                name = data.object_data_sources[item].enum_gui_friendly_name
+                name = static_data.object_data_sources[item].enum_gui_friendly_name
             else:
-                name = data.object_data_sources[item].enum_gui_friendly_name_no_special_characters
+                name = static_data.object_data_sources[item].enum_gui_friendly_name_no_special_characters
             
             if etc.get_blender_support(minver, unsupported_from): 
-                icon = get_mesh_data_enum_entry_icon(data.object_data_sources[item])
-                e.append((item, name, data.object_data_sources[item].enum_gui_description, icon, i))
+                icon = get_mesh_data_enum_entry_icon(static_data.object_data_sources[item])
+                e.append((item, name, static_data.object_data_sources[item].enum_gui_description, icon, i))
     return e
 
 def get_source_data_enum_with_separators(self, context):
@@ -1987,20 +1987,24 @@ def get_target_data_enum(self, context, include_separators=True):
     inv_data_entry = ("NULL", "[!] No Convertable Data", "")
 
 
-    for i, entry in enumerate(data.object_data_targets):
+    for i, entry in enumerate(static_data.object_data_targets):
         if "INSERT_SEPARATOR" in entry and include_separators:
             items.append((None))
         elif "INSERT_NEWLINE" in entry and include_separators:
             items.append(("","","","",i))
         else:
-            minver = data.object_data_targets[entry].min_blender_ver
-            unsupported_from = data.object_data_targets[entry].unsupported_from_blender_ver
+            minver = static_data.object_data_targets[entry].min_blender_ver
+            unsupported_from = static_data.object_data_targets[entry].unsupported_from_blender_ver
 
             if etc.get_blender_support(minver, unsupported_from): 
-                icon = get_mesh_data_enum_entry_icon(data.object_data_targets[entry])
+                icon = get_mesh_data_enum_entry_icon(static_data.object_data_targets[entry])
+                if etc.get_enhanced_enum_titles_enabled():
+                    name = static_data.object_data_targets[entry].enum_gui_friendly_name
+                else:
+                    name = static_data.object_data_targets[entry].enum_gui_friendly_name_no_special_characters
                 item = (entry,
-                        data.object_data_targets[entry].enum_gui_friendly_name, 
-                        data.object_data_targets[entry].enum_gui_description,
+                        name, 
+                        static_data.object_data_targets[entry].enum_gui_description,
                         icon,
                         i
                         )
@@ -2032,7 +2036,7 @@ def get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context
         list: List of tuples to be used in enum
     """
 
-    domains_supported = data.object_data_targets[self.data_target_enum].domains_supported
+    domains_supported = static_data.object_data_targets[self.data_target_enum].domains_supported
     items = []
 
     if 'POINT' in domains_supported:
@@ -2056,9 +2060,9 @@ def get_attribute_data_types_enum(self,context):
         list: List of tuples to be used in enum
     """
     l = []  
-    for item in data.attribute_data_types:
-        if etc.get_blender_support(data.attribute_data_types[item].min_blender_ver, data.attribute_data_types[item].unsupported_from_blender_ver):
-            l.append((item, data.attribute_data_types[item].friendly_name, ""))
+    for item in static_data.attribute_data_types:
+        if etc.get_blender_support(static_data.attribute_data_types[item].min_blender_ver, static_data.attribute_data_types[item].unsupported_from_blender_ver):
+            l.append((item, static_data.attribute_data_types[item].friendly_name, ""))
     return l
 
 def get_attribute_domains_enum(self, context):
@@ -2071,9 +2075,9 @@ def get_attribute_domains_enum(self, context):
         list: List of tuples to be used in enum
     """
     l = []
-    for item in data.attribute_domains:
-        if etc.get_blender_support(data.attribute_domains[item].min_blender_ver, data.attribute_domains[item].unsupported_from_blender_ver):
-            l.append((item, data.attribute_domains[item].friendly_name, ""))
+    for item in static_data.attribute_domains:
+        if etc.get_blender_support(static_data.attribute_domains[item].min_blender_ver, static_data.attribute_domains[item].unsupported_from_blender_ver):
+            l.append((item, static_data.attribute_domains[item].friendly_name, ""))
     return l
 
 def get_attribute_invert_modes(self, context):
@@ -2089,13 +2093,13 @@ def get_attribute_invert_modes(self, context):
     dt = context.active_object.data.attributes.active.data_type
 
     # Check if this data is supported by the addon
-    if not dt in data.attribute_data_types.keys():
+    if not dt in static_data.attribute_data_types.keys():
         return[('NULL', "Data Type Unsupported", "")]
     
     # Get each supported mode to invert this attribute
     l = []
-    for item in data.attribute_data_types[dt].supported_attribute_invert_modes:
-        l.append((item, data.attribute_invert_modes[item].friendly_name, data.attribute_invert_modes[item].description))
+    for item in static_data.attribute_data_types[dt].supported_attribute_invert_modes:
+        l.append((item, static_data.attribute_invert_modes[item].friendly_name, static_data.attribute_invert_modes[item].description))
 
     return l
 
@@ -2108,7 +2112,7 @@ def get_convert_attribute_modes_enum(self, context):
     Returns:
         list: List of tuples to be used in enum
     """
-    return data.attribute_convert_modes
+    return static_data.attribute_convert_modes
 
 def get_vertex_weight_attributes_enum(self, context):
     """Gets all attributes to syue as weight attribute when setting to vertex group index
@@ -2123,6 +2127,24 @@ def get_vertex_weight_attributes_enum(self, context):
         if not self.b_vgindex_weights_only_floats:
             return get_attributes_of_type_enum(self, context, [], [])
     return get_attributes_of_type_enum(self, context, ['FLOAT'], ['POINT'])
+
+def get_sculpt_mode_attributes_enum(self, context):
+    """Gets all attributes to use as sculpt mode mask or face set
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of tuples to be used in enum
+    """
+    if static_data.qops_sculpt_mode_attribute_show_unsupported:
+            return get_attributes_of_type_enum(self, context, [], [])
+    else:
+        if static_data.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+            return get_attributes_of_type_enum(self, context, ['FLOAT'], ['POINT'])
+        else:# data.enum_sculpt_mode_attribute_mode_toggle == 'FACE_SETS':
+            return get_attributes_of_type_enum(self, context, ['INT'], ['FACE'])
+
 
 def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POINT']):
     """Gets all attributes by data type to use in enum dropdown.
@@ -2141,10 +2163,10 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
 
     # Get all if empty or none
     if not data_types or not len(data_types):
-        data_types = [dt for dt in data.attribute_data_types]
+        data_types = [dt for dt in static_data.attribute_data_types]
 
     if not domains or not len(domains):
-        domains = [dt for dt in data.attribute_domains]
+        domains = [dt for dt in static_data.attribute_domains]
     
 
     for attrib in obj.data.attributes:
@@ -2167,8 +2189,8 @@ def get_attribute_comparison_conditions_enum(self,context):
     """
     a = context.active_object.data.attributes.active
     l = []
-    for mode in data.attribute_data_types[a.data_type].supported_comparison_modes:
-        l.append(data.attribute_comparison_modes[mode])
+    for mode in static_data.attribute_data_types[a.data_type].supported_comparison_modes:
+        l.append(static_data.attribute_comparison_modes[mode])
     return l
 
 
@@ -2199,7 +2221,7 @@ def conditional_selection_poll(self, context):
         self.poll_message_set("No active attribute")
         return False
 
-    elif not data.EAttributeType.NOTPROCEDURAL not in get_attribute_types(context.active_object.data.attributes.active):
+    elif not static_data.EAttributeType.NOTPROCEDURAL not in get_attribute_types(context.active_object.data.attributes.active):
         self.poll_message_set("Attribute cannot be selected (Non-procedural)")
         return False
     
@@ -2229,8 +2251,8 @@ def get_attribute_compatibility_check(attribute):
     Returns:
         bool
     """
-    if attribute.data_type not in data.attribute_data_types:
+    if attribute.data_type not in static_data.attribute_data_types:
         return False
-    elif attribute.domain not in data.attribute_domains:
+    elif attribute.domain not in static_data.attribute_domains:
         return False
     return True

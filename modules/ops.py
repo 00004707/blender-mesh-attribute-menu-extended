@@ -18,7 +18,7 @@ import bpy
 import colorsys
 import bmesh
 from . import func
-from . import data
+from . import static_data
 from . import etc
 from bpy_types import bpy_types
 from mathutils import Vector
@@ -84,7 +84,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         # Use bpy.ops.mesh_attribute_set()
         if (etc.get_blender_support((3,5,0))
             and not (prop_group.face_corner_spill and mesh_selected_modes[1])               # Face corner spill feature is not supported by the operator
-            and data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None  # Strings are unsupported by this, oh well
+            and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None  # Strings are unsupported by this, oh well
             and not etc.get_preferences_attrib("disable_bpy_set_attribute")):               # Preferences toggle
             
             etc.pseudo_profiler("OPS_START")
@@ -92,8 +92,8 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
                 print( f"Using ops.mesh_attribute_set()" )
 
             params = {}
-            paramname = data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
-            params[paramname] = getattr(prop_group, data.attribute_data_types[dt].gui_property_name) 
+            paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
+            params[paramname] = getattr(prop_group, static_data.attribute_data_types[dt].gui_property_name) 
 
             bpy.ops.mesh.attribute_set(**params)
             
@@ -109,9 +109,9 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         attribute = obj.data.attributes[active_attrib_name] #!important
 
         # Get value from GUI
-        if dt in data.attribute_data_types:
+        if dt in static_data.attribute_data_types:
             
-            gui_value = getattr(prop_group, data.attribute_data_types[dt].gui_property_name)
+            gui_value = getattr(prop_group, static_data.attribute_data_types[dt].gui_property_name)
             etc.pseudo_profiler("READ_ATTRIB")
 
             if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
@@ -267,7 +267,7 @@ class CreateAttribFromData(bpy.types.Operator):
         """
 
         #check if selection even exists
-        if not self.domain_data_type_enum in data.object_data_sources:
+        if not self.domain_data_type_enum in static_data.object_data_sources:
             self.report({'ERROR'}, f"Can't find this data source {self.domain_data_type_enum}. Contact developer.")
             return False
 
@@ -333,14 +333,14 @@ class CreateAttribFromData(bpy.types.Operator):
                 return False
 
         # UVMaps
-        if self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']: 
+        if self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']: 
             if self.enum_uvmaps == 'NULL':
                 self.report({'ERROR'}, f"No UVMap selected. Nothing done")
                 return False
 
 
         # invalid domain enum for multiple choices
-        if len(data.object_data_sources[self.domain_data_type_enum].domains_supported) > 1 and self.target_attrib_domain_enum == '':
+        if len(static_data.object_data_sources[self.domain_data_type_enum].domains_supported) > 1 and self.target_attrib_domain_enum == '':
             self.report({'ERROR'}, f"Invalid source domain. Nothing done")
             return False
         return True
@@ -373,17 +373,17 @@ class CreateAttribFromData(bpy.types.Operator):
 
         # Get default value if default was chosen
         if self.target_attrib_domain_enum =="DEFAULT" or self.target_attrib_domain_enum == "":
-            self.target_attrib_domain_enum = data.object_data_sources[self.domain_data_type_enum].attribute_domain_on_default
+            self.target_attrib_domain_enum = static_data.object_data_sources[self.domain_data_type_enum].attribute_domain_on_default
 
         # Read prefixes and suffixes of automatic naming
-        data_type = data.object_data_sources[self.domain_data_type_enum].data_type
+        data_type = static_data.object_data_sources[self.domain_data_type_enum].data_type
         
         
         if func.is_verbose_mode_enabled():
-            print(f"Batch mode supported & enabled: {not (not data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled) }")
+            print(f"Batch mode supported & enabled: {not (not static_data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled) }")
         
         # [Batch mode off] Single assignment to single attribute
-        if not data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled:
+        if not static_data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled:
             
             def format_name(name:str):
                 # this is dirty but it already gets the right data so...
@@ -399,7 +399,7 @@ class CreateAttribFromData(bpy.types.Operator):
             
             # Automatic name formatting
             if self.attrib_name == "":
-                name = data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
+                name = static_data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
                 name = format_name(name)
             else:
                 name = self.attrib_name
@@ -530,7 +530,7 @@ class CreateAttribFromData(bpy.types.Operator):
 
                 # Create formatted attribute name
                 if self.attrib_name == "":
-                    xname = data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
+                    xname = static_data.object_data_sources[self.domain_data_type_enum].attribute_auto_name
                     xname = format_name_batch(xname)
                 else:
                     xname = self.attrib_name
@@ -586,7 +586,7 @@ class CreateAttribFromData(bpy.types.Operator):
 
 
         # get if the attrib supports batch conversion
-        batch_convert_support = False if self.domain_data_type_enum == '' else data.object_data_sources[self.domain_data_type_enum].batch_convert_support
+        batch_convert_support = False if self.domain_data_type_enum == '' else static_data.object_data_sources[self.domain_data_type_enum].batch_convert_support
 
         row = self.layout
 
@@ -645,7 +645,7 @@ class CreateAttribFromData(bpy.types.Operator):
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
         
         # UVMap domain selection, or from UVMap for legacy blender versions
-        elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", 'UVMAP']:
+        elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']:
             row.prop(self, "enum_uvmaps", text="UV Map")
         
         else:
@@ -928,7 +928,7 @@ class RemoveAllAttribute(bpy.types.Operator):
         for a in context.active_object.data.attributes:
             types = func.get_attribute_types(a)
             editable = True
-            for e in [data.EAttributeType.CANTREMOVE]:
+            for e in [static_data.EAttributeType.CANTREMOVE]:
                 if e in types:
                     editable = False
                     break
@@ -957,13 +957,13 @@ class RemoveAllAttribute(bpy.types.Operator):
             a_types = func.get_attribute_types(a)
 
             # If the attribute cannot be removed, ignore
-            if data.EAttributeType.CANTREMOVE in a_types :
+            if static_data.EAttributeType.CANTREMOVE in a_types :
                 continue
             
             if ((self.b_include_uvs if self.is_uvmap(a) else True) and 
                 (self.b_include_color_attribs if self.is_color_attrib(a) else True) and
-                (self.b_include_hidden if data.EAttributeType.HIDDEN in a_types else True) and
-                (self.b_include_all if data.EAttributeType.DONOTREMOVE in a_types else True)):
+                (self.b_include_hidden if static_data.EAttributeType.HIDDEN in a_types else True) and
+                (self.b_include_all if static_data.EAttributeType.DONOTREMOVE in a_types else True)):
                     if func.is_verbose_mode_enabled():
                         print(f"Attribute removed - {a.name}: {a.domain}, {a.data_type}")
                     obj.data.attributes.remove(a)
@@ -1157,7 +1157,7 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib = obj.data.attributes[src_attrib_name] # !important
         src_attrib_domain = src_attrib.domain
         src_attrib_data_type = src_attrib.data_type
-        data_target_data_type = data.object_data_targets[self.data_target_enum].data_type
+        data_target_data_type = static_data.object_data_targets[self.data_target_enum].data_type
         data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
 
         # Check if user input is valid.
@@ -1244,7 +1244,7 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib = obj.data.attributes.active
         src_attrib_domain = src_attrib.domain
         src_attrib_data_type = src_attrib.data_type
-        data_target_data_type = data.object_data_targets[self.data_target_enum].data_type
+        data_target_data_type = static_data.object_data_targets[self.data_target_enum].data_type
         data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
 
         # Apply compatible domain by default or set first one in a list if it is not supported
@@ -1314,7 +1314,7 @@ class ConvertToMeshData(bpy.types.Operator):
                 row.prop(self, 'to_vgindex_weight')
 
         # UVMap selector
-        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"]:
+        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR", 'TO_PINNED_VERTICES_IN_UV_EDITOR']:
             row.prop(self, 'uvmaps_enum', text="UVMap")
             row.label(text="")
         
@@ -1372,14 +1372,14 @@ class ConvertToMeshData(bpy.types.Operator):
                 if self.to_vgindex_weights_attribute_enum != "NULL":
                     src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
                     static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
-                    friendly_domain = func.get_friendly_domain_name(src_weight_attrib.domain) if not static_val_mode else data.attribute_domains['POINT'].friendly_name
+                    friendly_domain = func.get_friendly_domain_name(src_weight_attrib.domain) if not static_val_mode else static_data.attribute_domains['POINT'].friendly_name
 
                     if src_weight_attrib.domain  != 'POINT' and not static_val_mode:
                         row.label(text=f"{friendly_domain}", icon='ERROR')
                     else:
                         row.label(text=f"{friendly_domain}")
 
-                    row.label(text=f"{data.attribute_domains['POINT'].friendly_name}")
+                    row.label(text=f"{static_data.attribute_domains['POINT'].friendly_name}")
 
             # Show a row comparing the data types
             row = col.row(align=True)
@@ -1388,14 +1388,14 @@ class ConvertToMeshData(bpy.types.Operator):
                 if self.to_vgindex_weights_attribute_enum != "NULL":
                     src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
                     static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
-                    friendly_datatype = func.get_friendly_data_type_name(src_weight_attrib.data_type) if not static_val_mode else data.attribute_data_types["FLOAT"].friendly_name
+                    friendly_datatype = func.get_friendly_data_type_name(src_weight_attrib.data_type) if not static_val_mode else static_data.attribute_data_types["FLOAT"].friendly_name
 
                     if src_weight_attrib.data_type != 'FLOAT' and not static_val_mode:
                         row.label(text=f"{friendly_datatype}", icon='ERROR')
                     else:
                         row.label(text=f"{friendly_datatype}")
 
-                    row.label(text=f"{data.attribute_data_types['FLOAT'].friendly_name}")
+                    row.label(text=f"{static_data.attribute_data_types['FLOAT'].friendly_name}")
         
         # Occupy space if not applicable
         else:
@@ -1670,13 +1670,13 @@ class ConditionalSelection(bpy.types.Operator):
     val_string: bpy.props.StringProperty(name="String Value", default="")
     val_boolean: bpy.props.BoolProperty(name="Boolean Value", default=False)
     val_float2: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
-    if etc.get_blender_support(data.attribute_data_types['INT8'].min_blender_ver, data.attribute_data_types['INT8'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['INT8'].min_blender_ver, static_data.attribute_data_types['INT8'].unsupported_from_blender_ver):
         val_int8: bpy.props.IntProperty(name="8-bit unsigned Integer Value", min=0, max=127, default=0)
     val_float_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     val_byte_color: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    if etc.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['INT32_2D'].min_blender_ver, static_data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
-    if etc.get_blender_support(data.attribute_data_types['QUATERNION'].min_blender_ver, data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['QUATERNION'].min_blender_ver, static_data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
         val_quaternion: bpy.props.FloatVectorProperty(name="Quaternion Value", size=4, default=(1.0,0.0,0.0,0.0))
 
     # Toggles for enabling comparing the individual vector/color values
@@ -1929,35 +1929,35 @@ FiltIndex: {filtered_indexes}""")
         layout = self.layout
         dt = attribute.data_type
         domain = attribute.domain
-        e_datatype = data.EAttributeDataType[dt]
-        gui_prop_subtype = data.attribute_data_types[dt].gui_prop_subtype
+        e_datatype = static_data.EAttributeDataType[dt]
+        gui_prop_subtype = static_data.attribute_data_types[dt].gui_prop_subtype
 
         # For anything that holds a single value
-        if gui_prop_subtype in [data.EDataTypeGuiPropType.SCALAR,
-                            data.EDataTypeGuiPropType.STRING,
-                            data.EDataTypeGuiPropType.BOOLEAN]:
+        if gui_prop_subtype in [static_data.EDataTypeGuiPropType.SCALAR,
+                            static_data.EDataTypeGuiPropType.STRING,
+                            static_data.EDataTypeGuiPropType.BOOLEAN]:
 
             grid = layout.row(align=True)
             grid.prop(self, 'b_deselect', text=f"Select {func.get_friendly_domain_name(domain, True)}" if not self.b_deselect else f"Deselect {func.get_friendly_domain_name(domain, True)}", toggle=True, invert_checkbox=True) 
             grid.prop(self, "attribute_comparison_condition_enum", text="")
 
             # Get different text on value field
-            if e_datatype == data.EAttributeDataType.STRING:
+            if e_datatype == static_data.EAttributeDataType.STRING:
                 text = ''
-            elif e_datatype == data.EAttributeDataType.BOOLEAN:
+            elif e_datatype == static_data.EAttributeDataType.BOOLEAN:
                 text = 'True' if self.val_boolean else 'False'
             else:
                 text = "Value"
 
             grid.prop(self, f"val_{dt.lower()}", text=text, toggle=True)
-            if e_datatype == data.EAttributeDataType.STRING:
+            if e_datatype == static_data.EAttributeDataType.STRING:
                 layout.prop(self, "b_string_case_sensitive", text="Not Case Sensitive" if not self.b_string_case_sensitive else "Case Sensitive", toggle=True)
         
         # For vectors of any type
-        elif gui_prop_subtype in [data.EDataTypeGuiPropType.VECTOR, data.EDataTypeGuiPropType.COLOR]:
+        elif gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR, static_data.EDataTypeGuiPropType.COLOR]:
             row = layout.row(align=True)
 
-            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR:
+            if gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR:
                 row.prop_tabs_enum(self, "color_value_type_enum")
             
             col = layout.column(align=True)
@@ -1975,10 +1975,10 @@ FiltIndex: {filtered_indexes}""")
             else:
                 subrow.label(text="")
 
-            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR and self.color_value_type_enum == 'HSVA':
+            if gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR and self.color_value_type_enum == 'HSVA':
                     v_subelements = ['H','S','V','A']
             else:
-                v_subelements = data.attribute_data_types[dt].vector_subelements_names 
+                v_subelements = static_data.attribute_data_types[dt].vector_subelements_names 
             
             row2 = col.row(align=True)
 
@@ -2015,7 +2015,7 @@ FiltIndex: {filtered_indexes}""")
                 for el in range(0, len(func.get_attrib_default_value(attribute))):
                     subrow.prop(self, f"val_{dt.lower()}", text="")
             
-            if gui_prop_subtype == data.EDataTypeGuiPropType.COLOR:
+            if gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR:
                 row = col.row(align=True)
                 subrow = row.row(align=True)
                 subrow.ui_units_x = 3
@@ -2030,6 +2030,16 @@ FiltIndex: {filtered_indexes}""")
             subrow.ui_units_x = 5
             row.prop(self, 'vector_value_cmp_type_enum', text="")
 
+
+
+
+
+        # TODO WTF IS THIS
+
+
+
+
+            
         elif attribute.data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
                 #row.prop(self, "color_gui_mode_enum", text="Mode")
             
@@ -2165,45 +2175,44 @@ class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
 
     def execute(self, context):
         dt = context.active_object.data.attributes.active.data_type
-        
-        if dt == 'BOOLEAN':
-            condition = 'EQ'
-        else:
-            condition = 'NEQ'
+        params = {}
+
+        params['attribute_comparison_condition_enum'] = 'EQ' if dt == 'BOOLEAN' else 'NEQ'
 
         # do not compare alpha value
-        if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
-            w_toggle = False
-        else:
-            w_toggle = True
+        params['val_vector_3_toggle'] = False if dt in ['FLOAT_COLOR', 'BYTE_COLOR'] else True
 
+        params['val_']
         # set default value to 1.0 for quats
         if dt == "QUATERNION":
             val_float_x = 1.0
         else:
             val_float_x = 0.0
-        bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
-                                                b_deselect = False,
-                                                val_float = 0.0,
-                                                val_int = 0,
-                                                attribute_comparison_condition_enum = condition,
-                                                val_vector_x_toggle = True,
-                                                val_vector_y_toggle = True,
-                                                val_vector_z_toggle = True,
-                                                val_vector_w_toggle = w_toggle,
-                                                val_float_x = val_float_x,
-                                                val_float_y = 0.0,
-                                                val_float_z = 0.0,
-                                                val_float_w = 0.0,
-                                                val_float_color_x = 0.0,
-                                                val_float_color_y = 0.0,
-                                                val_float_color_z = 0.0,
-                                                val_float_color_w = 0.0,
-                                                val_string = "",
-                                                val_bool = True,
-                                                val_int_x = 0,
-                                                val_int_y = 0,
-                                                val_int8 = 0)
+
+
+
+        # bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
+        #                                         b_deselect = False,
+        #                                         val_float = 0.0,
+        #                                         val_int = 0,
+        #                                         attribute_comparison_condition_enum = condition,
+        #                                         val_vector_0_toggle = True,
+        #                                         val_vector_1_toggle = True,
+        #                                         val_vector_2_toggle = True,
+        #                                         val_vector_3_toggle = w_toggle,
+        #                                         val_float = func.get_attrib_default_value,
+        #                                         val_float_1 = 0.0,
+        #                                         val_float_2 = 0.0,
+        #                                         val_float_3 = 0.0,
+        #                                         val_float_color_x = 0.0,
+        #                                         val_float_color_y = 0.0,
+        #                                         val_float_color_z = 0.0,
+        #                                         val_float_color_w = 0.0,
+        #                                         val_string = "",
+        #                                         val_bool = True,
+        #                                         val_int_x = 0,
+        #                                         val_int_y = 0,
+        #                                         val_int8 = 0)
         return {'FINISHED'}
 
     @classmethod
@@ -2243,14 +2252,14 @@ class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
                                                 val_float = 0.0,
                                                 val_int = 0,
                                                 attribute_comparison_condition_enum = condition,
-                                                val_vector_x_toggle = True,
-                                                val_vector_y_toggle = True,
-                                                val_vector_z_toggle = True,
-                                                val_vector_w_toggle = w_toggle,
-                                                val_float_x = val_float_x,
-                                                val_float_y = 0.0,
-                                                val_float_z = 0.0,
-                                                val_float_w = 0.0,
+                                                val_vector_0_toggle = True,
+                                                val_vector_1_toggle = True,
+                                                val_vector_2_toggle = True,
+                                                val_vector_3_toggle = w_toggle,
+                                                val_float_0 = val_float_x,
+                                                val_float_1 = 0.0,
+                                                val_float_2 = 0.0,
+                                                val_float_3 = 0.0,
                                                 val_float_color_x = 0.0,
                                                 val_float_color_y = 0.0,
                                                 val_float_color_z = 0.0,
@@ -2321,7 +2330,7 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                 
             if obj.data.attributes[i].name in restricted_names:
                 atypes = func.get_attribute_types(obj.data.attributes[i])
-                if (not bool(len([atype for atype in atypes if atype in [data.EAttributeType.HIDDEN, data.EAttributeType.CANTREMOVE, data.EAttributeType.READONLY]])) 
+                if (not bool(len([atype for atype in atypes if atype in [static_data.EAttributeType.HIDDEN, static_data.EAttributeType.CANTREMOVE, static_data.EAttributeType.READONLY]])) 
                     or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER' and bpy.app.version >= (3,5,0)) #ignore uvmaps, they're auto renamed if bl > 3,5
                     or (obj.data.attributes[i].data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] and obj.data.attributes[i].domain in ['POINT', 'CORNER'])): # same for color attribs
                     failed += 1
@@ -2358,10 +2367,10 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         elif not context.active_object.data.attributes.active :
             self.poll_message_set("No active attribute")
             return False
-        elif not context.active_object.data.attributes.active.data_type in data.attribute_data_types :
+        elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
             self.poll_message_set("Data type is not yet supported!")
             return False
-        elif bool(len([atype for atype in func.get_attribute_types(context.active_object.data.attributes.active) if atype in [data.EAttributeType.NOTPROCEDURAL]])) :
+        elif bool(len([atype for atype in func.get_attribute_types(context.active_object.data.attributes.active) if atype in [static_data.EAttributeType.NOTPROCEDURAL]])) :
             self.poll_message_set("This attribute is unsupported (Non-procedural)")
             return False
         
@@ -2437,7 +2446,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
             attribute_value = int(round(attribute_value))
 
         # Set the attribute value in GUI
-        setattr(prop_group, data.attribute_data_types[dt].gui_property_name, attribute_value)
+        setattr(prop_group, static_data.attribute_data_types[dt].gui_property_name, attribute_value)
 
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
@@ -2471,7 +2480,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
     int_val_max:bpy.props.IntProperty(name="Max", default=100, description="Maximum Integer Value")
     
     # 8-Bit Integer
-    if etc.get_blender_support(data.attribute_data_types['INT8'].min_blender_ver, data.attribute_data_types['INT8'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['INT8'].min_blender_ver, static_data.attribute_data_types['INT8'].unsupported_from_blender_ver):
         int8_val_min:bpy.props.IntProperty(name="Min", default=-128, min=-128, max=127, description="Minimum 8-bit Integer Value")
         int8_val_max:bpy.props.IntProperty(name="Max", default=127, min=-128, max=127, description="Maximum 8-bit Integer Value")
     
@@ -2488,7 +2497,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
     float2_val_max:bpy.props.FloatVectorProperty(name="Vector 2D Random Max", size=2, default=(1.0,1.0), description="Maximum Vector2D Value")
     
     # 2D Integer Vector
-    if etc.get_blender_support(data.attribute_data_types['INT32_2D'].min_blender_ver, data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['INT32_2D'].min_blender_ver, static_data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         int32_2d_val_min: bpy.props.IntVectorProperty(name="Min", size=2, default=(0,0), description="Minimum 2D Integer Vector Value")
         int32_2d_val_max: bpy.props.IntVectorProperty(name="Max", size=2, default=(100,100), description="Maximum 2D Integer Vector Value")
 
@@ -2504,7 +2513,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
                                                   default=False,
                                                   description="Use specific characters in the characters field")
     # Quaternion values
-    if etc.get_blender_support(data.attribute_data_types['QUATERNION'].min_blender_ver, data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
+    if etc.get_blender_support(static_data.attribute_data_types['QUATERNION'].min_blender_ver, static_data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
         quaternion_val_min: bpy.props.FloatVectorProperty(name="Min", size=4, default=(-1.0,-1.0,-1.0,-1.0), description="Minimum Quaternion Value")
         quaternion_val_max: bpy.props.FloatVectorProperty(name="Max", size=4, default=(1.0,1.0,1.0,1.0), description="Maximum Quaternion Value")
     
@@ -2545,7 +2554,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
         elif not context.active_object.data.attributes.active :
             self.poll_message_set("No active attribute")
             return False
-        elif not context.active_object.data.attributes.active.data_type in data.attribute_data_types :
+        elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
             self.poll_message_set("Data type is not yet supported!")
             return False
         
@@ -2556,10 +2565,11 @@ class RandomizeAttributeValue(bpy.types.Operator):
 
     def gui_values_check(self, context):
         active_attribute = context.active_object.data.attributes.active
-        dt = data.EAttributeDataType[active_attribute.data_type]
+        dt = active_attribute.data_type
+        e_dt = static_data.EAttributeDataType[dt]
         
         # Strings check
-        if dt == data.EAttributeDataType.STRING:
+        if e_dt == static_data.EAttributeDataType.STRING:
             if self.b_use_specified_characters:
                 return bool(len(self.val_string))
             else:
@@ -2576,9 +2586,9 @@ class RandomizeAttributeValue(bpy.types.Operator):
                     return False
                 
         # Vectors/colors check
-        elif data.attribute_data_types[dt].gui_prop_subtype == data.EDataTypeGuiPropType.VECTOR:
+        elif static_data.attribute_data_types[dt].gui_prop_subtype == static_data.EDataTypeGuiPropType.VECTOR:
             any_toggle_on = []
-            for i in range(0, len(data.attribute_data_types[dt].vector_subelements_names)):\
+            for i in range(0, len(static_data.attribute_data_types[dt].vector_subelements_names)):
                 any_toggle_on.append(getattr(self, f'val_vector_{i}_toggle'))
             
             if not any(any_toggle_on):
@@ -2640,17 +2650,17 @@ class RandomizeAttributeValue(bpy.types.Operator):
         # Get values set in UI
         rnd_min = None
         rnd_max = None
-        e_dt = data.EAttributeDataType[dt]
-        if e_dt in [data.EAttributeDataType.FLOAT,
-                    data.EAttributeDataType.INT,
-                    data.EAttributeDataType.INT8,
-                    data.EAttributeDataType.INT32_2D,
-                    data.EAttributeDataType.FLOAT2,
-                    data.EAttributeDataType.FLOAT_COLOR,
-                    data.EAttributeDataType.FLOAT_VECTOR,
-                    data.EAttributeDataType.BYTE_COLOR,
-                    data.EAttributeDataType.QUATERNION,
-                    data.EAttributeDataType.STRING]:
+        e_dt = static_data.EAttributeDataType[dt]
+        if e_dt in [static_data.EAttributeDataType.FLOAT,
+                    static_data.EAttributeDataType.INT,
+                    static_data.EAttributeDataType.INT8,
+                    static_data.EAttributeDataType.INT32_2D,
+                    static_data.EAttributeDataType.FLOAT2,
+                    static_data.EAttributeDataType.FLOAT_COLOR,
+                    static_data.EAttributeDataType.FLOAT_VECTOR,
+                    static_data.EAttributeDataType.BYTE_COLOR,
+                    static_data.EAttributeDataType.QUATERNION,
+                    static_data.EAttributeDataType.STRING]:
             rnd_min = getattr(self, f"{dt.lower()}_val_min")
             rnd_max = getattr(self, f"{dt.lower()}_val_max")
         
@@ -2701,19 +2711,19 @@ class RandomizeAttributeValue(bpy.types.Operator):
         if domain != 'CORNER':
             self.b_face_corner_spill = False
         
-        e_dt = data.EAttributeDataType[dt]
-        gui_prop_subtype = data.attribute_data_types[dt].gui_prop_subtype
+        e_dt = static_data.EAttributeDataType[dt]
+        gui_prop_subtype = static_data.attribute_data_types[dt].gui_prop_subtype
 
         # ints & floats
-        if gui_prop_subtype == data.EDataTypeGuiPropType.SCALAR:
+        if gui_prop_subtype == static_data.EDataTypeGuiPropType.SCALAR:
             col = self.layout.column(align=True)
             col.prop(self, f"{dt.lower()}_val_min", text="Min")
             col.prop(self, f"{dt.lower()}_val_max", text="Max")
 
         # vectors & colors
-        elif gui_prop_subtype in [data.EDataTypeGuiPropType.VECTOR, data.EDataTypeGuiPropType.COLOR]:
+        elif gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR, static_data.EDataTypeGuiPropType.COLOR]:
             
-            vector_is_a_color = gui_prop_subtype == data.EDataTypeGuiPropType.COLOR
+            vector_is_a_color = gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR
 
             # Create a column layout for uh, enum toggle atm
             row = self.layout.row(align = True)
@@ -2757,7 +2767,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
                 if vector_is_a_color and self.color_randomize_type == 'HSVA':
                     gui_vector_subel = ['H','S','V','A'][i]
                 else:
-                    gui_vector_subel = data.attribute_data_types[dt].vector_subelements_names[i]
+                    gui_vector_subel = static_data.attribute_data_types[dt].vector_subelements_names[i]
                 row.prop(self, f"val_vector_{str(i)}_toggle", text=gui_vector_subel.upper(), toggle=True)
             
             row = col2.row(align=True)
@@ -2765,12 +2775,12 @@ class RandomizeAttributeValue(bpy.types.Operator):
                 row.prop(self, "b_use_color_picker", toggle=True)
 
         # boolean
-        elif gui_prop_subtype == data.EDataTypeGuiPropType.BOOLEAN:
+        elif gui_prop_subtype == static_data.EDataTypeGuiPropType.BOOLEAN:
             col = self.layout.column(align=True)
             col.prop(self, f"boolean_probability", text="Probability")
 
         # string
-        elif gui_prop_subtype == data.EDataTypeGuiPropType.STRING:
+        elif gui_prop_subtype == static_data.EDataTypeGuiPropType.STRING:
             col = self.layout.column(align=True)
             col.prop(self, f"string_val_min", text="Min Length")
             col.prop(self, f"string_val_max", text="Max Length")

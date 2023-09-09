@@ -28,13 +28,14 @@ import importlib
 
 if "etc" in locals():
     import importlib
-    for mod in [etc,func,data,gui,ops,quick_ops]:
+    for mod in [etc,func,static_data,gui,ops,quick_ops,variable_data]:
         importlib.reload(mod)
 else:
     import bpy
     from .modules import etc
     from .modules import func
-    from .modules import data
+    from .modules import static_data
+    from .modules import variable_data
     from .modules import gui
     from .modules import ops
     from .modules import debug
@@ -62,7 +63,7 @@ unsupported_ver_classes = [
 # Main
 classes = [
     etc.AddonPreferences,
-    data.MAME_PropValues,
+    variable_data.MAME_PropValues,
     ops.CreateAttribFromData,
     ops.AssignActiveAttribValueToSelection,
     ops.ConditionalSelection,
@@ -126,7 +127,7 @@ def register():
             bpy.utils.register_class(c)
         
         # Per-object Property Values
-        bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(type=data.MAME_PropValues)
+        bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
 
         # GUI Extensions
         bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)

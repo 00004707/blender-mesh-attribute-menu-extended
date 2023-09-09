@@ -15,7 +15,7 @@ Debug
 import bpy
 from . import ops
 from . import func
-from . import data
+from . import static_data
 from . import etc
 # Operators
 # ----------------------------
@@ -94,8 +94,8 @@ class MAMECreateAllAttributes(bpy.types.Operator):
 
     def execute(self, context):
         dts = []
-        for dt in data.attribute_data_types:
-             if etc.get_blender_support(data.attribute_data_types[dt].min_blender_ver, data.attribute_data_types[dt].unsupported_from_blender_ver):
+        for dt in static_data.attribute_data_types:
+             if etc.get_blender_support(static_data.attribute_data_types[dt].min_blender_ver, static_data.attribute_data_types[dt].unsupported_from_blender_ver):
                   print(dt)
                   dts.append(dt)
              

@@ -2,7 +2,7 @@ import bpy
 
 from . import ops
 from . import func
-from . import data
+from . import static_data
 #
 # Quick buttons
 #

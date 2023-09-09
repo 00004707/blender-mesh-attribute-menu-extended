@@ -17,7 +17,7 @@ Everything related to user interface.
  
 import bpy 
 from . import func
-from . import data
+from . import static_data
 from . import etc
 from . import debug
 
@@ -62,7 +62,7 @@ def attribute_assign_panel(self, context):
                         else:
                             title_str = ""
 
-                        col2.prop(prop_group, data.attribute_data_types[dt].gui_property_name, text=title_str, toggle=True)
+                        col2.prop(prop_group, static_data.attribute_data_types[dt].gui_property_name, text=title_str, toggle=True)
                         col2.ui_units_x = 40
  
                         col2 = col.row(align=True)
