@@ -523,7 +523,7 @@ class QuickCurrentSculptMaskToAttribute(bpy.types.Operator):
         obj = context.active_object
         
         args = {}
-        args['attrib_name'] = ""
+        args['attrib_name'] = "Mask"
         args['domain_data_type_enum'] = "SCULPT_MODE_MASK"
         args['target_attrib_domain_enum'] = 'POINT'
         args['b_batch_convert_enabled'] = False
@@ -548,6 +548,7 @@ class QuickActiveAttributeToSculptMask(bpy.types.Operator):
         args['b_delete_if_converted'] = False
         args['data_target_enum'] = "TO_SCULPT_MODE_MASK"
         args['convert_to_domain_enum'] = 'POINT'
+        args['enum_expand_sculpt_mask_mode'] = 'REPLACE'
         return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
 
 # Quick Face Sets
@@ -566,14 +567,13 @@ class QuickFaceSetsToAttribute(bpy.types.Operator):
         obj = context.active_object
         
         args = {}
-        args['attrib_name'] = ""
+        args['attrib_name'] = "Face Set"
         args['domain_data_type_enum'] = "SCULPT_MODE_FACE_SETS"
         args['target_attrib_domain_enum'] = 'FACE'
         args['b_batch_convert_enabled'] = False
         args['b_overwrite'] = False
         args['b_enable_name_formatting'] = True
         return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
-
 
 class QuickActiveAttributeToFaceSets(bpy.types.Operator):
     bl_idname = "mesh.attribute_quick_face_sets_from_attribute"
@@ -597,86 +597,157 @@ class QuickActiveAttributeToFaceSets(bpy.types.Operator):
 
 # Quick Sculpt Mode Menu
 
+def apply_mask_attrib(mode:str, inverted=False):
+            prop_group = bpy.context.window_manager.MAME_GUIPropValues
+            args = {}
+            args['b_delete_if_converted'] = False
+            args['data_target_enum'] = "TO_SCULPT_MODE_MASK"
+            args['convert_to_domain_enum'] = 'POINT'
+            args['enum_expand_sculpt_mask_mode'] = mode
+            args['b_invert_sculpt_mode_mask'] = inverted
+            args['b_normalize_mask'] = prop_group.qops_sculpt_mode_mask_normalize
+            return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
+    
 class QuickSculptModeApplyAttribute(bpy.types.Operator):
     """
     Used for add attribute button in sculpt mode menu bar extension.
     """
 
     bl_idname = "mesh.mame_attribute_sculpt_mode_apply"
-    bl_label = "Active Attribute to Mask/FaceSet"
-    bl_description = "Converts Active Mesh Attribute to Sculpt Mode Face Sets or Mask"
+    bl_label = "Replace"
+    bl_description = "Converts selected attribute to mask or face set"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        prop_group = context.object.MAME_PropValues
-        return (context.active_object
-                and context.active_object.mode == 'SCULPT' 
-                and context.active_object.type == 'MESH'
-                and (prop_group.enum_sculpt_mode_attribute_selector is not None
-                     or prop_group.enum_sculpt_mode_attribute_selector != 'NULL')
-                )
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif (prop_group.enum_sculpt_mode_attribute_selector is None
+                     or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
+            self.poll_message_set("Invalid attribute selected in menu")
+            return False
+
+        return True
 
     def execute(self, context):
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.window_manager.MAME_GUIPropValues
         obj = context.active_object
-        print(prop_group.enum_sculpt_mode_attribute_selector)
         func.set_active_attribute(obj, prop_group.enum_sculpt_mode_attribute_selector)
-        bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT',
-                                                    enum_expand_sculpt_mask_mode ='REPLACE')
-        return {'FINISHED'}
-
+        if prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+            return apply_mask_attrib('REPLACE')
+        elif prop_group.enum_sculpt_mode_attribute_mode_toggle == 'FACE_SETS':
+            args = {}
+            args['b_delete_if_converted'] = False
+            args['data_target_enum'] = "TO_SCULPT_MODE_FACE_SETS"
+            args['convert_to_domain_enum'] = 'FACE'
+            return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
+    
 class QuickSculptModeExtendAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_extend"
-    bl_label = "Active Attribute add to Mask/FaceSet"
+    bl_label = "Add to mask"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif (prop_group.enum_sculpt_mode_attribute_selector is None
+                     or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
+            self.poll_message_set("Invalid attribute selected in menu")
+            return False
+        elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
+            self.poll_message_set("Only supported for masks")
+            return False
+    
+
+        return True
 
     def execute(self, context):
-        return 
+        prop_group = context.window_manager.MAME_GUIPropValues
+        obj = context.active_object
+        func.set_active_attribute(obj, prop_group.enum_sculpt_mode_attribute_selector)
+        return apply_mask_attrib('EXPAND')
 
 class QuickSculptModeSubtractAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_subtract"
-    bl_label = "Active Attribute add to Mask/FaceSet"
+    bl_label = "Subtract from mask"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif (prop_group.enum_sculpt_mode_attribute_selector is None
+                     or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
+            self.poll_message_set("Invalid attribute selected in menu")
+            return False
+        elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
+            self.poll_message_set("Only supported for masks")
+            return False
+        return True
 
     def execute(self, context):
-        return 
+        prop_group = context.window_manager.MAME_GUIPropValues
+        obj = context.active_object
+        func.set_active_attribute(obj, prop_group.enum_sculpt_mode_attribute_selector)
+        return apply_mask_attrib('SUBTRACT')
 
 class QuickSculptModeRemoveAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_remove"
-    bl_label = "Remove attribute from the selector"
+    bl_label = "Remove attribute"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        prop_group = context.object.MAME_PropValues
-        return (context.active_object
-                and context.active_object.mode == 'SCULPT' 
-                and context.active_object.type == 'MESH'
-                and hasattr(context.active_object.data.attributes, prop_group.enum_sculpt_mode_attribute_selector)
-                )
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif prop_group.enum_sculpt_mode_attribute_selector not in context.active_object.data.attributes:
+            self.poll_message_set("This attribute does not exist on this mesh")
+            return False
+        return True
+
 
 
     def execute(self, context):
         # Toggle to object mode to change data
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.window_manager.MAME_GUIPropValues
         attrib_name = prop_group.enum_sculpt_mode_attribute_selector
         obj = context.active_object
         
@@ -687,73 +758,121 @@ class QuickSculptModeRemoveAttribute(bpy.types.Operator):
         # Go back to sculpt mode
         bpy.ops.object.mode_set(mode='SCULPT')
 
-        # Set the selector to currently active attribute, if there is any
-        # if not obj.data.attributes.active:
-        #     attrib = obj.data.attributes[0]
-        #     func.set_active_attribute(attrib)
-
-        # prop_group.enum_sculpt_mode_attribute_selector = obj.data.attributes.active.name 
         return {'FINISHED'}
 
 class QuickSculptModeNewAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_new"
-    bl_label = "Active Attribute add to Mask/FaceSet"
+    bl_label = "New Attribute from current mask/face set"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        return (context.active_object
-                and context.active_object.mode == 'SCULPT' 
-                and context.active_object.type == 'MESH')
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        return True
     
     def execute(self, context):
-        bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT',
-                                 attrib_name='',
-                                 domain_data_type="SCULPT_MODE_MASK",
-                                 target_attrib_domain='POINT',
-                                 batch_convert_enabled=False,
-                                 b_overwrite=False,
-                                 b_enable_name_formatting=True,
-                                 auto_convert=False)
+        prop_group = context.window_manager.MAME_GUIPropValues
         
+        if prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+            bpy.ops.mesh.attribute_quick_from_current_sculpt_mask()
+        else:
+            bpy.ops.mesh.attribute_quick_from_face_sets()
         # Set the new group in sculpt mode attribute selector
-        prop_group = context.object.MAME_PropValues
-        prop_group.enum_sculpt_mode_attribute_selector = context.active_object.data.attributes.active.name
+        prop_group.enum_sculpt_mode_attribute_selector = bpy.context.active_object.data.attributes.active.name
     
         return {'FINISHED'}
 
 class QuickSculptModeOverwriteAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_overwrite"
-    bl_label = "Active Attribute add to Mask/FaceSet"
+    bl_label = "Overwrite"
     bl_description = ""
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif (prop_group.enum_sculpt_mode_attribute_selector is None
+                     or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
+            self.poll_message_set("Invalid attribute selected in menu")
+            return False
+
+        return True
 
     def execute(self, context):
-        return 
+        prop_group = context.window_manager.MAME_GUIPropValues
+        current_attrib = prop_group.enum_sculpt_mode_attribute_selector
 
-class QuickSculptModeInvertAttribute(bpy.types.Operator):
-    bl_idname = "mesh.mame_attribute_sculpt_mode_invert"
-    bl_label = "Active Attribute add to Mask/FaceSet"
-    bl_description = "asdfsadf"
-    bl_options = {'REGISTER', 'UNDO'}
+        if prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+            args = {}
+            args['attrib_name'] = current_attrib
+            args['domain_data_type_enum'] = "SCULPT_MODE_MASK"
+            args['target_attrib_domain_enum'] = 'POINT'
+            args['b_batch_convert_enabled'] = False
+            args['b_overwrite'] = True
+            args['b_enable_name_formatting'] = True
+            args['b_normalize_mask'] = prop_group.qops_sculpt_mode_mask_normalize
+            return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+        else:
+            args = {}
+            args['attrib_name'] = current_attrib
+            args['domain_data_type_enum'] = "SCULPT_MODE_FACE_SETS"
+            args['target_attrib_domain_enum'] = 'FACE'
+            args['b_batch_convert_enabled'] = False
+            args['b_overwrite'] = True
+            args['b_enable_name_formatting'] = True
+            return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
+
+class QuickSculptModeApplyInvertedAttribute(bpy.types.Operator):
+    bl_idname = "mesh.mame_attribute_sculpt_mode_apply_inverted"
+    bl_label = "Apply Inverted"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     @classmethod
     def poll(self, context):
-        self.poll_message_set("Not implemented yet...")
-        # check if its a mesh
-        return False
+        prop_group = context.window_manager.MAME_GUIPropValues
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Not a mesh")
+            return False
+        elif not context.active_object.mode == 'SCULPT' :
+            self.poll_message_set("Not in sculpt mode")
+            return False
+        elif (prop_group.enum_sculpt_mode_attribute_selector is None
+                     or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
+            self.poll_message_set("Invalid attribute selected in menu")
+            return False
+        elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
+            self.poll_message_set("Only supported for masks")
+            return False
+        return True
+    
 
     def execute(self, context):
-        return 
-
-
+        prop_group = context.window_manager.MAME_GUIPropValues
+        obj = context.active_object
+        func.set_active_attribute(obj, prop_group.enum_sculpt_mode_attribute_selector)
+        return apply_mask_attrib('REPLACE', inverted=True)
 
 # Quick nodes
 
@@ -848,7 +967,7 @@ class SelectDomainButton(bpy.types.Operator):
         params['b_use_color_picker'] =  False
         params['b_single_value_vector'] = False
         # select true booleans though
-        params['attribute_comparison_condition_enum'] = 'NEQ' if select_nonzero and dt != 'BOOLEAN' else 'EQ'
+        params['attribute_comparison_condition_enum'] = 'NEQ' if (select_nonzero and dt != 'BOOLEAN') else 'EQ'
         params['b_string_case_sensitive'] = True
         params['color_value_type_enum'] = 'RGBA'
         params['vector_value_cmp_type_enum'] = 'AND'

@@ -65,6 +65,7 @@ unsupported_ver_classes = [
 classes = [
     etc.AddonPreferences,
     variable_data.MAME_PropValues,
+    variable_data.MAME_GUIPropValues,
     ops.CreateAttribFromData,
     ops.AssignActiveAttribValueToSelection,
     ops.ConditionalSelection,
@@ -79,7 +80,9 @@ classes = [
     ops.ReadValueFromSelectedDomains,
     ops.RandomizeAttributeValue,
     etc.FakeFaceCornerSpillDisabledOperator,
-    etc.MAMEReportIssue
+    etc.MAMEReportIssue,
+    gui.MasksManagerPanel,
+    
 ]
 
 # Debug
@@ -113,7 +116,7 @@ classes += [
     quick_ops.QuickSculptModeRemoveAttribute,
     quick_ops.QuickSculptModeNewAttribute,
     quick_ops.QuickSculptModeOverwriteAttribute,
-    quick_ops.QuickSculptModeInvertAttribute,
+    quick_ops.QuickSculptModeApplyInvertedAttribute,
     quick_ops.QuickAttributeNode,
     quick_ops.QuickUVMapToAttribute,
     quick_ops.QuickFaceMapAssignmentToAttribute,
@@ -131,13 +134,13 @@ def register():
         
         # Per-object Property Values
         bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
+        bpy.types.WindowManager.MAME_GUIPropValues = bpy.props.PointerProperty(type=variable_data.MAME_GUIPropValues)
 
         # GUI Extensions
         bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
         bpy.types.MESH_MT_attribute_context_menu.append(gui.attribute_context_menu_extension)
         bpy.types.VIEW3D_MT_mask.append(gui.sculpt_mode_mask_menu_extension)
         bpy.types.VIEW3D_MT_face_sets.append(gui.sculpt_mode_face_sets_menu_extension)
-        bpy.types.VIEW3D_MT_editor_menus.append(gui.sculpt_mode_3dview_header_extension)
         bpy.types.MESH_MT_vertex_group_context_menu.append(gui.vertex_groups_context_menu_extension)
         bpy.types.MESH_MT_shape_key_context_menu.append(gui.shape_keys_context_menu_extension)
         bpy.types.MATERIAL_MT_context_menu.append(gui.material_context_menu_extension)

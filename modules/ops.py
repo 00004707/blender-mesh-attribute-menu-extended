@@ -1028,6 +1028,10 @@ class ConvertToMeshData(bpy.types.Operator):
                                                description="Custom split normals are visible only when Auto Smooth is enabled", 
                                                default=True)
     
+    b_normalize_mask: bpy.props.BoolProperty(name="Normalize Mask Value",
+                                               description="Make sure the mask value is between 0.0 and 1.0", 
+                                               default=True)
+    
     # The single float value to set the weight to all vertices when converting to vertex group index
     to_vgindex_weight: bpy.props.FloatProperty(name='Weight Value',
                                                           description="Weight value to apply to vertex group at index defined in this attribute",
@@ -1215,7 +1219,8 @@ class ConvertToMeshData(bpy.types.Operator):
                            to_vgindex_src_attrib=vg_weight_attrib,
                            uvmap_index=self.uvmaps_enum,
                            invert_sculpt_mask=self.b_invert_sculpt_mode_mask,
-                           expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode)
+                           expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode,
+                           normalize_mask=self.b_normalize_mask)
         
         
         # post-conversion cleanup
@@ -1320,8 +1325,11 @@ class ConvertToMeshData(bpy.types.Operator):
         
         # Show options for sculpt mode mask conversion
         elif self.data_target_enum == 'TO_SCULPT_MODE_MASK':
-            row.prop(self, "b_invert_sculpt_mode_mask")
+            subrow = row.row()
+            subrow.prop(self, "b_invert_sculpt_mode_mask")
+            subrow.prop(self, 'b_normalize_mask')
             row.prop(self, "enum_expand_sculpt_mask_mode", text='Mode')
+            
         
         # leave a space to avoid resizing the window
         else:

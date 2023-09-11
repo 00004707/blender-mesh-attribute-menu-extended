@@ -268,13 +268,114 @@ def object_context_menu_extension(self,context):
         self.layout.separator()
 
 
-def uvmaps_context_menu_extension(self,context):
-    if etc.get_preferences_attrib('extra_context_menu_uvmaps') and etc.get_blender_support(minver_unsupported=(3,5,0)):
+def sculpt_mode_mask_menu_extension(self, context):
+    """
+    Extra entries in sculpt mode mask menu on the menu bar
+    """
+    
+    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.operator('mesh.attribute_quick_from_uvmap', icon='MESH_DATA')
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_current_sculpt_mask', icon='MESH_DATA') 
+        self.layout.operator('mesh.attribute_quick_sculpt_mask_from_active_attribute', icon='MOD_MASK')
 
-def facemaps_context_menu_extension(self,context):
-    if etc.get_preferences_attrib('extra_context_menu_fm') and etc.get_blender_support(minver_unsupported=(4,0,0)):
+def sculpt_mode_face_sets_menu_extension(self, context):
+    """
+    Extra entries in sculpt mode face sets menu on the menu bar
+    """
+    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.operator('mesh.attribute_quick_from_face_map', icon='MESH_DATA')
-        self.layout.operator('mesh.attribute_quick_from_face_map_index', icon='MESH_DATA')
+        self.layout.separator()
+        self.layout.operator('mesh.attribute_quick_from_face_sets', icon='MESH_DATA') 
+        self.layout.operator('mesh.attribute_quick_face_sets_from_attribute', icon='FACE_MAPS')
+
+class SculptMode3DViewHeaderSettings(bpy.types.Menu):
+    """
+    Menu shown in sculpt mode tool n-panel menu, Mask Manager submenu
+    
+    Contains extra toggles that are not required to be visible by default
+    """
+    bl_idname = "VIEW3D_MT_select_test"
+    bl_label = "Settings"
+
+    def draw(self, context):
+        layout = self.layout
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
+        layout.prop(gui_prop_group, "qops_sculpt_mode_attribute_show_unsupported")
+        layout.prop(gui_prop_group, "qops_sculpt_mode_mask_normalize")
+
+class MasksManagerPanel(bpy.types.Panel):
+    """
+    The panel menu in N-Panel Tool tab and properties panel Tool tab.
+
+    Allows managing masks and face sets from attributes in a quicker way
+    """
+    bl_label = "Mask Manager"
+    bl_idname = "TOOL_PT_MAME_Masks_Manager"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Tool'
+
+
+    # Show only in sculpt mode and if enabled in preferences
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'SCULPT' and etc.get_preferences_attrib('extra_header_sculpt')
+
+    def draw(self, context):
+
+        obj_prop_group = context.active_object.MAME_PropValues
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
+        
+        col = self.layout.column(align=True)
+
+        # box2.ui_units_x = 1.0
+
+        # Toggle between masks and face sets
+        row2 = col.row(align=True)
+        row2.label(text="Mode")
+        row2 = col.row(align=True)
+        
+        row2.prop_enum(gui_prop_group, "enum_sculpt_mode_attribute_mode_toggle", "MASK")
+        row2.prop_enum(gui_prop_group, "enum_sculpt_mode_attribute_mode_toggle", "FACE_SETS")
+
+        # Attribute selector dropdown menu
+        row2 = col.row(align=True)
+        row2.label(text="Attribute")
+        box2 = col.row(align=True)
+        box2.ui_units_x = 5
+        gui_prop_group.validify_enums() # make sure the selection in dropdown exists
+        box2.prop(gui_prop_group, "enum_sculpt_mode_attribute_selector", text="")
+
+        # Modify sub-menu
+        row2 = col.row(align=True)
+        row2.label(text=f"Modify {func.get_friendly_name_from_enum_function(context, gui_prop_group.get_enum_sculpt_mode_attribute_mode_toggle_enum, gui_prop_group.enum_sculpt_mode_attribute_mode_toggle)}")
+        row = col.row(align=True)
+        row.operator("mesh.mame_attribute_sculpt_mode_apply", icon='ZOOM_PREVIOUS')
+        row.operator("mesh.mame_attribute_sculpt_mode_apply_inverted",text="Inverted", icon='SELECT_SUBTRACT')
+    
+        row = col.row(align=True)
+        row.operator("mesh.mame_attribute_sculpt_mode_extend", text="Add", icon='ZOOM_IN')
+        row.operator("mesh.mame_attribute_sculpt_mode_subtract", text="Subtract", icon='ZOOM_OUT')
+        
+        # Manage sub-menu
+        row2 = col.row(align=True)
+        row2.label(text="Manage")
+        row = col.row(align=True)
+        row.operator("mesh.mame_attribute_sculpt_mode_new",text="Store", icon='FILE_NEW')
+        row.operator("mesh.mame_attribute_sculpt_mode_remove",text="Remove", icon='PANEL_CLOSE')
+        row = col.row(align=True)
+        row.operator("mesh.mame_attribute_sculpt_mode_overwrite",text="Overwrite", icon='COPYDOWN')
+        
+        col.menu('VIEW3D_MT_select_test', text='Settings', text_ctxt='', translate=True, icon='SETTINGS')
+
+        # Show warning for multiresolution
+        for mod in context.active_object.modifiers:
+            if mod.type == 'MULTIRES':
+                box = col.box()
+                col = box.column(align=True)
+                r= col.row()
+                r.label(icon='ERROR', text="Warning")
+                r.alert=True
+                col.label(text="Multiresolution is not-compatible")
+        
