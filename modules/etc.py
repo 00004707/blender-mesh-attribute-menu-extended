@@ -240,7 +240,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     # 3D View
     extra_header_sculpt: bpy.props.BoolProperty(name="Sculpt Mode Header", description="Adds extra operators to sculpting 3D View", default=False)
     extra_context_menu_sculpt: bpy.props.BoolProperty(name="Mask & Face Sets Menus", description="Adds extra operators to sculpting 3D View menus", default=True)
-    extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=False)
+    # extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=False)
 
     # Quick
     extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=False)

@@ -260,7 +260,6 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
 
         if use_hsv:
             for i, subelement in enumerate(og_vals):
-                print(subelement[0])
                 og_vals[i] = color_vector_to_hsv(subelement)
 
         for subelement in range(0, v_size):
@@ -343,6 +342,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
             return [e <= kwargs['bool_probability'] for e in np.random.uniform(low=0.0, high=1.0, size=count)]
     else:
         raise etc.GenericFunctionParameterError("get_random_attribute_of_data_type", f"Data type invalid: \"{data_type}\"")
+
 # set
 
 def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
@@ -561,8 +561,9 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
     else:
         raise etc.MeshDataWriteException('convert_attribute', f"{attrib_name} attribute is None?")
 
-# ------------------------------------------
+
 # Mesh related
+# ------------------------------------------
 
 # get
 
@@ -691,8 +692,6 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
     else:
         raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {domain} domain is not supported')
 
-# TODO this one below
-
 def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_value, case_sensitive_string = False):
     """Gets indexes of the list that store values that meet selected condition
 
@@ -747,7 +746,7 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
     # strings
     elif type(source_data[0]) == str:
         for i, data in enumerate(source_data):
-                
+        
             # case sensitive toggle
             if not case_sensitive_string:
                 value = data.upper()
@@ -769,6 +768,8 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
 
             elif condition == "ENDS_WITH" and value.endswitch(cmp): #endswith
                 indexes.append(i)
+    else:
+        raise etc.GenericFunctionParameterError("get_filtered_indexes_by_condition", f"Unsupported input data type: {type(source_data[0])}")
 
     if is_verbose_mode_enabled():
         print(f"Filtered indexes: {indexes}")
@@ -1680,6 +1681,7 @@ def get_all_mesh_data_entries_of_type(obj,data_type):
             return [f.material_index for f in obj.data.polygons]
 
 
+# String Getters
 # ------------------------------------------
 # Utility
 
@@ -1719,6 +1721,7 @@ def get_friendly_data_type_name(data_type_raw):
 # --------------------------------------------
 
 # individual mesh data enums
+
 def get_face_maps_enum(self, context):
     """Gets all face maps as an enum entries.
     
@@ -2194,7 +2197,8 @@ def get_attribute_comparison_conditions_enum(self,context):
     return l
 
 
-# Other
+# Multi-use operator poll functions
+# --------------------------------
 
 def conditional_selection_poll(self, context):
     """Used in multiple ops that are used for selecting attributes by condition on their values
@@ -2231,6 +2235,36 @@ def conditional_selection_poll(self, context):
     
     return True
 
+
+# Color
+# --------------------------------
+
+def color_vector_to_hsv(color):
+    """Converts a 4 dimensional tuple contatining color values in RGB to HSV values. 
+
+    Args:
+        color (tuple): 4 dimensional color tuple in RGB
+
+    Returns:
+        tuple: 4 dimensional color tuple in HSV
+    """
+    return tuple(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + (color[3],)
+
+def color_vector_to_rgb(color):
+    """Converts a 4 dimensional tuple contatining color values in HSV to RGB values. 
+
+    Args:
+        color (tuple): 4 dimensional color tuple in HSV
+
+    Returns:
+        tuple: 4 dimensional color tuple in RGB
+    """
+    return tuple(colorsys.hsv_to_rgb(color[0], color[1], color[2])) + (color[3],)
+
+
+# Other
+# --------------------------------
+
 def is_verbose_mode_enabled():
     """Returns a boolean if the verbose logging to console is enabled
 
@@ -2239,17 +2273,14 @@ def is_verbose_mode_enabled():
     """
     return etc.get_preferences_attrib('verbose_mode')
 
-def color_vector_to_hsv(color):
-    return tuple(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + (color[3],)
-
-def color_vector_to_rgb(color):
-    return tuple(colorsys.hsv_to_rgb(color[0], color[1], color[2])) + (color[3],)
-
 def get_attribute_compatibility_check(attribute):
     """Returns true if the attribute is compatible with this addon.
 
+    Args:
+        attribute (ref): Reference to attribute
+
     Returns:
-        bool
+        bool: True if the support for this attribute type was implemented
     """
     if attribute.data_type not in static_data.attribute_data_types:
         return False
@@ -2258,9 +2289,19 @@ def get_attribute_compatibility_check(attribute):
     return True
 
 
-def get_node_editor_type(area, use_id = False, return_enum=False):
-    """
-    Returns an enum of ENodeEditor for given area
+# Node Editors 
+# ----------------------------------------------
+
+def get_node_editor_type(area = None, use_id = False, return_enum=False):
+    """Returns an enum of ENodeEditor for given area or a string
+
+    Args:
+        area (ref, optional): Reference to area from window_manager.windows.screen.area
+        use_id (bool, optional): Whether to use (window_id, area_id) tuple instead of reference. Defaults to False.
+        return_enum (bool, optional): Whether to return static_data.ENodeEditor instead of tree_type string. Defaults to False.
+
+    Returns:
+        ENodeEditor or str: type of the node tree in node editor
     """
     if use_id:
         area = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
@@ -2275,10 +2316,14 @@ def get_node_editor_type(area, use_id = False, return_enum=False):
     else:
         return area.spaces[0].tree_type
         
-
 def get_node_editor_areas(ids=False):
-    """
-    Returns all areas that are node editors
+    """Returns all areas that are node editors
+
+    Args:
+        ids (bool, optional): Return a tuple with index for windoww, and index for area in (x, y) format. Defaults to False.
+
+    Returns:
+        list of ref or list of tuple: References to areas, or 2 dimensional tuples to window id and area ids
     """
     areas = []
     for w, window in enumerate(bpy.context.window_manager.windows):
@@ -2295,8 +2340,14 @@ def get_area_node_tree(area, useid = False):
     return area.spaces[0].node_tree
 
 def get_supported_areas_for_attribute(attribute, ids = False):
-    """
-    Gets supported node editors for specified attribute to create attribute node in.
+    """Gets supported node editors for specified attribute to create attribute node in.
+
+    Args:
+        attribute (ref): Reference to the attribute
+        ids (bool, optional): Return a tuple with index for windoww, and index for area in (x, y) format. Defaults to False.
+
+    Returns:
+        ref or tuple: Reference to area, or 2 dimensional tuple to window id and area id
     """
 
     areas = get_node_editor_areas(True) # returns tuple window id area id
@@ -2317,7 +2368,16 @@ def get_supported_areas_for_attribute(attribute, ids = False):
     return supported_areas
 
 def get_node_tree_parent(node_tree, tree_type = None):
+    """
+    Gets the parent (likely material reference) of the node tree
 
+    Args:
+        node_tree (Reference): Reference to node tree
+        tree_type (static_data.ENodeEdtior) (Optional): To limit the search to specific tree type it can be specified
+
+    Returns:
+        Reference to the parent, likely the material reference
+    """
     if tree_type in [None, static_data.ENodeEditor.SHADER]:
         for mat in bpy.data.materials:
             if mat.node_tree == node_tree:
@@ -2326,3 +2386,6 @@ def get_node_tree_parent(node_tree, tree_type = None):
         for gn in bpy.data.node_groups:
             if gn.node_tree == node_tree:
                 return gn
+    else: 
+        return None
+

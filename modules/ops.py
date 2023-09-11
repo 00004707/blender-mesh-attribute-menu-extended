@@ -93,7 +93,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
             params = {}
             paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
-            params[paramname] = getattr(prop_group, static_data.attribute_data_types[dt].gui_property_name) 
+            params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
 
             bpy.ops.mesh.attribute_set(**params)
             
@@ -111,7 +111,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         # Get value from GUI
         if dt in static_data.attribute_data_types:
             
-            gui_value = getattr(prop_group, static_data.attribute_data_types[dt].gui_property_name)
+            gui_value = getattr(prop_group, f'val_{dt.lower()}')
             etc.pseudo_profiler("READ_ATTRIB")
 
             if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
@@ -2031,250 +2031,6 @@ FiltIndex: {filtered_indexes}""")
             row.prop(self, 'vector_value_cmp_type_enum', text="")
 
 
-
-
-
-        # TODO WTF IS THIS
-
-
-
-
-            
-        elif attribute.data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
-                #row.prop(self, "color_gui_mode_enum", text="Mode")
-            
-            
-
-            # show normal color picker, if set to value then show values in grids
-            # if self.color_gui_mode_enum == 'COLOR':
-            #     row.prop(self, "val_color", text="Value")
-                self.color_gui_mode_enum = 'VALUE'
-                
-            # elif self.color_gui_mode_enum == 'VALUE':
-                # gui that compares individual values like a vector, with hsv mode too
-                row.prop(self, "color_value_type_enum", text="Value Type")
-
-                rgb = True if self.color_value_type_enum == 'RGBA' else False
-
-                row.prop(self, "val_vector_x_toggle", text="Red" if rgb else 'Hue')
-
-                grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_0_toggle
-                grid.prop(self, "vec_x_condition_enum", text="")
-                if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_color_x", text="Value")
-
-                row.prop(self, "val_vector_y_toggle", text="Green" if rgb else 'Saturation')
-
-                grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_1_toggle
-                grid.prop(self, "vec_y_condition_enum", text="")
-                if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_color_y", text="Value")  
-                
-                row.prop(self, "val_vector_z_toggle", text="Blue" if rgb else 'Value')
-
-                grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_2_toggle
-                grid.prop(self, "vec_z_condition_enum", text="")
-                if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_color_z", text="Value") 
-
-                row.prop(self, "val_vector_w_toggle", text="Alpha")
-                
-                grid = row.grid_flow(columns=2, even_columns=True)
-                grid.enabled = self.val_vector_3_toggle
-                grid.prop(self, "vec_w_condition_enum", text="")
-                if self.color_gui_mode_enum == 'VALUE':
-                    grid.prop(self, "val_float_color_w", text="Value")
-                    
-                row.prop(self, 'vector_value_cmp_type_enum')
-
-        # INT32_2D
-        elif attribute.data_type in ['INT32_2D']:
-
-            row.prop(self, "val_vector_x_toggle", text="X")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_0_toggle
-            grid.prop(self, "vec_x_condition_enum", text="")
-            grid.prop(self, "val_int_x", text="Value")
-
-
-            row.prop(self, "val_vector_y_toggle", text="Y")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_1_toggle
-            grid.prop(self, "vec_y_condition_enum", text="")
-            grid.prop(self, "val_int_y", text="Value") 
-            row.prop(self, 'vector_value_cmp_type_enum') 
-            
-
-            # if attribute.data_type in ['QUATERNION']:
-            #     row.prop(self, "val_vector_z_toggle", text="Z")
-
-            #     grid = row.grid_flow(columns=2, even_columns=True)
-            #     grid.enabled = self.val_vector_z_toggle
-            #     grid.prop(self, "vec_z_condition_enum", text="")
-            #     grid.prop(self, "val_int_z", text="Value") 
-            
-            # if attribute.data_type in ['QUATERNION']:
-            #     row.prop(self, "val_vector_w_toggle", text="W")
-
-            #     grid = row.grid_flow(columns=2, even_columns=True)
-            #     grid.enabled = self.val_vector_z_toggle
-            #     grid.prop(self, "vec_w_condition_enum", text="")
-            #     grid.prop(self, "val_int_w", text="Value") 
-
-        # QUATERNION
-        elif attribute.data_type in ['QUATERNION']:
-
-            row.prop(self, "val_vector_x_toggle", text="X")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_0_toggle
-            grid.prop(self, "vec_x_condition_enum", text="")
-            grid.prop(self, "val_float_x", text="Value")
-
-
-            row.prop(self, "val_vector_y_toggle", text="Y")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_1_toggle
-            grid.prop(self, "vec_y_condition_enum", text="")
-            grid.prop(self, "val_float_y", text="Value") 
-            
-
-            row.prop(self, "val_vector_z_toggle", text="Z")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_2_toggle
-            grid.prop(self, "vec_z_condition_enum", text="")
-            grid.prop(self, "val_float_z", text="Value") 
-        
-
-            row.prop(self, "val_vector_w_toggle", text="W")
-
-            grid = row.grid_flow(columns=2, even_columns=True)
-            grid.enabled = self.val_vector_2_toggle
-            grid.prop(self, "vec_w_condition_enum", text="")
-            grid.prop(self, "val_float_w", text="Value") 
-
-            row.prop(self, 'vector_value_cmp_type_enum') 
-
-        # row.prop(self, 'b_deselect')         
-
-class SelectDomainWithAttributeZeroValue(bpy.types.Operator):
-    """
-    Used in gui to select domains with non-zero value
-    """
-    bl_idname = "mesh.attribute_zero_value_select"
-    bl_label = "Select Domain With Zero Value of Current Attribute"
-    bl_description = "Select attribute with non-zero or True value"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        dt = context.active_object.data.attributes.active.data_type
-        params = {}
-
-        params['attribute_comparison_condition_enum'] = 'EQ' if dt == 'BOOLEAN' else 'NEQ'
-
-        # do not compare alpha value
-        params['val_vector_3_toggle'] = False if dt in ['FLOAT_COLOR', 'BYTE_COLOR'] else True
-
-        params['val_']
-        # set default value to 1.0 for quats
-        if dt == "QUATERNION":
-            val_float_x = 1.0
-        else:
-            val_float_x = 0.0
-
-
-
-        # bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
-        #                                         b_deselect = False,
-        #                                         val_float = 0.0,
-        #                                         val_int = 0,
-        #                                         attribute_comparison_condition_enum = condition,
-        #                                         val_vector_0_toggle = True,
-        #                                         val_vector_1_toggle = True,
-        #                                         val_vector_2_toggle = True,
-        #                                         val_vector_3_toggle = w_toggle,
-        #                                         val_float = func.get_attrib_default_value,
-        #                                         val_float_1 = 0.0,
-        #                                         val_float_2 = 0.0,
-        #                                         val_float_3 = 0.0,
-        #                                         val_float_color_x = 0.0,
-        #                                         val_float_color_y = 0.0,
-        #                                         val_float_color_z = 0.0,
-        #                                         val_float_color_w = 0.0,
-        #                                         val_string = "",
-        #                                         val_bool = True,
-        #                                         val_int_x = 0,
-        #                                         val_int_y = 0,
-        #                                         val_int8 = 0)
-        return {'FINISHED'}
-
-    @classmethod
-    def poll(self, context):
-        return func.conditional_selection_poll(self, context)
-
-class DeSelectDomainWithAttributeZeroValue(bpy.types.Operator):
-    """
-    Used in gui to deselect domains with non-zero value
-    """
-    bl_idname = "mesh.attribute_zero_value_deselect"
-    bl_label = "Deselect Domain With Zero Value of Current Attribute"
-    bl_description = "Deselect attribute with non-zero or True value"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        dt = context.active_object.data.attributes.active.data_type
-        
-        if dt == 'BOOLEAN':
-            condition = 'EQ'
-        else:
-            condition = 'NEQ'
-
-        # do not compare alpha value
-        if dt in ['FLOAT_COLOR', 'BYTE_COLOR']:
-            w_toggle = False
-        else:
-            w_toggle = True
-
-        # set default value to 1.0 for quats
-        if dt == "QUATERNION":
-            val_float_x = 1.0
-        else:
-            val_float_x = 0.0
-        bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', 
-                                                b_deselect = True,
-                                                val_float = 0.0,
-                                                val_int = 0,
-                                                attribute_comparison_condition_enum = condition,
-                                                val_vector_0_toggle = True,
-                                                val_vector_1_toggle = True,
-                                                val_vector_2_toggle = True,
-                                                val_vector_3_toggle = w_toggle,
-                                                val_float_0 = val_float_x,
-                                                val_float_1 = 0.0,
-                                                val_float_2 = 0.0,
-                                                val_float_3 = 0.0,
-                                                val_float_color_x = 0.0,
-                                                val_float_color_y = 0.0,
-                                                val_float_color_z = 0.0,
-                                                val_float_color_w = 0.0,
-                                                val_string = "",
-                                                val_bool = True,
-                                                val_int_x = 0,
-                                                val_int_y = 0,
-                                                val_int8 = 0)
-        return {'FINISHED'}
-
-    @classmethod
-    def poll(self, context):
-        return func.conditional_selection_poll(self, context)
-
 class AttributeResolveNameCollisions(bpy.types.Operator):
     """
     Adds suffix to attributes with colliding names
@@ -2446,7 +2202,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
             attribute_value = int(round(attribute_value))
 
         # Set the attribute value in GUI
-        setattr(prop_group, static_data.attribute_data_types[dt].gui_property_name, attribute_value)
+        setattr(prop_group, f'val_{dt.lower()}', attribute_value)
 
         bpy.ops.object.mode_set(mode='EDIT')
         return {'FINISHED'}
@@ -2830,17 +2586,3 @@ class RandomizeAttributeValue(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
-# TODO
-# class ConditionedRemoveAttribute(bpy.types.Operator):
-#     bl_idname = "mesh.attribute_conditioned_remove"
-#     bl_label = "Remove by Condition"
-#     bl_description = "Removes attributes by condition"
-#     bl_options = {'REGISTER', 'UNDO'}
-
-#     @classmethod
-#     def poll(self, context):
-#         self.poll_message_set("Not implemented yet...")
-#         return False
-
-#     def execute(self, context):
-#         return 
