@@ -1610,9 +1610,12 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
     def draw(self, context):
         row = self.layout
-        row.prop(self, "b_overwrite", text="Overwrite if exists")
-        row.prop(self, "b_overwrite_different_type", text="Overwrite different type")
-        row.prop(self, "extend_mode_enum", text="Extend Mode")
+        row.label(text="Overwrite")
+        subrow = row.row(align=False)
+        subrow.prop(self, "b_overwrite", text="Existing", toggle=True)
+        subrow.prop(self, "b_overwrite_different_type", text="Different domain/data type", toggle=True)
+        row.label(text="Extend values mode for larger meshes")
+        row.prop(self, "extend_mode_enum", text="")
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
