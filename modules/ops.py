@@ -2104,8 +2104,11 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                     while obj.data.attributes[i].name in restricted_names:
                         j += 1
                         obj.data.attributes[i].name = str(obj.data.attributes[i].name) + "." + str(j).zfill(3)
-                    
-        self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else ""))
+        
+        if renamed == 0:
+            self.report({'INFO'}, f"No name collisions found")
+        else:
+            self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else ""))
 
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
