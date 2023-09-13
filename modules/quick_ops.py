@@ -1011,3 +1011,47 @@ class DeSelectDomainButton(bpy.types.Operator):
     @classmethod
     def poll(self, context):
         return func.conditional_selection_poll(self, context)
+    
+
+class RandomizeGUIInputFieldValue(bpy.types.Operator):
+    """
+    Used in gui to randomize the value in set attribute value field
+    """
+    bl_idname = "mesh.attribute_gui_value_randomize"
+    bl_label = "Randomize"
+    bl_description = "Randomize value"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        obj = context.active_object
+        attrib = obj.data.attributes.active
+        dt=attrib.data_type
+        prop_group = context.object.MAME_PropValues
+        args = {}
+        args['range_min'] = static_data.attribute_data_types[dt].default_randomize_value_min
+        args['range_max'] = static_data.attribute_data_types[dt].default_randomize_value_max
+        args['bool_probability'] = .50
+        args['string_capital'] = True
+        args['string_lowercase'] = True
+        args['string_numbers'] = True
+        args['string_special'] = False
+        args['string_custom'] = False
+        args['color_randomize_type'] = 'RGBA'
+        setattr(prop_group, f'val_{dt.lower()}', func.get_random_attribute_of_data_type(obj, dt, 1, True, **args))
+
+        return  {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        obj = context.active_object
+
+        if not obj:
+            self.poll_message_set('No active object')
+            return False
+        elif not obj.data.attributes.active:
+            self.poll_message_set('No active attribute')
+            return False
+        elif not func.get_attribute_compatibility_check(context.active_object.data.attributes.active):
+            self.poll_message_set("Attribute is unsupported in this addon version")
+            return False
+        return True

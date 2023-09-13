@@ -62,7 +62,8 @@ def attribute_assign_panel(self, context):
                         else:
                             title_str = ""
 
-                        col2.prop(prop_group, static_data.attribute_data_types[dt].gui_property_name, text=title_str, toggle=True)
+                        col2.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True)
+                        col2.operator('mesh.attribute_gui_value_randomize', text="", icon='FILE_REFRESH')
                         col2.ui_units_x = 40
  
                         col2 = col.row(align=True)

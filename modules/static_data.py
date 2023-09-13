@@ -1136,6 +1136,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "compatible_node_editors",                  # The supported node editors, ENodeEditor enum
     "geonodes_attribute_node_datatype",         # The name of the data type used in Named Attribute node in Geometry nodes. 'FLOAT', 'INT', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BOOLEAN', 'QUATERNION'
     "animnodes_attribute_node_datatype",        # The name of the data type used in Get Custom Attribute node in Animation nodes. ('INT', 'FLOAT', 'FLOAT2', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'BOOLEAN')
+    "default_randomize_value_min",              # The suggested minimum random value for this datatype
+    "default_randomize_value_max"               # The suggested maximum random value for this datatype 
 ])
 
 # Defines all supported mesh data types
@@ -1152,7 +1154,9 @@ attribute_data_types = {
         default_value=0.0,
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT",
-        animnodes_attribute_node_datatype="FLOAT"
+        animnodes_attribute_node_datatype="FLOAT",
+        default_randomize_value_min=0.0,
+        default_randomize_value_max=1.0
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1166,7 +1170,9 @@ attribute_data_types = {
         default_value=0,
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="INT",
-        animnodes_attribute_node_datatype="INT"
+        animnodes_attribute_node_datatype="INT",
+        default_randomize_value_min=0,
+        default_randomize_value_max=100
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1180,7 +1186,9 @@ attribute_data_types = {
         default_value=0,
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="INT",
-        animnodes_attribute_node_datatype="INT"
+        animnodes_attribute_node_datatype="INT",
+        default_randomize_value_min=-127,
+        default_randomize_value_max=128
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1194,7 +1202,9 @@ attribute_data_types = {
         default_value=(0.0, 0.0, 0.0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
-        animnodes_attribute_node_datatype="FLOAT_VECTOR"
+        animnodes_attribute_node_datatype="FLOAT_VECTOR",
+        default_randomize_value_min=(0,0,0),
+        default_randomize_value_max=(1,1,1)
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1208,7 +1218,9 @@ attribute_data_types = {
         default_value=(0.0, 0.0, 0.0, 1.0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT_COLOR",
-        animnodes_attribute_node_datatype="FLOAT_COLOR"
+        animnodes_attribute_node_datatype="FLOAT_COLOR",
+        default_randomize_value_min=(0.0,0.0,0.0,1.0),
+        default_randomize_value_max=(1.0,1.0,1.0,1.0)
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1222,7 +1234,9 @@ attribute_data_types = {
         default_value=(0.0, 0.0, 0.0, 1.0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT_COLOR",
-        animnodes_attribute_node_datatype="BYTE_COLOR"
+        animnodes_attribute_node_datatype="BYTE_COLOR",
+        default_randomize_value_min=(0.0,0.0,0.0,1.0),
+        default_randomize_value_max=(1.0,1.0,1.0,1.0)
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1236,7 +1250,9 @@ attribute_data_types = {
         default_value="",
         compatible_node_editors=[],
         geonodes_attribute_node_datatype="",
-        animnodes_attribute_node_datatype=""
+        animnodes_attribute_node_datatype="",
+        default_randomize_value_min=5, # used as length
+        default_randomize_value_max=10
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1250,7 +1266,9 @@ attribute_data_types = {
         default_value=False,
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="BOOLEAN",
-        animnodes_attribute_node_datatype="BOOLEAN"
+        animnodes_attribute_node_datatype="BOOLEAN",
+        default_randomize_value_min=False,
+        default_randomize_value_max=True
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1264,7 +1282,9 @@ attribute_data_types = {
         default_value=(0.0, 0.0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
-        animnodes_attribute_node_datatype="FLOAT2"
+        animnodes_attribute_node_datatype="FLOAT2",
+        default_randomize_value_min=(0.0,0.0),
+        default_randomize_value_max=(1.0,1.0)
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1278,7 +1298,9 @@ attribute_data_types = {
         default_value=(0, 0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],#, ENodeEditor.ANIMATION_NODES],
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
-        animnodes_attribute_node_datatype="FLOAT2"
+        animnodes_attribute_node_datatype="FLOAT2",
+        default_randomize_value_min=(0,0),
+        default_randomize_value_max=(100,100)
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1292,7 +1314,9 @@ attribute_data_types = {
         default_value=(1.0, 0.0, 0.0, 0.0),
         compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],
         geonodes_attribute_node_datatype="QUATERNION",
-        animnodes_attribute_node_datatype=""
+        animnodes_attribute_node_datatype="",
+        default_randomize_value_min=(-1.0,-1.0,-1.0,-1.0),
+        default_randomize_value_max=(1.0,1.0,1.0,1.0)
     ),
 }
 

@@ -76,6 +76,7 @@ classes = [
     ops.CopyAttributeToSelected,
     quick_ops.DeSelectDomainButton,
     quick_ops.SelectDomainButton,
+    quick_ops.RandomizeGUIInputFieldValue,
     ops.AttributeResolveNameCollisions,
     ops.ReadValueFromSelectedDomains,
     ops.RandomizeAttributeValue,
