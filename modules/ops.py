@@ -431,9 +431,10 @@ class CreateAttribFromData(bpy.types.Operator):
 
             # Convert to different type (optional)
             if self.b_auto_convert:
-                func.convert_attribute(self, obj, attrib.name, mode=self.enum_attrib_converter_mode, 
+                func.convert_attribute(self, obj, name, mode=self.enum_attrib_converter_mode, 
                                                domain=self.enum_attrib_converter_domain, 
                                                data_type=self.enum_attrib_converter_datatype)
+            func.set_active_attribute(obj, name)
 
         # [Batch mode on] Assign all of type to n amount of attributes 
         # This currently applies only to:
