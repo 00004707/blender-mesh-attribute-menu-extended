@@ -1348,6 +1348,8 @@ attribute_data_types = {
 # Defines mesh domain entries
 AttributeDomain = namedtuple("AttributeDomain", [
     "friendly_name",
+    "friendly_name_short",                      # The name presented to the user (shorter)
+    "friendly_name_veryshort",                  # The name presented to the user (shorter)
     "min_blender_ver",
     "unsupported_from_blender_ver",
 ])
@@ -1356,21 +1358,29 @@ AttributeDomain = namedtuple("AttributeDomain", [
 attribute_domains = {
     "POINT": AttributeDomain(
         friendly_name="Vertex",
+        friendly_name_short="Vertex",
+        friendly_name_veryshort="V",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
     "EDGE": AttributeDomain(
         friendly_name="Edge",
+        friendly_name_short="Edge",
+        friendly_name_veryshort="E",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
     "FACE": AttributeDomain(
         friendly_name="Face",
+        friendly_name_short="Face",
+        friendly_name_veryshort="V",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
     "CORNER": AttributeDomain(
         friendly_name="Face Corner",
+        friendly_name_short="Corner",
+        friendly_name_veryshort="C",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
