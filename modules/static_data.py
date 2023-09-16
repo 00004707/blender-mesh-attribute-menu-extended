@@ -668,7 +668,7 @@ object_data_sources = {
         data_type='FLOAT2',
         min_blender_ver=None,
         unsupported_from_blender_ver=(3,5),
-        batch_convert_support=False,
+        batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV"
     ),
@@ -690,7 +690,7 @@ object_data_sources = {
         data_type='BOOLEAN',
         min_blender_ver=(3,5,0),
         unsupported_from_blender_ver=None,
-        batch_convert_support=False,
+        batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV"
     ),
@@ -706,7 +706,7 @@ object_data_sources = {
         data_type='BOOLEAN',
         min_blender_ver=(3,5,0),
         unsupported_from_blender_ver=None,
-        batch_convert_support=False,
+        batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV"
     ),
@@ -721,7 +721,7 @@ object_data_sources = {
         data_type='BOOLEAN',
         min_blender_ver=(3,5,0),
         unsupported_from_blender_ver=None,
-        batch_convert_support=False,
+        batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV"
     ),

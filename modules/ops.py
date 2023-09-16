@@ -335,7 +335,10 @@ class CreateAttribFromData(bpy.types.Operator):
         # UVMaps
         if self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']: 
             if self.enum_uvmaps == 'NULL':
-                self.report({'ERROR'}, f"No UVMap selected. Nothing done")
+                if not self.b_batch_convert_enabled:
+                    self.report({'ERROR'}, f"No UVMap selected. Nothing done")
+                else:
+                    self.report({'ERROR'}, f"No UVMaps. Nothing done")
                 return False
 
 
@@ -386,16 +389,19 @@ class CreateAttribFromData(bpy.types.Operator):
         if not static_data.object_data_sources[self.domain_data_type_enum].batch_convert_support or not self.b_batch_convert_enabled:
             
             def format_name(name:str):
-                # this is dirty but it already gets the right data so...
-                return name.format(domain=func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
-                                face_map=func.get_face_maps_enum(self, context)[int(self.enum_face_maps)][1] if self.enum_face_maps != 'NULL' else None,
-                                shape_key=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
-                                shape_key_to=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_target)][1] if self.enum_shape_keys_offset_target != 'NULL' else None, 
-                                shape_key_from=func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
-                                vertex_group=func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
-                                material=func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
-                                material_slot=func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None,
-                                uvmap=func.get_uvmaps_enum(self, context)[int(self.enum_uvmaps)][1] if self.enum_uvmaps != 'NULL' else None) 
+                format_args = {
+                    "domain": func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
+                    "face_map": func.get_face_maps_enum(self, context)[int(self.enum_face_maps)][1] if self.enum_face_maps != 'NULL' else None,
+                    "shape_key": func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
+                    "shape_key_to": func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys_offset_target)][1] if self.enum_shape_keys_offset_target != 'NULL' else None, 
+                    "shape_key_from": func.get_shape_keys_enum(self, context)[int(self.enum_shape_keys)][1] if self.enum_shape_keys != 'NULL' else None, 
+                    "vertex_group": func.get_vertex_groups_enum(self, context)[int(self.enum_vertex_groups)][1] if self.enum_vertex_groups != 'NULL' else None, 
+                    "material": func.get_materials_enum(self, context)[int(self.enum_materials)][1] if self.enum_materials != 'NULL' else None, 
+                    "material_slot": func.get_material_slots_enum(self, context)[int(self.enum_material_slots)][1] if self.enum_material_slots != 'NULL' else None,
+                    "uvmap": func.get_uvmaps_enum(self, context)[int(self.enum_uvmaps)][1] if self.enum_uvmaps != 'NULL' else None
+                }
+
+                return name.format(**format_args) 
             
             # Automatic name formatting
             if self.attrib_name == "":
@@ -445,8 +451,12 @@ class CreateAttribFromData(bpy.types.Operator):
         # "FACE_IS_MATERIAL_ASSIGNED", 
         # "FACE_IS_MATERIAL_SLOT_ASSIGNED", 
         # "FACE_FROM_FACE_MAP"
+        # "SELECTED_VERTICES_IN_UV_EDITOR", 
+        # "SELECTED_EDGES_IN_UV_EDITOR", 
+        # "PINNED_VERTICES_IN_UV_EDITOR", 
+        # 'UVMAP'
         else:
-            for element_index, element in enumerate(func.get_all_mesh_data_entries_of_type(obj, self.domain_data_type_enum)):
+            for element_index, element in enumerate(func.get_all_mesh_data_indexes_of_type(obj, self.domain_data_type_enum)):
                 
                 if func.is_verbose_mode_enabled():
                     print(f"Batch converting #{element}")
@@ -463,6 +473,8 @@ class CreateAttribFromData(bpy.types.Operator):
                 mat_index = None
                 face_map = None
                 fm_index = None
+                uvmap = None
+                uvmap_index = None
 
                 # case: vertex groups
                 # VERT_IS_IN_VERTEX_GROUP: check for each group if vertex is in it 
@@ -473,7 +485,7 @@ class CreateAttribFromData(bpy.types.Operator):
                     vg_index = element
 
                 # case: get shape key position for each shape key 
-                if self.domain_data_type_enum in ["VERT_SHAPE_KEY_POSITION"]:
+                elif self.domain_data_type_enum in ["VERT_SHAPE_KEY_POSITION"]:
                     shape_key = func.get_shape_keys_enum(self, context)[element][1]
                     sk_index = element
                     if func.is_verbose_mode_enabled():
@@ -502,32 +514,40 @@ class CreateAttribFromData(bpy.types.Operator):
                         
                 # case: check for each material if it's assigned
                 # -> iterates over every material
-                if self.domain_data_type_enum == "FACE_IS_MATERIAL_ASSIGNED":
+                elif self.domain_data_type_enum == "FACE_IS_MATERIAL_ASSIGNED":
                     material = func.get_materials_enum(self, context)[element][1]
                     sel_mat = element    
 
                 # case; check for each material slot if it's assigned
                 # -> iterates over every material slot
-                if self.domain_data_type_enum == "FACE_IS_MATERIAL_SLOT_ASSIGNED":
+                elif self.domain_data_type_enum == "FACE_IS_MATERIAL_SLOT_ASSIGNED":
                     material_slot = func.get_material_slots_enum(self, context)[element][1]
                     mat_index = element
 
                 #case: check for each face map if it's assigned
                 # -> iterates over every face map
-                if self.domain_data_type_enum == "FACE_FROM_FACE_MAP":
+                elif self.domain_data_type_enum == "FACE_FROM_FACE_MAP":
                     face_map = func.get_face_maps_enum(self, context)[element][1]
                     fm_index = element
 
+                elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']:
+                    uvmap = func.get_uvmaps_enum(self, context)[element][1]
+                    uvmap_index = element
+
                 def format_name_batch(xname:str):
-                    return xname.format(domain=func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
-                                    face_map=face_map,
-                                    shape_key=shape_key, 
-                                    shape_key_to=shape_key_to,
-                                    shape_key_from=shape_key, 
-                                    vertex_group=vertex_group_name, 
-                                    material=material, 
-                                    material_slot=material_slot,
-                                    index=element_index) 
+                    format_args = {
+                        "domain": func.get_friendly_domain_name(self.target_attrib_domain_enum, plural=True), 
+                        "face_map": face_map,
+                        "shape_key": shape_key, 
+                        "shape_key_to": shape_key_to,
+                        "shape_key_from": shape_key, 
+                        "vertex_group": vertex_group_name, 
+                        "material": material, 
+                        "material_slot": material_slot,
+                        "index": element_index,
+                        "uvmap": uvmap
+                    }
+                    return xname.format(**format_args) 
 
                 # Create formatted attribute name
                 if self.attrib_name == "":
@@ -550,15 +570,18 @@ class CreateAttribFromData(bpy.types.Operator):
                 attrib = obj.data.attributes.new(name=xname, type=data_type, domain=self.target_attrib_domain_enum)
 
                 # Fetch data
+                args = {'vg_index': vg_index,
+                        'sk_index': sk_index,
+                        'sk_offset_index': sk_offset_index,
+                        'fm_index': fm_index,
+                        'sel_mat': sel_mat, 
+                        'mat_index': mat_index,
+                        'uvmap_index': uvmap_index
+                        }
                 obj_data = func.get_mesh_data(obj, 
                                         self.domain_data_type_enum, 
                                         self.target_attrib_domain_enum, 
-                                        vg_index=vg_index,
-                                        sk_index=sk_index,
-                                        sk_offset_index=sk_offset_index,
-                                        fm_index=fm_index,
-                                        sel_mat=sel_mat,
-                                        mat_index=mat_index)
+                                        **args)
                 
                 # Store data in attribute
                 func.set_attribute_values(attrib, obj_data)
@@ -645,10 +668,10 @@ class CreateAttribFromData(bpy.types.Operator):
         elif self.domain_data_type_enum in ["VERT_IS_IN_VERTEX_GROUP", "VERT_FROM_VERTEX_GROUP"] and not self.b_batch_convert_enabled:
             row.prop(self, "enum_vertex_groups", text="Vertex Group")
         
-        # UVMap domain selection, or from UVMap for legacy blender versions
-        elif self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']:
-            row.prop(self, "enum_uvmaps", text="UV Map")
-        
+        # UVMap domain selection
+        elif (self.domain_data_type_enum in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP'] and
+                not self.b_batch_convert_enabled):
+                row.prop(self, "enum_uvmaps", text="UV Map")
         else:
             row.label(text="") # occupy space to avoid resizing the window
 
