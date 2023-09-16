@@ -1675,7 +1675,7 @@ def get_all_mesh_data_entries_of_type(obj,data_type):
         return list(set([obj.data.face_maps[0].data[i].value  for i, f in enumerate(obj.data.polygons)]))
 
     elif data_type in ["FACE_IS_MATERIAL_SLOT_ASSIGNED"]:
-        return [i for i, mat_slot in obj.material_slots]
+        return [i for i, mat_slot in enumerate(obj.material_slots)]
 
     elif data_type in ["FACE_IS_MATERIAL_ASSIGNED"]:
             return [f.material_index for f in obj.data.polygons]
