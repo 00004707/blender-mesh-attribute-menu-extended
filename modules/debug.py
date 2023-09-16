@@ -31,54 +31,86 @@ class MAMETestAll(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        # bpy.ops.mesh.primitive_monkey_add()
-        # obj = context.active_object
-        excs = []
-        for source_data in [el[0] for el in func.get_source_data_enum_without_separators(self, context)]:
-            for target_domain in ['POINT','EDGE','FACE','CORNER']:
-                # for convert_domain in func.get_attribute_domains_enum(self, context):
-                #     for convert_dt in func.get_attribute_data_types_enum(self, context):
-                    
-                    
-                        bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT',
-                                                                attrib_name='',
-                                                                domain_data_type=source_data)
-                                                                #target_attrib_domain=target_domain)#,
-                    
-        if excs:
-            raise Exception(excs)   
-        
-                                # batch_convert_enabled= True,
-                                # auto_convert = True,
-                                # enum_attrib_converter_mode='GENERIC')
-                                # enum_attrib_converter_domain=convert_domain,
-                                # enum_attrib_converter_datatype=convert_dt)
     
-    # enum_face_maps=''
-    # enum_material_slots: bpy.props.EnumProperty(
-    # enum_materials: bpy.props.EnumProperty(
-    # enum_vertex_groups: bpy.props.EnumProperty(
-    # enum_shape_keys: bpy.props.EnumProperty(
-    # enum_shape_keys_offset_source: bpy.props.EnumProperty(
+        def test_from_mesh_data(self, context):
+            obj = context.active_object
+            req_attrs = ['domains_supported', 
+                        'batch_convert_support']
+            
+            excs = []
+            for source_data in static_data.object_data_sources:
+                
+                # ignore separators
+                if 'SEPARATOR' in source_data or 'NEWLINE' in source_data:
+                    continue
 
- 
-                            
+                # something went very wrong then
+                if source_data is None:
+                    print(F"[TESTS] NONETYPE: {source_data}")
+                    raise Exception()
+                
+                # check attrs 
+                for attr in req_attrs:
+                    if not hasattr(static_data.object_data_sources[source_data], attr):
+                        print(F"[TESTS] NO REQ ATTR: {source_data} - {attr}")
+                        raise Exception()
+                    
+                # check support for current blender version
+                if not etc.get_blender_support(static_data.object_data_sources[source_data].min_blender_ver, static_data.object_data_sources[source_data].unsupported_from_blender_ver):
+                    print(f"[TESTS] Handled non-compatible version xception: {source_data}")
+                    continue
+                
+                # test all cases
+                for domain in static_data.object_data_sources[source_data].domains_supported:
+                    for batch_mode_en in [True, False] if static_data.object_data_sources[source_data].batch_convert_support else [False]:
+                        for overwrite in [True, False]:
+                            for name_format_en in [True, False]:
+                                for auto_convert in [True, False]:
+                                    print(f"[TESTS] Creating new attribute from {source_data}, on domain {domain}, batch: {batch_mode_en}, name format enable: {name_format_en}, auto_convert: {auto_convert}")
+                                    try:
+                                        bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT',
+                                                                    attrib_name='',
+                                                                    domain_data_type_enum=source_data,
+                                                                    target_attrib_domain_enum=domain,
+                                                                    b_batch_convert_enabled=batch_mode_en,
+                                                                    b_overwrite=overwrite,
+                                                                    b_enable_name_formatting=name_format_en,
+                                                                    b_auto_convert=auto_convert)
+                                    except RuntimeError as exc:
+                                        print(f"[TESTS] Handled exception: {exc}")
+                                    else:
+                                        print("[TESTS] SUCCESS")
+        
+        obj = context.active_object
 
-        return {'FINISHED'}
-        for domain in func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context):
-            for data_target in func.get_target_data_enum(self, context):
-                bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT',
-                                                            append_to_current=False,
-                                                            apply_to_first_shape_key=True,
-                                                            delete_if_converted=False,
-                                                            data_target=data_target,
-                                                            attrib_name="",
-                                                            convert_to_domain=domain,
-                                                            enable_auto_smooth=True)
-                                                
+        print("[TESTS] FULL TEST START")
+        print("[TESTS] --------------------------------------------------")
+        print(f"[TESTS] Testing create from mesh data on object {obj}, type: empty object data test")
+        test_from_mesh_data(self, context)  
 
-        return {'FINISHED'}
+        print("[TESTS] --------------------------------------------------")
+        print(f"[TESTS] Testing create from mesh data on object {obj}, type: filled object data test")
 
+        bpy.ops.object.material_slot_add()
+        bpy.ops.material.new()
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.vertex_group_add()
+        bpy.ops.object.shape_key_add(from_mix=False)
+        bpy.ops.object.shape_key_add(from_mix=False)
+        bpy.ops.mesh.uv_texture_add()
+        bpy.ops.mesh.uv_texture_add()
+        bpy.ops.object.face_map_add()
+        bpy.ops.object.face_map_add()
+        bpy.ops.geometry.color_attribute_add(name="Color", domain='POINT', data_type='FLOAT_COLOR', color=(0, 0, 0, 1))
+        bpy.ops.geometry.color_attribute_add(name="Color", domain='CORNER', data_type='BYTE_COLOR', color=(0, 0, 0, 1))
+        bpy.ops.mesh.customdata_custom_splitnormals_add()
+        bpy.ops.mesh.customdata_bevel_weight_edge_add()
+        bpy.ops.mesh.customdata_bevel_weight_vertex_add()
+        bpy.ops.mesh.customdata_crease_edge_add()
+        bpy.ops.mesh.customdata_crease_vertex_add()
+        test_from_mesh_data(self, context)
+
+        return {'FINISHED'} 
 
     @classmethod
     def poll(self, context):
