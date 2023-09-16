@@ -2190,9 +2190,18 @@ def get_attribute_comparison_conditions_enum(self,context):
     Returns:
         list: List of tuples to be used in enum
     """
-    a = context.active_object.data.attributes.active
-    l = []
-    for mode in static_data.attribute_data_types[a.data_type].supported_comparison_modes:
+    obj = context.active_object
+    a = get_active_attribute(obj)
+    
+    return get_attribute_comparison_conditions_enum(a.data_type)
+    
+
+def get_attribute_comparison_conditions_enum_strings(self, context):
+    return get_attribute_comparison_conditions_enum('STRING')
+
+def get_attribute_comparison_conditions_enum(data_type):
+    l= []
+    for mode in static_data.attribute_data_types[data_type].supported_comparison_modes:
         l.append(static_data.attribute_comparison_modes[mode])
     return l
 
@@ -2389,3 +2398,15 @@ def get_node_tree_parent(node_tree, tree_type = None):
     else: 
         return None
 
+def get_active_attribute(obj):
+    """Bug bypass if attributes.active returns none
+
+    Args:
+        obj (ref): reference to the object to get the active attribute from
+    """
+
+    a = obj.data.attributes.active
+
+    if a is None:
+        return obj.data.attributes[obj.data.attributes.active_index]
+    return a
