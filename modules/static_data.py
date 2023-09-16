@@ -737,7 +737,8 @@ ObjectDataTarget = namedtuple("MeshDataSource", [
     "data_type",
     "min_blender_ver",
     "unsupported_from_blender_ver",
-    "icon"
+    "icon",
+    "batch_convert_support"
 ])
 
 # Contains object data sources
@@ -761,6 +762,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="HIDE_OFF",
+            batch_convert_support=False
         ),
 
     "TO_HIDDEN": ObjectDataTarget(
@@ -773,6 +775,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="HIDE_ON",
+            batch_convert_support=False
         ),
 
     "TO_SELECTED": ObjectDataTarget(
@@ -785,6 +788,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="RESTRICT_SELECT_OFF",
+            batch_convert_support=False
         ),
 
     "TO_NOT_SELECTED": ObjectDataTarget(
@@ -797,6 +801,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="RESTRICT_SELECT_ON",
+            batch_convert_support=False
         ),
 
     # # VERTEX EDGE
@@ -813,6 +818,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="MOD_BEVEL",
+            batch_convert_support=False
         ),
 
     "TO_MEAN_CREASE": ObjectDataTarget(
@@ -825,6 +831,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="LINCURVE",
+            batch_convert_support=False
         ),
 
     # VERTEX CORNER
@@ -841,6 +848,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="MOD_NORMALEDIT",
+            batch_convert_support=False
         ),
 
     # VERTEX
@@ -857,6 +865,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="GIZMO",
+            batch_convert_support=False
         ),
 
     "TO_SCULPT_MODE_MASK": ObjectDataTarget(
@@ -869,6 +878,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="MOD_MASK",
+            batch_convert_support=False
         ),
 
     "TO_VERTEX_GROUP": ObjectDataTarget(
@@ -881,6 +891,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="GROUP_VERTEX",
+            batch_convert_support=True
         ),
         
     "TO_SHAPE_KEY": ObjectDataTarget(
@@ -893,6 +904,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="SHAPEKEY_DATA",
+            batch_convert_support=True
         ),
 
     "TO_VERTEX_GROUP_INDEX": ObjectDataTarget(
@@ -904,6 +916,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="GROUP_VERTEX",
+            batch_convert_support=False
         ),
 
     # EDGE
@@ -919,6 +932,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="EMPTY_DATA",
+            batch_convert_support=False
         ),
 
     "TO_SHARP": ObjectDataTarget(
@@ -930,6 +944,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="SHARPCURVE",
+            batch_convert_support=False
         ),
 
     "TO_FREESTYLE_MARK": ObjectDataTarget(
@@ -942,6 +957,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="OUTLINER_OB_EMPTY",
+            batch_convert_support=False
         ),
 
     # FACE
@@ -958,6 +974,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="SMOOTHCURVE",
+            batch_convert_support=False
         ),
 
     "TO_FACE_MAP": ObjectDataTarget(
@@ -970,6 +987,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
             icon="FACE_MAPS",
+            batch_convert_support=True
         ),
 
     "TO_SCULPT_MODE_FACE_SETS": ObjectDataTarget(
@@ -982,6 +1000,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="UV_FACESEL",
+            batch_convert_support=False
         ),
 
     "TO_MATERIAL_SLOT_INDEX": ObjectDataTarget(
@@ -994,6 +1013,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=None,
             icon="MATERIAL",
+            batch_convert_support=False
         ),
 
     "TO_FACE_MAP_INDEX": ObjectDataTarget(
@@ -1006,6 +1026,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=(4,0),
             icon="FACE_MAPS",
+            batch_convert_support=False
         ),  
 
     # CORNER
@@ -1022,6 +1043,7 @@ object_data_targets = {
             min_blender_ver=None,
             unsupported_from_blender_ver=(3,5),
             icon="UV",
+            batch_convert_support=True
         ),  
 
     # # SPECIAL
@@ -1037,6 +1059,7 @@ object_data_targets = {
             min_blender_ver=(3,5,0),
             unsupported_from_blender_ver=None,
             icon="UV",
+            batch_convert_support=False
         ),    
     
     "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
@@ -1048,6 +1071,7 @@ object_data_targets = {
             min_blender_ver=(3,5,0),
             unsupported_from_blender_ver=None,
             icon="UV",
+            batch_convert_support=False
         ),    
 
     "TO_PINNED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
@@ -1059,6 +1083,7 @@ object_data_targets = {
             min_blender_ver=(3,5,0),
             unsupported_from_blender_ver=None,
             icon="UV",
+            batch_convert_support=False
         ),    
 
 }
