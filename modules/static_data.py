@@ -198,8 +198,8 @@ object_data_sources = {
     ),
 
     "VERT_FROM_VERTEX_GROUP": ObjectDataSource(
-        enum_gui_friendly_name="From Vertex Group ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="From Vertex Group",
+        enum_gui_friendly_name="Vertex Group Weight ⁻ ᵛᵉʳᵗᵉˣ",
+        enum_gui_friendly_name_no_special_characters="Vertex Group Weight",
         enum_gui_description="Create float vertex attribute from vertex group values",
         attribute_auto_name="{vertex_group} Vertex Weight",
         attribute_domain_on_default='POINT',
