@@ -2192,14 +2192,10 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
         vg_names = [vg.name for vg in obj.vertex_groups]
         restricted_names += vg_names
 
-        # get UVMap names, if any
-        uvm_names = [uv.name for uv in obj.data.uv_layers]
-        restricted_names += uvm_names
-
-        # get color attrib names, if any
-        uvm_names = [uv.name for uv in obj.data.uv_layers]
-        restricted_names += uvm_names
-
+        # get UVMap names, for blender 3.4 or lower
+        if etc.get_blender_support(minver_unsupported=(3,5,0)):
+            uvm_names = [uv.name for uv in obj.data.uv_layers]
+            restricted_names += uvm_names
 
         # rename those, get by index, by name is fucky wucky
         renamed = 0
@@ -2211,18 +2207,22 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
                 
             if obj.data.attributes[i].name in restricted_names:
                 atypes = func.get_attribute_types(obj.data.attributes[i])
-                if (not bool(len([atype for atype in atypes if atype in [static_data.EAttributeType.HIDDEN, static_data.EAttributeType.CANTREMOVE, static_data.EAttributeType.READONLY]])) 
-                    or (obj.data.attributes[i].data_type == 'FLOAT2' and obj.data.attributes[i].domain == 'CORNER' and bpy.app.version >= (3,5,0)) #ignore uvmaps, they're auto renamed if bl > 3,5
-                    or (obj.data.attributes[i].data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] and obj.data.attributes[i].domain in ['POINT', 'CORNER'])): # same for color attribs
-                    failed += 1
-                else:
-                    renamed +=1
-                    j = 0
-                    while obj.data.attributes[i].name in restricted_names:
-                        j += 1
-                        obj.data.attributes[i].name = str(obj.data.attributes[i].name) + "." + str(j).zfill(3)
+
+                is_removeable = not bool(len([atype for atype in atypes if atype in [static_data.EAttributeType.HIDDEN, static_data.EAttributeType.CANTREMOVE, static_data.EAttributeType.READONLY]]))
+
+
+                renamed +=1
+                j = 0
+                while obj.data.attributes[i].name in restricted_names:
+                    if (not is_removeable):
+                        failed += 1
+                        break
+                    j += 1
+                    obj.data.attributes[i].name = str(obj.data.attributes[i].name) + "." + str(j).zfill(3)
         
-        if renamed == 0:
+        if failed > 0:
+            self.report({'WARNING'}, f"Renamed {str(renamed)}, cannot rename {str(failed)}")
+        elif renamed == 0:
             self.report({'INFO'}, f"No name collisions found")
         else:
             self.report({'INFO'}, f"Renamed {str(renamed)} attribute" + ("s" if renamed > 1 else ""))
