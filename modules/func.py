@@ -1769,7 +1769,7 @@ def get_all_mesh_data_indexes_of_type(obj,data_type):
 # String Getters
 # ------------------------------------------
 
-def get_friendly_domain_name(domain_name_raw, plural=False):
+def get_friendly_domain_name(domain_name_raw, plural=False, short=False):
     """Converts internal domain name to friendly name to be used in UI
     eg. CORNER to Face Corners
 
@@ -1780,7 +1780,9 @@ def get_friendly_domain_name(domain_name_raw, plural=False):
     Returns:
         str: Friendly string
     """
-    if domain_name_raw == 'POINT':
+    if short:
+        return static_data.attribute_domains[domain_name_raw].friendly_name_short
+    elif domain_name_raw == 'POINT':
         return "Vertex" if not plural else "Vertices"
     elif domain_name_raw == 'CORNER':
         return "Face Corner" if not plural else "Face Corners"
@@ -1797,7 +1799,7 @@ def get_friendly_data_type_name(data_type_raw):
         str: Friendly string
     """
     if data_type_raw in static_data.attribute_data_types:
-        return static_data.attribute_data_types[data_type_raw].friendly_name
+        return static_data.attribute_data_types[data_type_raw].friendly_name 
     else:
         return data_type_raw
 
