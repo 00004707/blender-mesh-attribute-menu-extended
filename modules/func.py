@@ -562,8 +562,10 @@ def set_active_attribute(obj, attribute_name):
         obj (Reference): Object Reference
         attribute_name (str): Attribute name
     """
-
+    
     atrr_index = obj.data.attributes.keys().index(attribute_name)
+    if is_verbose_mode_enabled():
+        print(f"Setting active attribute to {attribute_name}, index {atrr_index}")
     obj.data.attributes.active_index = atrr_index
 
 def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
@@ -2341,7 +2343,7 @@ def conditional_selection_poll(self, context):
         self.poll_message_set("Object is not a mesh")
         return False
 
-    elif not context.active_object.data.attributes.active:
+    elif context.active_object.data.attributes.active is None:
         self.poll_message_set("No active attribute")
         return False
 
