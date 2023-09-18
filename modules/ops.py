@@ -54,7 +54,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         elif not context.active_object.mode  == 'EDIT' :
             self.poll_message_set("Not in edit mode")
             return False
-        elif not context.active_object.data.attributes.active  :
+        elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
         elif not func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)  :
@@ -712,7 +712,7 @@ class DuplicateAttribute(bpy.types.Operator):
         elif not context.active_object.type == 'MESH' :
             self.poll_message_set("Object is not a mesh")
             return False
-        elif not context.active_object.data.attributes.active  :
+        elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
         return True
@@ -792,7 +792,7 @@ class InvertAttribute(bpy.types.Operator):
         elif not context.active_object.type == 'MESH' :
             self.poll_message_set("Object is not a mesh")
             return False
-        elif not context.active_object.data.attributes.active  :
+        elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
         return True

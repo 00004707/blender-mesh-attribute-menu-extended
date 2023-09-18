@@ -897,7 +897,7 @@ class QuickAttributeNode(bpy.types.Operator):
         elif obj.type != 'MESH':
             self.poll_message_set("Object is not a mesh")
             return False
-        elif not obj.data.attributes.active:
+        elif obj.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
 
@@ -1048,7 +1048,7 @@ class RandomizeGUIInputFieldValue(bpy.types.Operator):
         if not obj:
             self.poll_message_set('No active object')
             return False
-        elif not obj.data.attributes.active:
+        elif obj.data.attributes.active is None:
             self.poll_message_set('No active attribute')
             return False
         elif not func.get_attribute_compatibility_check(context.active_object.data.attributes.active):
