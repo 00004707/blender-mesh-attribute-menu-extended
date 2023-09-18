@@ -1801,6 +1801,25 @@ def get_friendly_data_type_name(data_type_raw):
     else:
         return data_type_raw
 
+def get_friendly_name_from_enum_function(context, enum_function, element:str):
+    """Gets the Title from enum tuple
+
+    Args:
+        context (ref): Context Reference
+        enum_function (function): The function that will return enum entries list
+        element (str): The element id, aka first element in enum element tuple
+
+    Returns:
+        str: Title string, aka second element in enum element tuple
+    """
+    en = enum_function(context)
+    for e in en:
+        if e[0] == element:
+            return e[1]
+    else:
+        return None
+
+
 # Data enums
 # --------------------------------------------
 
