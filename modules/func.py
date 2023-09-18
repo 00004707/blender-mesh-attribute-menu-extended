@@ -2436,3 +2436,40 @@ def get_active_attribute(obj):
     if a is None:
         return obj.data.attributes[obj.data.attributes.active_index]
     return a
+def refresh_attribute_UIList_elements():
+        obj = bpy.context.active_object
+        gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+        list_elements = gui_prop_group.to_mesh_data_attributes_list
+
+        list_elements.clear()
+        
+        for attrib in obj.data.attributes:
+            el = list_elements.add()
+            el.attribute_name = attrib.name
+            el.domain = attrib.domain
+            el.domain_friendly_name = get_friendly_domain_name(attrib.domain, short=True)
+            el.data_type = attrib.data_type
+            el.data_type_friendly_name = get_friendly_data_type_name(attrib.data_type)
+
+
+def set_attribute_uilist_compatible_attribute_type(domain, data_type):
+    """Updates elements in UIList to red-highlight attributes that do not have specified domain or data type 
+
+    Args:
+        domain (str): domain
+        data_type (str): data type
+    """
+    obj = bpy.context.active_object
+    gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+
+    for el in gui_prop_group.to_mesh_data_attributes_list:
+                
+                el.b_domain_compatible = el.domain == domain
+                el.b_data_type_compatible = el.data_type == data_type
+
+def configutre_attribute_uilist(enable_same_as_target_filter_btn: bool,
+                                enable_incompatible_type_highlight: bool):
+    
+    gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+    gui_prop_group.b_attributes_uilist_show_same_as_target_filter = enable_same_as_target_filter_btn
+    gui_prop_group.b_attributes_uilist_highlight_different_attrib_types = enable_incompatible_type_highlight
