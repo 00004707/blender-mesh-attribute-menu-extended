@@ -202,7 +202,7 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
 
     return attribute_name
 
-def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list = False, src_attribute = None, obj = None, randomize_once = False, **kwargs):
+def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list = False, src_attribute = None, obj = None, randomize_once = False, no_numpy = False, **kwargs):
     """Returns a list or a single random value of specified data type.
 
     Args:
@@ -213,7 +213,8 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
         src_attribute (reference): If only a part of the vector has to be randomized the attribute has to be passed 
         obj (reference): If only a part of the vector has to be randomized the object reference has to be passed 
         randomize_once (bool): For lists, returns a single random value repeated for whole length of the list
-        
+        no_numpy (bool): If the returned value cannot be of numpy type eg. numpy.int32
+
         kwargs: (If applicable)
         * range_min                 The minimum random value or length for string
         * range_min                 The maximum random value or length for string
@@ -224,6 +225,8 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
         * string_special            Whether to use special characters in strings
         * string_custom             Use characters from input range (overrides previous toggles)
         * color_randomize_type      str RGBA HSVA
+        * b_vec_{id}                Whether to change the value at vector subelement, vector is usually 4D
+        * original_vector           If no_list is true, input is a vector and only some subelements have to be randomized, pass original vector here
 
     Returns:
         list or variable type: random value(s)
@@ -256,6 +259,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
         
         # support for single values implemented btw
         
+        # Get number of elements to randomize
         if no_list or randomize_once:
             substack_len = 1
         else:
@@ -265,13 +269,19 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
         v_size = len(static_data.attribute_data_types[data_type].vector_subelements_names)
         stacks = []
 
+        # Check if all vector elements have to be randomized
         v_toggles = []
         for i in range(0, v_size):
             v_toggles.append(kwargs[f'b_vec_{i}'])
 
-        if not all(v_toggles) or not no_list or use_hsv:
-            og_vals = get_attrib_values(src_attribute, obj)
+        # If not read the original values or get the og vector from kwargs if this is a single random vec
+        if not all(v_toggles) or use_hsv:
+            if no_list:
+                og_vals = [kwargs['original_vector']]
+            else:
+                og_vals = get_attrib_values(src_attribute, obj)
 
+        # Convert them to HSV if applicable
         if use_hsv:
             for i, subelement in enumerate(og_vals):
                 og_vals[i] = color_vector_to_hsv(subelement)
@@ -296,11 +306,12 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
                 print(f'converting {el}')
                 val[i] = color_vector_to_rgb(el)
         if no_list:
-            return val[0]
+            return val.tolist()[0] if no_numpy else val[0]
         elif randomize_once:
-            return [(val[0]), ] * count
+            val = val.tolist()[0] if no_numpy else val[0]
+            return [(val), ] * count
         else:
-            return val
+            return val.tolist() if no_numpy else val
 
     # String
     elif data_type == "STRING":
