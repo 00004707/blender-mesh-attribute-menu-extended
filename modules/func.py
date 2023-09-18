@@ -1374,17 +1374,17 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             print(f"Filtered edges of the corner are {edge_indexes_to_select}")
         set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
 
-def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
+def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwrite = False, **kwargs):
     """Sets mesh data from selected attribute
 
     Args:
         obj (Reference): 3D Object Reference
         data_target (str): See data.object_data_targets
         src_attrib (Reference): Attribute reference
+        new_data_name (str): The name of new shape key, vertex group etc.
+        overwrite (boolean): if name of the shape key/vertex group exists, replace the data
         
         kwargs: (If applicable)
-        * face_map_name             Name of the face map to create
-        * vertex_group_name         Name of the vertex group to create
         * enable_auto_smooth        bool
         * apply_to_first_shape_key  bool
         * to_vgindex_weight         float
@@ -1393,6 +1393,8 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         * uvmap_index               integer
         * invert_sculpt_mask        boolean, 1-clamped sculpt mask val
         * expand_sculpt_mask_mode   enum REPLACE EXPAND SUBTRACT
+        * normalize_mask            boolean
+
 
     Raises:
         etc.MeshDataWriteException: On failure if selected data target is not supported
@@ -1401,11 +1403,25 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
         Nothing
     """
     
+    def foreach_get_mesh_data_value(data, prop):
+        sample = getattr(data[0], prop)
+        if type(sample) in [tuple, list]:
+            storage_multi = len(sample)
+        else:
+            storage_multi = 1
+        storage = [None] * len(data) * storage_multi
+        data.foreach_get(prop, storage)
+        return storage
+    
+    def foreach_set_mesh_data_value(data, prop, values):
+        data.foreach_set(prop, values)
+        return True
+
     a_vals = get_attrib_values(src_attrib, obj)
     if is_verbose_mode_enabled():
-        print(f"Setting mesh data {data_target} from {src_attrib}, values: {a_vals}, kwargs: {kwargs}")
+        print(f"Setting mesh data {data_target} from {src_attrib}, \nvalues: {a_vals}, \nkwargs: {kwargs}, \ncustom name: {new_data_name}")
     
-    src_attrib_name = src_attrib.name
+    src_attrib_name = src_attrib.name # for setting active attribute ONLY
 
     # QUICK BOOLEANS
     # -----------------------------
@@ -1467,25 +1483,36 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
             bm.free()
             src_attrib = obj.data.attributes[src_attrib_name] # !important
         
-        for i, val in enumerate(a_vals):
-            val = min(max(val, 0.0), 1.0)
+        if kwargs['invert_sculpt_mask']:
+            for i in range(0, len(a_vals)):
+                a_vals[i] = 1 - a_vals[i]
 
-            # Invert the values if enabled
-            if kwargs['invert_sculpt_mask']:
-                val = 1.0 - val
+        if kwargs['expand_sculpt_mask_mode'] != 'REPLACE':
+            storage = foreach_get_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value')
 
-            # Apply different value depending on the mode (auto clamped then)
-            if kwargs['expand_sculpt_mask_mode'] == 'REPLACE':
-                obj.data.vertex_paint_masks[0].data[i].value = val
-            elif kwargs['expand_sculpt_mask_mode'] == 'EXPAND':
-                obj.data.vertex_paint_masks[0].data[i].value += val
+            if kwargs['expand_sculpt_mask_mode'] == 'EXPAND':
+                for i in range(0, len(storage)):
+                    a_vals[i] = storage[i] + a_vals[i] 
             elif kwargs['expand_sculpt_mask_mode'] == 'SUBTRACT':
-                obj.data.vertex_paint_masks[0].data[i].value -= val
+                for i in range(0, len(storage)):
+                    a_vals[i] = storage[i] - a_vals[i] 
+
+        if kwargs['normalize_mask']:
+            for i, val in enumerate(a_vals):
+                a_vals[i] = min(max(val, 0.0), 1.0)
+
+        
+        foreach_set_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value', a_vals)
+
         
     # TO VERTEX GROUP
     elif data_target == "TO_VERTEX_GROUP":
-        name = get_safe_attrib_name(obj, src_attrib_name + " Group", 'Group')
-        vg = obj.vertex_groups.new(name=name if kwargs["vertex_group_name"] == '' else kwargs["vertex_group_name"])
+        name = get_safe_attrib_name(obj, new_data_name, 'Group')
+        if name in obj.vertex_groups and overwrite:
+            vg = obj.vertex_groups[name]
+        else:
+            vg = obj.vertex_groups.new(name=name)
+
         for vert in obj.data.vertices:
             weight = a_vals[vert.index]
             vg.add([vert.index], weight, 'REPLACE')
@@ -1502,7 +1529,11 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
 
     # TO SHAPE KEY
     elif data_target == "TO_SHAPE_KEY":
-        sk = obj.shape_key_add(name=src_attrib_name)
+        if new_data_name in obj.data.shape_keys.key_blocks and overwrite:
+            sk = obj.data.shape_keys.key_blocks[new_data_name]
+        else:
+            sk = obj.shape_key_add(name=new_data_name)
+
         l = [[vec[0],vec[1],vec[2]] for vec in a_vals]
         for vert in obj.data.vertices:
             sk.data[vert.index].co = l[vert.index]
@@ -1577,8 +1608,12 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
 
     # TO FACE MAP
     elif data_target == "TO_FACE_MAP":
-        fm_name = "Face Map" if kwargs["face_map_name"] == '' else kwargs["face_map_name"]
-        fm = obj.face_maps.new(name=fm_name)
+        fm_name = "Face Map" if new_data_name == '' else new_data_name
+        
+        if fm_name in obj.face_maps and overwrite:
+            fm = obj.face_maps[fm_name].index
+        else:
+            fm = obj.face_maps.new(name=fm_name)
         
         # create layer
         bm = bmesh.new()
@@ -1598,12 +1633,20 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     
     # TO SCULPT MODE FACE SETS
     elif data_target == "TO_SCULPT_MODE_FACE_SETS":
-        # case: no face sets
-        if ".sculpt_face_set" not in obj.data.polygon_layers_int:
-            obj.data.polygon_layers_int.new(name=".sculpt_face_set" )
 
-        for i, val in enumerate(a_vals):
-            obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
+        if etc.get_blender_support(minver_unsupported=(4,0,0)):
+            # case: no face sets
+            if ".sculpt_face_set" not in obj.data.polygon_layers_int:
+                obj.data.polygon_layers_int.new(name=".sculpt_face_set" )
+
+            for i, val in enumerate(a_vals):
+                obj.data.polygon_layers_int['.sculpt_face_set'].data[i].value = val
+        else:
+            if not '.sculpt_face_set' in obj.data.attributes:
+                obj.data.attributes.new('.sculpt_face_set', 'INT', 'FACE')
+            
+            set_attribute_values(obj.data.attributes['.sculpt_face_set'], a_vals)
+
     
     # TO MATERIAL INDEX
     elif data_target == "TO_MATERIAL_SLOT_INDEX":
@@ -1639,7 +1682,9 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     
     # TO UV MAP
     elif data_target == "TO_UVMAP":
-        obj.data.uv_layers.new(name=src_attrib_name)
+        if not (new_data_name in obj.data.uv_layers and overwrite):
+            obj.data.uv_layers.new(name=new_data_name)
+
         for i, val in enumerate(a_vals):
             obj.data.uv_layers[int(kwargs['uvmap_index'])].data[i].uv = (val[0], val[1])
 
@@ -1684,7 +1729,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, **kwargs):
     else:
         raise etc.MeshDataWriteException("set_mesh_data", f"Can't find {data_target} to set")
           
-def get_all_mesh_data_entries_of_type(obj,data_type):
+def get_all_mesh_data_indexes_of_type(obj,data_type):
     """Gets all indexes of iterable mesh data. Used in batch converting of attributes.
 
     * Vertex Groups
@@ -1720,6 +1765,7 @@ def get_all_mesh_data_entries_of_type(obj,data_type):
     
     else:
         raise etc.GenericFunctionParameterError("get_all_mesh_data_indexes_of_type", f"Data type unsupported?: {data_type}")
+
 # String Getters
 # ------------------------------------------
 

@@ -1031,6 +1031,13 @@ class ConvertToMeshData(bpy.types.Operator):
     # Whether to remove the attribute after converting to mesh data
     b_delete_if_converted: bpy.props.BoolProperty(name="Delete after conversion", default=False)
 
+    # Converts multiple attributes of this type at once. Limited to specific data targets with batch_convert_support set to true in static data
+    b_convert_multiple: bpy.props.BoolProperty(name="Convert Multiple", default=False, description="Converts multiple attributes of this type at once")
+    
+    # Overwrites existing mesh data - Vertex Groups, Face Maps, Shape Keys, UVMaps...
+    b_overwrite: bpy.props.BoolProperty(name="Overwrite", default=False, description="Overwrites existing mesh data - Vertex Groups, Face Maps, Shape Keys, UVMaps...")
+
+
     # The target to convert the active attribute to
     data_target_enum: bpy.props.EnumProperty(
         name="Target",
@@ -1142,7 +1149,10 @@ class ConvertToMeshData(bpy.types.Operator):
         if func.is_verbose_mode_enabled():
             print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {target_data_type}")
         
-        new_attrib = obj.data.attributes.new(name=convert_from.name + " " + name_suffix, type=convert_from.data_type, domain=convert_from.domain)
+        # Make sure the new name is not starting with dot, as this will create a non-convertable internal attribute
+        new_attrib_name = convert_from.name[1:] if convert_from.name.startswith('.') else convert_from.name 
+        new_attrib_name += " " + name_suffix
+        new_attrib = obj.data.attributes.new(name=new_attrib_name, type=convert_from.data_type, domain=convert_from.domain)
         new_attrib_name = new_attrib.name
         
         if func.is_verbose_mode_enabled():
@@ -1164,10 +1174,13 @@ class ConvertToMeshData(bpy.types.Operator):
         elif not context.active_object.type == 'MESH' :
             self.poll_message_set("Object is not a mesh")
             return False
-        elif not context.active_object.data.attributes.active:
+        elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute") 
             return False
-           
+        elif not func.get_attribute_compatibility_check(context.active_object.data.attributes.active):
+            self.poll_message_set("Addon update required for this attribute type") 
+            return False
+        
         return True
 
     def execute(self, context):
@@ -1175,96 +1188,124 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib_name = obj.data.attributes.active.name
         current_mode = context.active_object.mode
 
-        # Compatibility Check
-        if not func.get_attribute_compatibility_check(obj.data.attributes[src_attrib_name]):
-            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
-            return {'CANCELLED'}
-
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        src_attrib = obj.data.attributes[src_attrib_name] # !important
-        src_attrib_domain = src_attrib.domain
-        src_attrib_data_type = src_attrib.data_type
-        data_target_data_type = static_data.object_data_targets[self.data_target_enum].data_type
-        data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
-
         # Check if user input is valid.
         self.perform_user_input_test(obj, current_mode)
 
-        if func.is_verbose_mode_enabled():
-            print(f"Converting attribute {src_attrib.name} to {self.data_target_enum}")
+        # Get list of attributes to convert
+        convert_attribute_list = []
+        if not self.b_convert_multiple:
+            convert_attribute_list.append(obj.data.attributes.active.name)
+        else:
+            gui_prop_group = context.window_manager.MAME_GUIPropValues
+            list_elements = gui_prop_group.to_mesh_data_attributes_list
+            convert_attribute_list += [e.attribute_name for e in list_elements if e.b_select]
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
 
-        # Add basis shape key if none present and enabled in gui
-        if self.data_target_enum in ['TO_SHAPE_KEY'] and not hasattr(obj.data.shape_keys, 'key_blocks') and self.b_create_basis_shape_key:
-            bpy.ops.object.shape_key_add(from_mix=False)
+        for src_attrib_name in convert_attribute_list:
+            src_attrib = obj.data.attributes[src_attrib_name]
+
+            # Store original name to preserve if removal is enabled and target is vertex group
+            original_attrib_name = src_attrib_name
+
+            # check if the source attribute can be removed here as references to attrib might change 
+            can_remove = static_data.EAttributeType.CANTREMOVE not in func.get_attribute_types(obj.data.attributes[src_attrib_name])
+
+            # rename the attribute if converting to vertex group with same name as attribute
+            if self.data_target_enum in ['TO_VERTEX_GROUP'] and self.b_delete_if_converted and can_remove:
+                src_attrib.name = func.get_safe_attrib_name(obj, src_attrib_name)
+                src_attrib_name = src_attrib.name
+
+            src_attrib_domain = src_attrib.domain
+            src_attrib_data_type = src_attrib.data_type
+            data_target_data_type = static_data.object_data_targets[self.data_target_enum].data_type
+            data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
+
+            
+
             if func.is_verbose_mode_enabled():
-                print("Creating basis shape key...")
+                print(f"Converting attribute {src_attrib.name} to {self.data_target_enum}")
 
-        # Convert the attribute if required. Create a copy.
-        domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
-        data_type_compatible = src_attrib_data_type == data_target_data_type
-        attrib_to_convert = src_attrib
-
-        if not domain_compatible or not data_type_compatible:
-            attribute_to_convert_name = self.create_temp_converted_attrib(obj, src_attrib.name, "temp", self.convert_to_domain_enum, data_target_data_type)
-            attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
-        else:
-            attribute_to_convert_name = src_attrib_name
-        
-        # If target is VERTEX GROUP INDEX, with attribute weight, make sure the weight attribute is float
-        used_conveted_vgweight_attrib = False
-        if self.to_vgindex_weight_mode_enum == 'ATTRIBUTE':
-            vg_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
-            if vg_weight_attrib.data_type != 'FLOAT' or vg_weight_attrib.domain != 'POINT':
+            # Add basis shape key if none present and enabled in gui
+            if self.data_target_enum in ['TO_SHAPE_KEY'] and not hasattr(obj.data.shape_keys, 'key_blocks') and self.b_create_basis_shape_key:
+                bpy.ops.object.shape_key_add(from_mix=False)
                 if func.is_verbose_mode_enabled():
-                    print(f"Source attribute for weights ({vg_weight_attrib.name}) is is not correct type, converting...")
+                    print("Creating basis shape key...")
 
-                vg_weight_attrib_name = self.create_temp_converted_attrib(obj, vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
-                vg_weight_attrib =  obj.data.attributes[vg_weight_attrib_name]
-                used_conveted_vgweight_attrib = True
-        else:
-            vg_weight_attrib = None
+            # Convert the attribute if required. Create a copy.
+            domain_compatible = src_attrib_domain in [dom[0] for dom in data_target_compatible_domains] 
+            data_type_compatible = src_attrib_data_type == data_target_data_type
+            attrib_to_convert = src_attrib
 
-        if func.is_verbose_mode_enabled():
-            print(f"attribute -> data: {attrib_to_convert.name} -> {self.data_target_enum}")
-        
-        # Welp, new attribute might be added in vgweight convert and the reference to attrib_to_convert is gone...
-        attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
+            if not domain_compatible or not data_type_compatible:
+                attribute_to_convert_name = self.create_temp_converted_attrib(obj, src_attrib.name, "temp", self.convert_to_domain_enum, data_target_data_type)
+                attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
+            else:
+                attribute_to_convert_name = src_attrib_name
+            
+            # If target is VERTEX GROUP INDEX, with attribute weight, make sure the weight attribute is float
+            used_conveted_vgweight_attrib = False
+            if self.to_vgindex_weight_mode_enum == 'ATTRIBUTE':
+                vg_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
+                if vg_weight_attrib.data_type != 'FLOAT' or vg_weight_attrib.domain != 'POINT':
+                    if func.is_verbose_mode_enabled():
+                        print(f"Source attribute for weights ({vg_weight_attrib.name}) is is not correct type, converting...")
 
-        # Set mesh data
-        func.set_mesh_data(obj, self.data_target_enum, 
-                           attrib_to_convert, 
-                           face_map_name=self.attrib_name, 
-                           vertex_group_name=self.attrib_name, 
-                           enable_auto_smooth=self.b_enable_auto_smooth, 
-                           apply_to_first_shape_key=self.b_apply_to_first_shape_key,
-                           to_vgindex_weight=self.to_vgindex_weight,
-                           to_vgindex_weight_mode=self.to_vgindex_weight_mode_enum,
-                           to_vgindex_src_attrib=vg_weight_attrib,
-                           uvmap_index=self.uvmaps_enum,
-                           invert_sculpt_mask=self.b_invert_sculpt_mode_mask,
-                           expand_sculpt_mask_mode=self.enum_expand_sculpt_mask_mode,
-                           normalize_mask=self.b_normalize_mask)
-        
-        
-        # post-conversion cleanup
-        if not domain_compatible or not data_type_compatible:
-            obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
+                    vg_weight_attrib_name = self.create_temp_converted_attrib(obj, vg_weight_attrib.name, "vgweight", 'POINT', "FLOAT")
+                    vg_weight_attrib =  obj.data.attributes[vg_weight_attrib_name]
+                    used_conveted_vgweight_attrib = True
+            else:
+                vg_weight_attrib = None
 
-        if used_conveted_vgweight_attrib:
-             obj.data.attributes.remove(obj.data.attributes[vg_weight_attrib_name])
-        
-        func.set_active_attribute(obj, src_attrib_name)
-        # remove if user enabled
-        if self.b_delete_if_converted:
-            obj.data.attributes.remove(obj.data.attributes[src_attrib_name])
+            if func.is_verbose_mode_enabled():
+                print(f"attribute -> data: {attrib_to_convert.name} -> {self.data_target_enum}")
+            
+            # Welp, new attribute might be added in vgweight convert and the reference to attrib_to_convert is gone...
+            attrib_to_convert = obj.data.attributes[attribute_to_convert_name]
+
+            args = {
+                "new_data_name": original_attrib_name if self.attrib_name == "" else self.attrib_name,
+                "enable_auto_smooth": self.b_enable_auto_smooth, 
+                "apply_to_first_shape_key": self.b_apply_to_first_shape_key,
+                "to_vgindex_weight": self.to_vgindex_weight,
+                "to_vgindex_weight_mode": self.to_vgindex_weight_mode_enum,
+                "to_vgindex_src_attrib": vg_weight_attrib,
+                "uvmap_index": self.uvmaps_enum,
+                "invert_sculpt_mask": self.b_invert_sculpt_mode_mask,
+                "expand_sculpt_mask_mode": self.enum_expand_sculpt_mask_mode,
+                "normalize_mask": self.b_normalize_mask
+            }
+
+            # Remove a dot to avoid potential crashes and un-resolveable name collisions
+            args["new_data_name"] = args["new_data_name"] if not args["new_data_name"].startswith('.') else args["new_data_name"][1:]
+
+            # Set mesh data
+            func.set_mesh_data(obj, self.data_target_enum, 
+                            attrib_to_convert, 
+                            overwrite=self.b_overwrite,
+                            **args
+                            )
+            
+            
+            # post-conversion cleanup
+            if not domain_compatible or not data_type_compatible:
+                obj.data.attributes.remove(obj.data.attributes[attribute_to_convert_name])
+
+            if used_conveted_vgweight_attrib:
+                obj.data.attributes.remove(obj.data.attributes[vg_weight_attrib_name])
+            
+            func.set_active_attribute(obj, src_attrib_name)
+            # remove if user enabled
+            if self.b_delete_if_converted and can_remove:
+                obj.data.attributes.remove(obj.data.attributes[src_attrib_name])
 
         obj.data.update()
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
     
     def invoke(self, context, event):
+        func.refresh_attribute_UIList_elements()
+        func.configutre_attribute_uilist(True, True)
         return context.window_manager.invoke_props_dialog(self)
     
     last_selected_data_target = None
@@ -1276,6 +1317,8 @@ class ConvertToMeshData(bpy.types.Operator):
         src_attrib_data_type = src_attrib.data_type
         data_target_data_type = static_data.object_data_targets[self.data_target_enum].data_type
         data_target_compatible_domains = func.get_supported_domains_for_selected_mesh_data_target_enum_entry(self, context)
+        data_supports_multiple = static_data.object_data_targets[self.data_target_enum].batch_convert_support
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
 
         # Apply compatible domain by default or set first one in a list if it is not supported
         if self.last_selected_data_target != self.data_target_enum:
@@ -1308,17 +1351,17 @@ class ConvertToMeshData(bpy.types.Operator):
         # Setting the position attribute will not change the basis shape key, which might be unexpected.
         if self.data_target_enum in ['TO_POSITION'] and hasattr(obj.data.shape_keys, 'key_blocks'):
             row.prop(self, 'b_apply_to_first_shape_key', text="Apply to \"Basis\" Shape Key as well")
-            row.label(text="")
 
         # Creates basis shape key when converting to shape keys, which is probably the expected result
         elif self.data_target_enum in ['TO_SHAPE_KEY'] and not obj.data.shape_keys:
             row.prop(self, 'b_create_basis_shape_key')
-            row.label(text="")
-
+    
         # Custom name for face maps and vertex groups
-        elif self.data_target_enum in ['TO_FACE_MAP', 'TO_VERTEX_GROUP']:
-            row.prop(self, "attrib_name", text="Name")
-            row.label(text="")
+        elif self.data_target_enum in ['TO_FACE_MAP', 'TO_VERTEX_GROUP', "TO_UVMAP", "TO_SHAPE_KEY"]:
+            if not self.b_convert_multiple:
+                row.prop(self, "attrib_name", text="Name")
+            else:
+                row.label(text="")
         
         # Show a toggle for enabling auto smooth to see the result auto smooth needs to be enabled.
         elif self.data_target_enum in ['TO_SPLIT_NORMALS']:
@@ -1326,7 +1369,6 @@ class ConvertToMeshData(bpy.types.Operator):
                 row.prop(self, 'b_enable_auto_smooth', text="Enable Auto Smooth (Required to preview)")
             else:
                 row.label(text="")
-            row.label(text="")
         
         # Show modes to set the Vertex Group index
         elif self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
@@ -1346,7 +1388,6 @@ class ConvertToMeshData(bpy.types.Operator):
         # UVMap selector
         elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR", 'TO_PINNED_VERTICES_IN_UV_EDITOR']:
             row.prop(self, 'uvmaps_enum', text="UVMap")
-            row.label(text="")
         
         # Show options for sculpt mode mask conversion
         elif self.data_target_enum == 'TO_SCULPT_MODE_MASK':
@@ -1359,112 +1400,192 @@ class ConvertToMeshData(bpy.types.Operator):
         # leave a space to avoid resizing the window
         else:
             row.label(text="") 
-            row.label(text="")
 
+        toggles_row = row.row()
+        sr = toggles_row.row()
+        sr.prop(self, 'b_convert_multiple', toggle=True)
+        sr.enabled = data_supports_multiple
+
+        toggles_row.prop(self, 'b_overwrite', toggle=True)
         
-        # Data Type and Domains table
-        # ----------------------------------
+        def remove_after_convert_menu(layout, alt_text = "", batch_conv_check_selected= False): # TODO
+            subrow = layout.row()
 
-        box = self.layout.box()
-        col = box.column(align=True)
+            if not batch_conv_check_selected:
+                en = static_data.EAttributeType.CANTREMOVE not in func.get_attribute_types(src_attrib)
+                text = "Delete After conversion" if alt_text == "" else alt_text
+                text = "Non-removeable attribute" if not en else text
+            else:
+                gui_prop_group = context.window_manager.MAME_GUIPropValues
+                list_elements = gui_prop_group.to_mesh_data_attributes_list
+                
+                possible_to_remove_attrs = []
+                for el in [e for e in list_elements if e.b_select]:
+                    possible_to_remove_attrs.append(static_data.EAttributeType.CANTREMOVE not in func.get_attribute_types(obj.data.attributes[el.attribute_name]))
+                
+                en = True
+                if not len(possible_to_remove_attrs) or all(possible_to_remove_attrs):
+                    text = "Delete After conversion" if alt_text == "" else alt_text
+                elif any(possible_to_remove_attrs):
+                    text = "Delete all removeable after conversion"
+                else:
+                    text = "No removeable attributes" 
+                    en = False
+            
+            subrow.label(text=text)
+            subsr = subrow.row()
+            subsr.ui_units_x = 4
+            subsr.enabled = en
+            subsr.prop(self, 'b_delete_if_converted', text="Delete", toggle=True)
 
-        # Show titles
-        row = col.row(align=True)
-        row.label(text="")
-        row.label(text="Source")
-        row.label(text="Target")
 
-        # Show first row comparing the Domains
-        row = col.row(align=True)
-        row.label(text="Domain")
-        if domain_compatible:
-            row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}")
+        if self.b_convert_multiple and data_supports_multiple:
+            # update table compatibility hightlighting
+
+            comp_datatype = static_data.object_data_targets[self.data_target_enum].data_type
+            func.set_attribute_uilist_compatible_attribute_type(self.convert_to_domain_enum, comp_datatype)
+
+            # draw
+            col = row.column(align=True)
+            label_row = col.row()
+            sr = label_row.row()
+            sr.label(text="Name")
+            sr = label_row.row()
+            sr.scale_x = 0.5
+            sr.label(text="Domain")
+            sr = label_row.row()
+            sr.scale_x = .75
+            sr.label(text="Data Type")
+            gui_prop_group = context.window_manager.MAME_GUIPropValues
+            col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
+                          "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
+
+            # Conversion warning
+
+            gui_prop_group = context.window_manager.MAME_GUIPropValues
+            list_elements = gui_prop_group.to_mesh_data_attributes_list
+            
+            all_compatible = True
+            for el in [e for e in list_elements if e.b_select]:
+                if not el.b_domain_compatible or not el.b_data_type_compatible:
+                    all_compatible = False
+                    break
+
+            if not all_compatible:
+
+                col.label(icon='ERROR', text=f"Some data will be converted. Result might be unexpected.")
+            else:
+                col.label(text=f"") # leave a space to not resize the window
+
+            remove_after_convert_menu(col, "", True)
+
+
         else:
-            row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}", icon='ERROR')
-        row.label(text=f"{func.get_friendly_domain_name(self.convert_to_domain_enum)}")
-        
-        # Show second row comparing the Data Types
-        row = col.row(align=True)
-        row.label(text="Data Type")
-        if data_type_compatible:
-            row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}")
-        else:
-            row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}", icon='ERROR')
-        row.label(text=f"{func.get_friendly_data_type_name(data_target_data_type)}")
 
+            # Data Type and Domains table
+            # ----------------------------------
 
-        # Showa additional box for comparing "To Vertex Group Index" weighting attribute data type and domains
-        if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX'] and self.to_vgindex_weight_mode_enum == "ATTRIBUTE":
             box = self.layout.box()
             col = box.column(align=True)
 
-            # Show a row comparing the domains
+            # Show titles
             row = col.row(align=True)
-            if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
-                row.label(text="Weight Domain")
-                if self.to_vgindex_weights_attribute_enum != "NULL":
-                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
-                    static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
-                    friendly_domain = func.get_friendly_domain_name(src_weight_attrib.domain) if not static_val_mode else static_data.attribute_domains['POINT'].friendly_name
+            row.label(text="")
+            row.label(text="Source")
+            row.label(text="Target")
 
-                    if src_weight_attrib.domain  != 'POINT' and not static_val_mode:
-                        row.label(text=f"{friendly_domain}", icon='ERROR')
-                    else:
-                        row.label(text=f"{friendly_domain}")
-
-                    row.label(text=f"{static_data.attribute_domains['POINT'].friendly_name}")
-
-            # Show a row comparing the data types
+            # Show first row comparing the Domains
             row = col.row(align=True)
-            if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
-                row.label(text="Weight Data Type")
-                if self.to_vgindex_weights_attribute_enum != "NULL":
-                    src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
-                    static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
-                    friendly_datatype = func.get_friendly_data_type_name(src_weight_attrib.data_type) if not static_val_mode else static_data.attribute_data_types["FLOAT"].friendly_name
+            row.label(text="Domain")
+            if domain_compatible:
+                row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}")
+            else:
+                row.label(text=f"{func.get_friendly_domain_name(src_attrib_domain)}", icon='ERROR')
+            row.label(text=f"{func.get_friendly_domain_name(self.convert_to_domain_enum)}")
+            
+            # Show second row comparing the Data Types
+            row = col.row(align=True)
+            row.label(text="Data Type")
+            if data_type_compatible:
+                row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}")
+            else:
+                row.label(text=f"{func.get_friendly_data_type_name(src_attrib_data_type)}", icon='ERROR')
+            row.label(text=f"{func.get_friendly_data_type_name(data_target_data_type)}")
 
-                    if src_weight_attrib.data_type != 'FLOAT' and not static_val_mode:
-                        row.label(text=f"{friendly_datatype}", icon='ERROR')
-                    else:
-                        row.label(text=f"{friendly_datatype}")
 
-                    row.label(text=f"{static_data.attribute_data_types['FLOAT'].friendly_name}")
-        
-        # Occupy space if not applicable
-        else:
+            # Showa additional box for comparing "To Vertex Group Index" weighting attribute data type and domains
+            if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX'] and self.to_vgindex_weight_mode_enum == "ATTRIBUTE":
+                box = self.layout.box()
+                col = box.column(align=True)
+
+                # Show a row comparing the domains
+                row = col.row(align=True)
+                if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
+                    row.label(text="Weight Domain")
+                    if self.to_vgindex_weights_attribute_enum != "NULL":
+                        src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
+                        static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
+                        friendly_domain = func.get_friendly_domain_name(src_weight_attrib.domain) if not static_val_mode else static_data.attribute_domains['POINT'].friendly_name
+
+                        if src_weight_attrib.domain  != 'POINT' and not static_val_mode:
+                            row.label(text=f"{friendly_domain}", icon='ERROR')
+                        else:
+                            row.label(text=f"{friendly_domain}")
+
+                        row.label(text=f"{static_data.attribute_domains['POINT'].friendly_name}")
+
+                # Show a row comparing the data types
+                row = col.row(align=True)
+                if self.data_target_enum in ['TO_VERTEX_GROUP_INDEX']:
+                    row.label(text="Weight Data Type")
+                    if self.to_vgindex_weights_attribute_enum != "NULL":
+                        src_weight_attrib = obj.data.attributes[self.to_vgindex_weights_attribute_enum]
+                        static_val_mode = self.to_vgindex_weight_mode_enum == "STATIC"
+                        friendly_datatype = func.get_friendly_data_type_name(src_weight_attrib.data_type) if not static_val_mode else static_data.attribute_data_types["FLOAT"].friendly_name
+
+                        if src_weight_attrib.data_type != 'FLOAT' and not static_val_mode:
+                            row.label(text=f"{friendly_datatype}", icon='ERROR')
+                        else:
+                            row.label(text=f"{friendly_datatype}")
+
+                        row.label(text=f"{static_data.attribute_data_types['FLOAT'].friendly_name}")
+            
+            # Occupy space if not applicable
+            # else:
+            #     row = self.layout.column(align=True)
+            #     row.label(text="")
+            #     row.label(text="")
+            #     row.label(text="")
+
+            # Info and error messages
+            # ----------------------------------
             row = self.layout.column(align=True)
-            row.label(text="")
-            row.label(text="")
-            row.label(text="")
+            
+            # 1st row
+            
+            # Show error that the attribute will be converted if data type or domain is incompatible. Also for to vertex group index weighting attribute
+            if not domain_compatible or not data_type_compatible or (
+                (self.to_vgindex_weight_mode_enum == "ATTRIBUTE" and not static_val_mode) 
+                and
+                (src_weight_attrib.domain  != 'POINT' or src_weight_attrib.data_type != 'FLOAT')):
 
-        # Info and error messages
-        # ----------------------------------
-        row = self.layout.column(align=True)
-        
-        # 1st row
-        
-        # Show error that the attribute will be converted if data type or domain is incompatible. Also for to vertex group index weighting attribute
-        if not domain_compatible or not data_type_compatible or (
-            (self.to_vgindex_weight_mode_enum == "ATTRIBUTE" and not static_val_mode) 
-            and
-            (src_weight_attrib.domain  != 'POINT' or src_weight_attrib.data_type != 'FLOAT')):
+                row.label(icon='ERROR', text=f"Data will be converted. Result might be unexpected.")
+            else:
+                row.label(text=f"") # leave a space to not resize the window
 
-            row.label(icon='ERROR', text=f"Data will be converted. Result might be unexpected.")
-        else:
-            row.label(text=f"") # leave a space to not resize the window
+            # 2nd row
 
-        # 2nd row
+            # Show a message that normals should be, well, normalized
+            if self.data_target_enum in ['TO_SPLIT_NORMALS']:
+                row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
 
-        # Show a message that normals should be, well, normalized
-        if self.data_target_enum in ['TO_SPLIT_NORMALS']:
-            row.label(icon='INFO', text=f"Blender expects normal vectors to be normalized")
-
-        # Inform user that the suffix will be added to avoid crashing of blender.
-        elif self.data_target_enum in ['TO_VERTEX_GROUP']:
-            row.label(icon='INFO', text=f"Name will contain \"Group\" suffix")
-        else:
-            row.label(text=f"") # leave a space to not resize the window
-        row.prop(self, 'b_delete_if_converted')
+            # Inform user that the suffix will be added to avoid crashing of blender.
+            if self.data_target_enum in ['TO_VERTEX_GROUP']:
+                row.label(icon='INFO', text=f"Attributes & Vertex Groups cannot share names")
+                remove_after_convert_menu(row, "Delete & use attribute name")
+            else:
+                row.label(text=f"") # leave a space to not resize the window
+                remove_after_convert_menu(row)
 
 class CopyAttributeToSelected(bpy.types.Operator):
     bl_idname = "mesh.attribute_copy"
