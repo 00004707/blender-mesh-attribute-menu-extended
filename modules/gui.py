@@ -166,7 +166,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
     self.layout.operator('mesh.attribute_to_file', icon='FILE_NEW')
 
-def sculpt_mode_face_sets_menu_extension(self, context):
+def vertex_groups_context_menu_extension(self,context):
     """
     Entries in ^ menu located in Properties > Data > Vertex Groups
     """
