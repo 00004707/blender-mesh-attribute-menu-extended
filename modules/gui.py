@@ -255,6 +255,18 @@ def material_context_menu_extension(self,context):
         self.layout.operator('mesh.attribute_quick_from_material_slot_assignment', icon='MESH_DATA')
         self.layout.operator('mesh.attribute_quick_all_from_material_slot_assignment', icon='MESH_DATA')
 
+# Edit Mode
+# -----------------------------------------
+
+def vertex_context_menu_extension(self,context):
+    """
+    Entries in Vertex context menu in edit mode
+    UNUSED
+    """
+    if etc.get_preferences_attrib('extra_context_menu_vertex_menu'):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        # self.layout.separator()
+
 def edge_context_menu_extension(self,context):
     """
     Entries in Edge context menu in edit mode
@@ -262,7 +274,7 @@ def edge_context_menu_extension(self,context):
     """
     if etc.get_preferences_attrib('extra_context_menu_edge_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.separator()
+        # self.layout.separator()
 
 def face_context_menu_extension(self,context):
     """
@@ -271,14 +283,19 @@ def face_context_menu_extension(self,context):
     """
     if etc.get_preferences_attrib('extra_context_menu_face_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.separator()
+        # self.layout.separator()
+
 # Object Mode
 # -----------------------------------------
 
 def object_context_menu_extension(self,context):
+    """
+    Entries in Object context menu in object mode
+    UNUSED
+    """
     if etc.get_preferences_attrib('extra_context_menu_object'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.separator()
+        # self.layout.separator()
 
 # Sculpt Mode
 # -----------------------------------------
