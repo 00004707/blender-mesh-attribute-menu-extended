@@ -58,11 +58,13 @@ def attribute_assign_panel(self, context):
                         #col.split = 0.5
                         col2 = col.row(align=True)
                         if dt == 'BOOLEAN':
-                            title_str = "True" if prop_group.val_bool else "False"
+                            title_str = "True" if prop_group.val_boolean else "False"
                         else:
                             title_str = ""
 
                         col2.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True)
+                        if dt == 'STRING':
+                            col2.prop(prop_group, f"val_select_casesensitive", text="", toggle=True, icon='SYNTAX_OFF')
                         col2.operator('mesh.attribute_gui_value_randomize', text="", icon='FILE_REFRESH')
                         col2.ui_units_x = 40
  
@@ -92,9 +94,9 @@ def attribute_assign_panel(self, context):
                         sub.operator("mesh.attribute_deselect_button", text=f"Deselect")
                         
                         
-                        sub = col.row(align=True)
+                        sub = sub.row(align=True)
                         sub.ui_units_x = 1
-                        sub.prop(prop_group, "val_select_non_zero_toggle", text=f"Ø", toggle=True)
+                        sub.prop(prop_group, "val_select_non_zero_toggle", text=f"NZ" if prop_group.val_select_non_zero_toggle else 'V', toggle=True)
                     
         else:
             if etc.get_preferences_attrib('debug_operators'):
@@ -161,68 +163,13 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
-    #self.layout.operator('mesh.attribute_conditioned_remove', icon='X')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
-
-def sculpt_mode_mask_menu_extension(self, context):
-    """
-    Extra entries in sculpt mode mask menu on the menu bar
-    """
-    
-    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
-        self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.separator()
-        self.layout.operator('mesh.attribute_quick_from_current_sculpt_mask', icon='MESH_DATA') 
-        self.layout.operator('mesh.attribute_quick_sculpt_mask_from_active_attribute', icon='MOD_MASK')
+    self.layout.operator('mesh.attribute_to_file', icon='FILE_NEW')
 
 def sculpt_mode_face_sets_menu_extension(self, context):
     """
     Entries in ^ menu located in Properties > Data > Vertex Groups
     """
-    if etc.get_preferences_attrib('extra_context_menu_sculpt'):
-        self.layout.operator_context = "INVOKE_DEFAULT"
-        self.layout.separator()
-        self.layout.operator('mesh.attribute_quick_from_face_sets', icon='MESH_DATA') 
-        self.layout.operator('mesh.attribute_quick_face_sets_from_attribute', icon='FACE_MAPS')
-
-class SculptMode3DViewHeaderSettings(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_select_test"
-    bl_label = "Settings"
-
-    def draw(self, context):
-        layout = self.layout
-        prop_group = context.object.MAME_PropValues
-        layout.prop(prop_group, "qops_sculpt_mode_attribute_show_unsupported")
-
-def sculpt_mode_3dview_header_extension(self, context):
-    if bpy.context.mode == 'SCULPT':
-        if etc.get_preferences_attrib('extra_header_sculpt'):
-            prop_group = context.object.MAME_PropValues
-            box = self.layout.box()
-            row = box.row(align=True)
-
-            row.ui_units_x = 14.0
-
-            box2 = row.box()
-            box2.ui_units_x = 1.0
-            box2.prop(prop_group, "enum_sculpt_mode_attribute_mode_toggle", text="")
-
-            box2 = row.box()
-            box2.ui_units_x = 3.7
-            box2.prop(prop_group, "enum_sculpt_mode_attribute_selector", text="")
-
-            row.operator("mesh.mame_attribute_sculpt_mode_apply", text="", icon='ZOOM_PREVIOUS')
-            row.operator("mesh.mame_attribute_sculpt_mode_extend", text="", icon='ZOOM_IN')
-            row.operator("mesh.mame_attribute_sculpt_mode_subtract", text="", icon='ZOOM_OUT')
-            row.operator("mesh.mame_attribute_sculpt_mode_invert", text="", icon='SELECT_SUBTRACT')
-            row.operator("mesh.mame_attribute_sculpt_mode_new", text="", icon='FILE_NEW')
-            row.operator("mesh.mame_attribute_sculpt_mode_remove", text="", icon='PANEL_CLOSE')
-            row.operator("mesh.mame_attribute_sculpt_mode_overwrite", text="", icon='COPYDOWN')
-            
-            row.menu('VIEW3D_MT_select_test', text='', text_ctxt='', translate=True, icon='SETTINGS')
-
-def vertex_groups_context_menu_extension(self,context):
-    
     if etc.get_preferences_attrib('extra_context_menu_vg'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
