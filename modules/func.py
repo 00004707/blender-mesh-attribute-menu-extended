@@ -2224,14 +2224,22 @@ def get_sculpt_mode_attributes_enum(self, context):
     Returns:
         list: List of tuples to be used in enum
     """
-    if static_data.qops_sculpt_mode_attribute_show_unsupported:
+    gui_prop_group = context.window_manager.MAME_GUIPropValues
+
+    
+    if gui_prop_group.qops_sculpt_mode_attribute_show_unsupported:
             return get_attributes_of_type_enum(self, context, [], [])
     else:
-        if static_data.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
+        if gui_prop_group.enum_sculpt_mode_attribute_mode_toggle == 'MASK':
             return get_attributes_of_type_enum(self, context, ['FLOAT'], ['POINT'])
         else:# data.enum_sculpt_mode_attribute_mode_toggle == 'FACE_SETS':
-            return get_attributes_of_type_enum(self, context, ['INT'], ['FACE'])
-
+            attrs = get_attributes_of_type_enum(self, context, ['INT'], ['FACE'])
+            # Remove '.sculpt_face_set' aka current face set
+            for e in attrs:
+                if e[0] == '.sculpt_face_set':
+                    attrs.remove(e)
+                    break
+            return attrs
 
 def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POINT']):
     """Gets all attributes by data type to use in enum dropdown.
