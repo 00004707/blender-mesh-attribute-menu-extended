@@ -198,7 +198,20 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
         str: Safe attribute name
     """
     while(attribute_name in obj.vertex_groups.keys()):
+            if is_verbose_mode_enabled():
+                print(f"{attribute_name} exists in vertex groups! Renaming")
             attribute_name += " " + suffix
+            
+    while(attribute_name in obj.data.attributes):
+            if is_verbose_mode_enabled():
+                print(f"{attribute_name} exists in attributes! Renaming")
+            attribute_name += " " + suffix
+            
+    if attribute_name.startswith('.'):
+        if is_verbose_mode_enabled():
+                print(f"{attribute_name} starts with a dot, renaming")
+        attribute_name = attribute_name[1:] 
+        
 
     return attribute_name
 
