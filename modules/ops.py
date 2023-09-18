@@ -1947,7 +1947,9 @@ class ConditionalSelection(bpy.types.Operator):
         return func.conditional_selection_poll(self, context)
     
     def execute(self, context):
-        
+        if func.is_verbose_mode_enabled():
+            print(f"conditional selection on attrib: {context.active_object.data.attributes.active}")
+
         obj = context.active_object
         current_mode = obj.mode
         
@@ -1966,180 +1968,72 @@ class ConditionalSelection(bpy.types.Operator):
 Cond: {condition}
 CompVal: {comparison_value}
 DataType: {attrib_data_type}
-CaseSensitive: {case_sensitive_comp}
-FiltIndex: {filtered_indexes}""")
+CaseSensitive: {self.b_string_case_sensitive}
+FiltIndex: {filtered_indexes}
+VecSingleVal: {self.b_single_value_vector}
+VecSingleCondition: {self.b_single_condition_vector}""")
 
         
 
-        def compare_float_individual_vals(vals_list, mode='AND'):
+        def compare_each_vector_dimension_indexes(vals_list, mode='AND'):
             """
-            Compares list of floats containing indiviual vertex values eg [X[x1,x2,x3] Y[y1,y2,y3] Z[z1,z2,z3]]"""
+            Compares each dimension of vals_list input if all of them contain that index (AND), or any of them (OR)
+            """
             if mode == 'AND':
-            # compare to each other "and"
+                # check 2nd and higher dimension
                 for i in range(1, len(vals_list)):
                     for num in vals_list[0]:
                         if num not in vals_list[i]:
                             vals_list[0].remove(num)
                 return vals_list[0]
+            
             elif mode == 'OR':
                 r = []
                 for dimension in vals_list:
                     r += dimension
-                return list(set(r))
+                return np.unique(r)
 
+        
+        gui_prop_subtype = static_data.attribute_data_types[attrib_data_type].gui_prop_subtype
+        
         #case 1: single number/value
-        if attrib_data_type in ['FLOAT', 'INT', 'INT8', 'STRING', 'BOOLEAN']:
-            if attrib_data_type in ['FLOAT', 'INT', 'INT8']:
-                if attrib_data_type == 'INT':
-                    comparison_value = self.val_int
-                elif attrib_data_type == 'INT8':
-                    comparison_value = self.val_int8
-                elif attrib_data_type == 'FLOAT':
-                    comparison_value = self.val_float
-
-            elif attrib_data_type == 'BOOLEAN':
-                    comparison_value = self.val_boolean
-
-            elif attrib_data_type == 'STRING':
-                comparison_value = self.val_string
-                case_sensitive_comp = self.b_string_case_sensitive
-
-            filtered_indexes = func.get_filtered_indexes_by_condition([entry.value for entry in attrib.data], condition, comparison_value, case_sensitive_comp)
+        if gui_prop_subtype in [static_data.EDataTypeGuiPropType.SCALAR,
+                                static_data.EDataTypeGuiPropType.BOOLEAN,
+                                static_data.EDataTypeGuiPropType.STRING]:
+            comparison_value = getattr(self, f'val_{attrib_data_type.lower()}')
+            
+            filtered_indexes = func.get_filtered_indexes_by_condition(func.get_attrib_values(attrib, obj), 
+                                                                      condition, 
+                                                                      comparison_value, 
+                                                                      self.b_string_case_sensitive)
 
             
-        # case 2: multiple values
-        elif attrib_data_type in ['FLOAT_VECTOR', 'FLOAT2']:
+        # case 2: vectors/colors
+        elif gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR,
+                                  static_data.EDataTypeGuiPropType.COLOR]:
             vals_to_cmp = []
             filtered_indexes = []
-
-            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
-                #x
-                if self.val_vector_0_toggle:
-                    condition = self.vec_0_condition_enum
-                    comparison_value = self.val_float_x
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[0] for entry in attrib.data], condition, comparison_value))
-
-                #y
-                if self.val_vector_1_toggle:
-                    condition = self.vec_1_condition_enum
-                    comparison_value = self.val_float_1
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[1] for entry in attrib.data], condition, comparison_value))
-                
-                if attrib_data_type == 'FLOAT_VECTOR' and self.val_vector_2_toggle:
-                    #z
-                    condition = self.vec_2_condition_enum
-                    comparison_value = self.val_float_2
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.vector[2] for entry in attrib.data], condition, comparison_value))
-                
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
-
-        elif attrib_data_type in ['FLOAT_COLOR', 'BYTE_COLOR']:
-            vals_to_cmp = []
-            filtered_indexes = []
-
-            # value editor for RGB/hsv values
-            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle or self.val_vector_3_toggle:
-                
-                colors = []
-                for entry in attrib.data:
-                    color = entry.color
-
-                    if self.color_value_type_enum == 'HSVA':
-                        hsv = list(colorsys.rgb_to_hsv(color[0], color[1], color[2])) + [color[3]]
-                        colors.append(hsv)
-                        if func.is_verbose_mode_enabled():
-                            print(f"rgb: {list(entry.color)} -> hsv: {hsv}")
-                    else:
-                        colors.append((color[0], color[1], color[2], color[3]))
+            src_data = np.array(func.get_attrib_values(attrib, obj))
+            use_hsv = self.color_value_type_enum == 'HSVA' and gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR
+            
+            if use_hsv:
+                for i, subelement in enumerate(src_data):
+                    if func.is_verbose_mode_enabled():
+                        print("HSV mode enabled, converting all values to HSV")
+                    src_data[i] = func.color_vector_to_hsv(subelement)
+            
+            # for each dimension of a vector
+            for i in range(0, len(src_data[0])):
+                if getattr(self, f'val_vector_{i}_toggle'):
+                    condition = getattr(self, f'vec_0_condition_enum' if self.b_single_condition_vector else f'vec_{i}_condition_enum') 
+                    comparison_value = getattr(self, f"val_{attrib_data_type.lower()}")[0] if self.b_single_value_vector else getattr(self, f"val_{attrib_data_type.lower()}")[i]
                     
-                #r
-                if self.val_vector_0_toggle:
-                    condition = self.vec_0_condition_enum
-                    comparison_value = self.val_float_color_0 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[0]
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[0] for c in colors], condition, comparison_value))
-
-                #g
-                if self.val_vector_1_toggle:
-                    condition = self.vec_1_condition_enum
-                    comparison_value = self.val_float_color_1 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[1]
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[1] for c in colors], condition, comparison_value))
-                
-                #b
-                if self.val_vector_2_toggle:
-                    
-                    condition = self.vec_2_condition_enum
-                    comparison_value = self.val_float_color_2 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[2]
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[2] for c in colors], condition, comparison_value))
-
-                #a
-                if self.val_vector_3_toggle:
-                    condition = self.vec_3_condition_enum
-                    comparison_value = self.val_float_color_3 #if self.color_gui_mode_enum == 'VALUE' else self.val_color[3]
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([c[3] for c in colors], condition, comparison_value))
-
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
-
-        # case 3: integer vector values (.VALUE PROPERTY, NOT .VECTOR)
-        elif attrib_data_type in ['INT32_2D']:
-            vals_to_cmp = []
-            filtered_indexes = []
-            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
-                #x
-                if self.val_vector_0_toggle:
-                    condition = self.vec_0_condition_enum
-                    comparison_value = self.val_int_0
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
-
-                #y
-                if self.val_vector_1_toggle:
-                    condition = self.vec_1_condition_enum
-                    comparison_value = self.val_int_1
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
-                
-                # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
-                #     #z
-                #     condition = self.vec_z_condition_enum
-                #     comparison_value = self.val_int_z
-                #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
-
-                # if attrib_data_type in ['QUATERNION'] and self.val_vector_w_toggle:
-                #     #w
-                #     condition = self.vec_w_condition_enum
-                #     comparison_value = self.val_int_w
-                #     vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
-
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
-        
-        # case 4: float vector values with .value property
-        elif attrib_data_type in ['QUATERNION']:
-            vals_to_cmp = []
-            filtered_indexes = []
-            if self.val_vector_0_toggle or self.val_vector_1_toggle or self.val_vector_2_toggle:
-                #x
-                if self.val_vector_0_toggle:
-                    condition = self.vec_0_condition_enum
-                    comparison_value = self.val_float_x
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[0] for entry in attrib.data], condition, comparison_value))
-
-                #y
-                if self.val_vector_1_toggle:
-                    condition = self.vec_1_condition_enum
-                    comparison_value = self.val_float_1
-                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[1] for entry in attrib.data], condition, comparison_value))
-                
-                # if attrib_data_type in ['QUATERNION'] and self.val_vector_z_toggle:
-                    #z
-                condition = self.vec_2_condition_enum
-                comparison_value = self.val_float_2
-                vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[2] for entry in attrib.data], condition, comparison_value))
-
-                # if attrib_data_type in ['QUATERNION'] and self.val_vector_w_toggle:
-                    #w
-                condition = self.vec_3_condition_enum
-                comparison_value = self.val_float_3
-                vals_to_cmp.append(func.get_filtered_indexes_by_condition([entry.value[3] for entry in attrib.data], condition, comparison_value))
-
-                filtered_indexes = compare_float_individual_vals(vals_to_cmp, self.vector_value_cmp_type_enum)
+                    srgb_convert = attrib.data_type == 'BYTE_COLOR'
+                    if func.is_verbose_mode_enabled():
+                        print(f"Checking vector[{i}], condition: {condition}, to value {comparison_value}")
+                    vals_to_cmp.append(func.get_filtered_indexes_by_condition([vec[i] for vec in src_data], condition, comparison_value, vector_convert_to_srgb=srgb_convert))
+            
+            filtered_indexes = compare_each_vector_dimension_indexes(vals_to_cmp, self.vector_value_cmp_type_enum)
 
         if func.is_verbose_mode_enabled():
             debug_print()
