@@ -954,9 +954,11 @@ class SelectDomainButton(bpy.types.Operator):
     bl_description = "Select attribute domains"
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    deselect: bpy.props.BoolProperty(name="deselet", default=False)
+    deselect: bpy.props.BoolProperty(name="deselect", default=False)
 
     def execute(self, context):
+        if func.is_verbose_mode_enabled():
+            print(f"select? {not self.deselect} attrib: {context.active_object.data.attributes.active}")
         prop_group = context.object.MAME_PropValues
         select_nonzero = prop_group.val_select_non_zero_toggle
 
@@ -968,25 +970,28 @@ class SelectDomainButton(bpy.types.Operator):
         params['b_single_value_vector'] = False
         # select true booleans though
         params['attribute_comparison_condition_enum'] = 'NEQ' if (select_nonzero and dt != 'BOOLEAN') else 'EQ'
-        params['b_string_case_sensitive'] = True
+        params['b_string_case_sensitive'] = prop_group.val_select_casesensitive
         params['color_value_type_enum'] = 'RGBA'
-        params['vector_value_cmp_type_enum'] = 'AND'
         
-        # compare all for vectors
+        
+        # Enable comparing for each vector dimension
         if static_data.attribute_data_types[dt].gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR, 
                                                                      static_data.EDataTypeGuiPropType.COLOR]:
             for i in range(0,len(static_data.attribute_data_types[dt].vector_subelements_names)):
                 params[f'val_vector_{i}_toggle'] = True
 
-        # do not compare alpha
-        if static_data.attribute_data_types[dt].gui_prop_subtype in [static_data.EDataTypeGuiPropType.COLOR]:
-            params['val_vector_3_toggle'] = False
-        params['vec_0_condition_enum'] = 'NEQ' if select_nonzero else 'EQ'
+        # Do not compare alpha value of colors
+        if static_data.attribute_data_types[dt].gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR:
+            params[f'val_vector_3_toggle'] = False
 
         if select_nonzero:
             params[f'val_{dt.lower()}'] = func.get_attrib_default_value(datatype=dt)
+            params['vec_0_condition_enum'] = 'NEQ'
+            params['vector_value_cmp_type_enum'] = 'OR'
         else:
             params[f'val_{dt.lower()}'] = getattr(prop_group, f'val_{dt.lower()}')
+            params['vec_0_condition_enum'] = 'EQ'
+            params['vector_value_cmp_type_enum'] = 'AND'
 
         return  bpy.ops.mesh.attribute_conditioned_select('EXEC_DEFAULT', **params)
 
@@ -1005,6 +1010,8 @@ class DeSelectDomainButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
+        if func.is_verbose_mode_enabled():
+            print(f"deselect {context.active_object.data.attributes.active}")
         return  bpy.ops.mesh.attribute_select_button('EXEC_DEFAULT', 
                                                      deselect=True)
 
