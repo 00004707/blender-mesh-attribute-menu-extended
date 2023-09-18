@@ -22,6 +22,7 @@ import numpy as np
 import random
 import colorsys
 import string 
+import csv
 
 # Attribute related
 # ------------------------------------------
@@ -2424,18 +2425,59 @@ def get_node_tree_parent(node_tree, tree_type = None):
     else: 
         return None
 
-def get_active_attribute(obj):
-    """Bug bypass if attributes.active returns none
+# CSV related
+
+# ----------------------------------------------
+ 
+def write_csv_attributes_file(filepath:str, obj, attributes: list):
+    """Writes specified attrtibutes to .csv file specified in filepath
 
     Args:
-        obj (ref): reference to the object to get the active attribute from
+        filepath (str): path to the file
+        obj (_type_): object to take attributes from
+        attributes (list): list of attribute references to take data from
+
+    Exceptions:
+        PermissionError
     """
+    # add csv extension
+    if not filepath.lower().endswith('.csv'):
+        filepath += ".csv"
 
-    a = obj.data.attributes.active
+    if is_verbose_mode_enabled():
+            print(f"Exporting to CSV file located at \"{filepath}\"")
 
-    if a is None:
-        return obj.data.attributes[obj.data.attributes.active_index]
-    return a
+    with open(filepath, 'w', newline='') as csvfile:
+
+        rownames = []
+        datalengths = []
+        values = []
+
+        for attribute in attributes:
+            rownames.append(str(attribute.name + "(" + attribute.data_type + ")(" + attribute.domain+")"))
+            datalengths.append(len(attribute.data))
+            values.append(get_attrib_values(attribute, obj))
+
+        max_data_len = max(datalengths)
+
+        writer = csv.DictWriter(csvfile, fieldnames=rownames)
+        writer.writeheader()
+
+        for i in range(0, max_data_len):
+
+            row = {}
+            for j, attribute in enumerate(attributes):
+                if i < datalengths[j]:
+                    row[rownames[j]] = values[j][i]
+                else:
+                    row[rownames[j]] = ""
+
+            writer.writerow(row)
+
+    if is_verbose_mode_enabled():
+            print(f"Wrote {max_data_len+1} lines.")
+
+
 def refresh_attribute_UIList_elements():
         obj = bpy.context.active_object
         gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues

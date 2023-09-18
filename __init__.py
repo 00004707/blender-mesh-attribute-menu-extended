@@ -86,6 +86,7 @@ classes = [
     etc.FakeFaceCornerSpillDisabledOperator,
     etc.MAMEReportIssue,
     gui.MasksManagerPanel,
+    ops.AttributesToFile,
     
 ]
 

@@ -2624,3 +2624,202 @@ class RandomizeAttributeValue(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
+class AttributesToFile(bpy.types.Operator):
+    bl_idname = "mesh.attribute_to_file"
+    bl_label = "Export..."
+    bl_description = "Exports attribute data to external file"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    filepath: bpy.props.StringProperty(name="File path", default="", description="File path", subtype="FILE_PATH")
+    filename: bpy.props.StringProperty(name="File name", default="Attributes", description="File Name", subtype="FILE_PATH")
+
+    which_attributes_enum: bpy.props.EnumProperty(
+        name="Export",
+        description="Select an option",
+        items=[
+            ("ACTIVE", "Active", "Export active attribute to file"),
+            ("ALL", "All", "Export all attributes to file"),
+            ("BYTYPE", "In Domain", "Export all attributes stored in specific domain to file"),
+            ("SPECIFIC", "Specific", "Export specific attributes to file"),
+        ],
+        default="ALL"
+    )
+
+    
+    domain_filter: bpy.props.EnumProperty(
+        name="Filter",
+        description="Select an option",
+        items=func.get_attribute_domains_enum
+    )
+
+    def get_file_type_enum(self, context):
+        l = []
+        for f in static_data.attribute_to_file_supported_formats:
+            l.append((f, static_data.attribute_to_file_supported_formats[f].friendly_name, static_data.attribute_to_file_supported_formats[f].description))
+        
+        return l
+    file_type_enum: bpy.props.EnumProperty(
+        name="File Type",
+        description="Select an option",
+        items=get_file_type_enum
+    )
+
+    show_filetype_options = False
+
+    b_dont_show_file_selector: bpy.props.BoolProperty(name="dont_show_file_selector", default=False)
+    
+
+    img_width: bpy.props.IntProperty(name="Width", default=1024, min=2, max=32768)
+    img_height: bpy.props.IntProperty(name="Height", default=1024, min=2, max=32768)
+    b_force_img_square: bpy.props.BoolProperty(name="Squared", default=True)
+    # x y z / w optional
+    # to existing image
+    # create uvmap
+
+    @classmethod
+    def poll(self, context):
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Selected object is not a mesh")
+            return False
+        elif context.active_object.data.attributes.active is None:
+            self.poll_message_set("No active attribute")
+            return False
+        elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
+            self.poll_message_set("Data type is not yet supported!")
+            return False
+        return True
+
+    def invoke(self, context, event):
+        func.refresh_attribute_UIList_elements()
+        func.configutre_attribute_uilist(False, False)
+        self.filename = bpy.context.active_object.name + "_mesh_attributes"
+        return context.window_manager.invoke_props_dialog(self)
+    
+    def execute(self, context):
+        self.show_filetype_options = True
+        if self.filepath == '' and not self.b_dont_show_file_selector:
+            self.filepath = bpy.context.active_object.name + "_mesh_attributes"
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
+        
+        # reset filepath to show menu again if needed
+        self.show_filetype_options = False
+        filepath_temp = self.filepath
+        self.filepath = ""
+
+
+        obj = context.active_object
+        # Gather attributes
+
+        # all
+        if self.which_attributes_enum == 'ALL':
+            attributes = [attrib for attrib in obj.data.attributes]
+        
+        # filter by domain or data type
+        elif self.which_attributes_enum == 'BYTYPE':
+            attributes = [attrib for attrib in obj.data.attributes]
+            na = []
+            for attribute in attributes:
+                if attribute.domain == self.domain_filter:
+                    na.append(attribute)
+            attributes = na
+
+        # just active attribute
+        elif self.which_attributes_enum ==  "ACTIVE":
+            attributes = [func.get_active_attribute(obj)]
+
+        elif self.which_attributes_enum ==  "SPECIFIC":
+            gui_prop_group = context.window_manager.MAME_GUIPropValues
+            attributes = []
+            for a in [a for a in gui_prop_group.to_mesh_data_attributes_list if a.b_select]:
+                attributes.append(obj.data.attributes[a.attribute_name])
+
+        if not len(attributes):
+            self.report({'ERROR'}, f'No attributes to export with selected filters.')
+            return  {'CANCELLED'}
+
+        # case: export all to csv
+        if self.file_type_enum == 'CSV':
+            try:
+                func.write_csv_attributes_file(filepath_temp, obj, attributes)
+            except PermissionError:
+                self.report({'ERROR'}, f'Permission denied to write to file \"{filepath_temp}\"')
+                return {'CANCELLED'}
+            except OSError as exc:
+                self.report({'ERROR'}, f'System error: \"{str(exc)}\"')
+        
+        self.report({'INFO'}, f'File saved.')
+        return {'FINISHED'}
+
+    def draw(self, context):
+        obj = context.active_object
+        active_attribute = func.get_active_attribute(obj)
+        domain = active_attribute.domain
+        dt = active_attribute.data_type
+
+        # add enum checks
+
+        layout = self.layout
+        col = layout.column()
+
+
+        if not self.show_filetype_options:
+            # file type
+            col = layout.row(align=True)
+            col.prop_enum(self, "file_type_enum", 'CSV')
+            col.prop_enum(self, "file_type_enum", 'PNG')
+
+        else:
+
+            if self.file_type_enum == 'CSV':
+            
+                # toggle between single, all, and specific
+                
+                col.label(text="Export")
+                row = col.row(align=True)
+                row.prop_enum(self, "which_attributes_enum", 'ACTIVE')
+                row.prop_enum(self, "which_attributes_enum", 'BYTYPE')
+                row.prop_enum(self, "which_attributes_enum", 'ALL')
+                row.prop_enum(self, "which_attributes_enum", 'SPECIFIC')
+
+                if self.which_attributes_enum == 'ACTIVE':
+                    col.label(text=f"{active_attribute.name} will be exported.")
+
+                elif self.which_attributes_enum == 'ALL':
+                    col.label(text=f"{str(len(obj.data.attributes))} attributes will be exported.")
+
+                elif self.which_attributes_enum == 'BYTYPE':
+                    col.label(text="Export all stored in domain:")
+                    row = col.row(align=True)
+                    for domain in static_data.attribute_domains:
+                        row.prop_enum(self, "domain_filter", domain)
+                
+                elif self.which_attributes_enum == 'SPECIFIC':
+                    col.label(text="Export selected from list:")
+                    gui_prop_group = context.window_manager.MAME_GUIPropValues
+                    col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
+                            "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
+                
+                col.label(icon='INFO', text=f"Header row naming convention:")
+                col.label(icon="LAYER_ACTIVE", text=f"AttributeName(DATATYPE)(DOMAIN)")
+
+            if self.file_type_enum == 'PNG':
+                col.label(text="Data will be written sequentally")
+                subcol = col.column(align=True)
+                subcol.label(icon="INFO", text="To read value of index use formula:")
+                subcol.label(icon="LAYER_ACTIVE", text="x = index%width")
+                subcol.label(icon="LAYER_ACTIVE", text="y = floor(width/index)")
+                subcol.label(text="and read the value at those coordinates")
+                col.label(icon='ERROR', text="The values should be in 0.0 to 1.0 range")
+
+                col.prop(self, "img_width", text="Width" if not self.b_force_img_square else "Width x Height")
+                sc = col.row()
+                if not self.b_force_img_square:
+                    sc.prop(self, "img_height")
+                else:
+                    sc.label(text="")
+                col.prop(self, "b_force_img_square", toggle = True)
+                
