@@ -2287,6 +2287,15 @@ def color_vector_to_rgb(color):
     """
     return tuple(colorsys.hsv_to_rgb(color[0], color[1], color[2])) + (color[3],)
 
+def linear_to_srgb(color_value: float, return_float=True):
+    # https://b3d.interplanety.org/en/color-conversion-from-linear-to-srgb-color-space-and-back-in-blender/
+    if color_value <= 0.0031308:
+        v = int(12.92 * color_value * 255.99)
+        return max(min(1.0, v/255),0.0) if return_float else v 
+    else:
+        v = int((1.055 * color_value ** (1 / 2.4) - 0.055) * 255.99)
+        return max(min(1.0, v/255),0.0) if return_float else v 
+    
 
 # Other
 # --------------------------------
