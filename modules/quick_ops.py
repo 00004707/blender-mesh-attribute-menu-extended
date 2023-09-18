@@ -1035,8 +1035,13 @@ class RandomizeGUIInputFieldValue(bpy.types.Operator):
         args['string_lowercase'] = True
         args['string_numbers'] = True
         args['string_special'] = False
-        args['string_custom'] = False
+        args['string_custom'] = ""
         args['color_randomize_type'] = 'RGBA'
+        for i in range(0, 3):
+            args[f'b_vec_{i}'] = True
+        args[f'b_vec_3'] = False # no alpha
+        args['original_vector'] =  getattr(prop_group, f'val_{dt.lower()}')
+        args['no_numpy'] = True
         setattr(prop_group, f'val_{dt.lower()}', func.get_random_attribute_of_data_type(obj, dt, 1, True, **args))
 
         return  {'FINISHED'}
