@@ -931,6 +931,14 @@ class RemoveAllAttribute(bpy.types.Operator):
         default=False
         )
     
+
+    #Collection with all datatypes filter toggles
+    remove_datatype_filter: bpy.props.CollectionProperty(type = etc.GenericBoolPropertyGroup)
+
+    #Collection with all domain filter toggles
+    remove_domain_filter: bpy.props.CollectionProperty(type = etc.GenericBoolPropertyGroup)
+
+
     
     # Quick check if an attribute is an UVMap
     def is_uvmap(self, a):
@@ -963,7 +971,6 @@ class RemoveAllAttribute(bpy.types.Operator):
         self.poll_message_set("No removable attributes")
         return False
 
-
     def execute(self, context):
         obj = context.active_object
         current_mode = obj.mode
@@ -984,15 +991,44 @@ class RemoveAllAttribute(bpy.types.Operator):
             # If the attribute cannot be removed, ignore
             if static_data.EAttributeType.CANTREMOVE in a_types :
                 continue
+            conditions = []
+
+            # Check if is an uvmap 
+            conditions.append(self.b_include_uvs if self.is_uvmap(a) else True)
+
+            # Check for color attributes
+            conditions.append(self.b_include_color_attribs if self.is_color_attrib(a) else True)
+
+            # Check if it's hidden
+            conditions.append(self.b_include_hidden if static_data.EAttributeType.HIDDEN in a_types else True)
+
+            # Check if it's non-recommended
+            conditions.append(self.b_include_all if static_data.EAttributeType.DONOTREMOVE in a_types else True)
             
-            if ((self.b_include_uvs if self.is_uvmap(a) else True) and 
-                (self.b_include_color_attribs if self.is_color_attrib(a) else True) and
-                (self.b_include_hidden if static_data.EAttributeType.HIDDEN in a_types else True) and
-                (self.b_include_all if static_data.EAttributeType.DONOTREMOVE in a_types else True)):
-                    if func.is_verbose_mode_enabled():
-                        print(f"Attribute removed - {a.name}: {a.domain}, {a.data_type}")
-                    obj.data.attributes.remove(a)
-                    num += 1
+            # Check data type
+            
+            dt = obj.data.attributes[name].data_type
+            allow = False
+            for el in self.remove_datatype_filter:
+                if el.id == dt:
+                    allow = el.b_value
+                    break
+            conditions.append(allow)
+
+            # Check domain
+            domain = obj.data.attributes[name].domain
+            allow = False
+            for el in self.remove_domain_filter:
+                if el.id == domain:
+                    allow = el.b_value
+                    break
+            conditions.append(allow)
+
+            if all(conditions):
+                if func.is_verbose_mode_enabled():
+                    print(f"Attribute removed - {a.name}: {a.domain}, {a.data_type}")
+                obj.data.attributes.remove(a)
+                num += 1
         
         obj.data.update()
         bpy.ops.object.mode_set(mode=current_mode)
@@ -1000,17 +1036,56 @@ class RemoveAllAttribute(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
+        list_elements = gui_prop_group.to_mesh_data_attributes_list
+
+        # Get data type toggles 
+        self.remove_datatype_filter.clear()
+        for data_type in static_data.attribute_data_types:
+            b = self.remove_datatype_filter.add()
+            b.b_value = True
+            b.name = func.get_friendly_data_type_name(data_type)
+            b.id = data_type
+
+        # Get domain toggles 
+        self.remove_domain_filter.clear()
+        for domain in static_data.attribute_domains:
+            b = self.remove_domain_filter.add()
+            b.b_value = True
+            b.name = func.get_friendly_domain_name(domain)
+            b.id = domain
+
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         row = self.layout
+        
+        row.label(text="Include")
+        col = row.column(align=True)
+        
+        colrow = col.row(align=True)
 
-        row.label(text="Include:")
-        if bpy.app.version >= (3,5,0):
-            row.prop(self, "b_include_uvs", text="UVMaps")
-        row.prop(self, "b_include_color_attribs", text="Color Attributes")
-        row.prop(self, "b_include_hidden", text="Hidden")
-        row.prop(self, "b_include_all", text="Non-Recommended")
+        subcolprop = colrow.row(align=True)
+        subcolprop.enabled = bpy.app.version >= (3,5,0)
+        subcolprop.prop(self, "b_include_uvs", text="UVMaps", toggle=True)
+        colrow.prop(self, "b_include_color_attribs", text="Color Attributes", toggle=True)
+        
+        colrow = col.row(align=True)
+
+        colrow.prop(self, "b_include_hidden", text="Hidden", toggle=True)
+        colrow.prop(self, "b_include_all", text="Non-Recommended", toggle=True)
+        
+        
+        col.label(text="Filter Domains")
+        filter_row = col.row(align=True)
+        filter_row = col.grid_flow(columns=4, even_columns=False, align=True)
+        for boolprop in self.remove_domain_filter:
+            filter_row.prop(boolprop, f"b_value", toggle=True, text=boolprop.name)
+
+        col.label(text="Filter Data Types")
+        filter_row = col.grid_flow(columns=3, even_columns=False, align=True)
+        for boolprop in self.remove_datatype_filter:
+            filter_row.prop(boolprop, f"b_value", toggle=True, text=boolprop.name)
 
 class ConvertToMeshData(bpy.types.Operator):
     """
