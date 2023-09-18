@@ -472,4 +472,47 @@ class AddonPreferences(bpy.types.AddonPreferences):
             
 
         
-            
+class AttributeListItem(bpy.types.PropertyGroup):
+    """
+    Group of properties representing an item in mesh attribute list
+    """
+
+    b_select: bpy.props.BoolProperty(name="Selected", default=False)
+
+    attribute_name: bpy.props.StringProperty(
+           name="Attribute Name",
+           description="Attribute Name",
+           default= "Untitled")
+    
+    data_type: bpy.props.StringProperty(
+           name="Data Type",
+           description="Data Type",
+           default= "")
+    
+    data_type_friendly_name: bpy.props.StringProperty(
+           name="Data Type",
+           description="Data Type",
+           default= "")
+    
+    domain: bpy.props.StringProperty(
+           name="Domain",
+           description="Domain",
+           default= "")
+    
+    domain_friendly_name: bpy.props.StringProperty(
+           name="Domain",
+           description="Domain",
+           default= "")
+    
+    b_domain_compatible: bpy.props.BoolProperty(
+            name="Boolean", 
+            default=True)
+
+    b_data_type_compatible: bpy.props.BoolProperty(
+            name="Boolean", 
+            default=True)
+    
+class GenericBoolPropertyGroup(bpy.types.PropertyGroup):
+    b_value: bpy.props.BoolProperty(name="Boolean", default=True)
+    name: bpy.props.StringProperty(name="Name", default="")
+    id: bpy.props.StringProperty(name="Identification String", default="")

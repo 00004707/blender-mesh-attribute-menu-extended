@@ -379,4 +379,167 @@ class MasksManagerPanel(bpy.types.Panel):
                 r.label(icon='ERROR', text="Warning")
                 r.alert=True
                 col.label(text="Multiresolution is not-compatible")
+
+
+class ATTRIBUTE_UL_attribute_multiselect_list(bpy.types.UIList):
+
+    name_filter: bpy.props.StringProperty(name="Name", default="")
+
+    datatype_filter_compatible: bpy.props.BoolProperty(name="Same as target", default=False)
+    datatype_filter: bpy.props.CollectionProperty(type = etc.GenericBoolPropertyGroup)
+
+    domain_filter_compatible: bpy.props.BoolProperty(name="Same as target", default=False)
+    domain_filter: bpy.props.CollectionProperty(type = etc.GenericBoolPropertyGroup)
+    
+    def _gen_order_update(name1, name2):
+        def _u(self, ctxt):
+            if (getattr(self, name1)):
+                setattr(self, name2, False)
+        return _u
+
+    use_order_name: bpy.props.BoolProperty(
+        name="Name", default=False, options=set(),
+        description="Sort groups by their name (case-insensitive)",
+        update=_gen_order_update("use_order_name", "use_order_importance"),
+    )
+
+    sort_reverse: bpy.props.BoolProperty(
+        name="Reverse",
+        default=False,
+        options=set(),
+        description="Reverse sorting",
+    )
+
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         
+        gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+
+        # layout.label(text=item.attribute_name)
+        
+        row = layout.row()
+        row.prop(item, "b_select", text=item.attribute_name)
+        # subrow = row.row()
+        # subrow.scale_x = 1.0
+        # subrow.label(text=item.attribute_name)
+
+        subrow = row.row()
+        subrow.scale_x = 0.5
+        subrow.alert = not item.b_domain_compatible and gui_prop_group.b_attributes_uilist_highlight_different_attrib_types
+        subrow.label(text = item.domain_friendly_name)
+
+        subrow = row.row()
+        subrow.scale_x = .75
+        subrow.alert = not item.b_data_type_compatible and gui_prop_group.b_attributes_uilist_highlight_different_attrib_types
+        subrow.label(text = item.data_type_friendly_name)
+
+    
+    def draw_filter(self, context, layout):
+        gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+        col = layout.column()
+
+    
+        row = col.row(align=True)
+        row.prop(self, "name_filter", text="")
+        row.prop(self, "use_order_name", text="", icon="SORTALPHA")
+        icon = 'SORT_ASC' if self.sort_reverse else 'SORT_DESC'
+        row.prop(self, "sort_reverse", text="", icon=icon)
+    
+        col.label(text="Filter Domains")
+
+        if gui_prop_group.b_attributes_uilist_show_same_as_target_filter:
+            filter_row = col.row(align=True)
+            filter_row.prop(self, 'domain_filter_compatible', toggle=True)
+        else:
+            self.domain_filter_compatible = False
+
+        filter_row = col.row(align=True)
+        filter_row.enabled = not self.domain_filter_compatible
+        for boolprop in self.domain_filter:
+            filter_row.prop(boolprop, f"b_value", toggle=True, text=boolprop.name)
+        
+        col.label(text="Filter Data Types")
+
+        if gui_prop_group.b_attributes_uilist_show_same_as_target_filter:
+            filter_row = col.row(align=True)
+            filter_row.prop(self, 'datatype_filter_compatible', toggle=True)
+        else:
+            self.datatype_filter_compatible = False
+
+        filter_row = col.grid_flow(columns=3, even_columns=False, align=True)
+        filter_row.enabled = not self.datatype_filter_compatible
+        for boolprop in self.datatype_filter:
+            filter_row.prop(boolprop, f"b_value", toggle=True, text=boolprop.name)
+
+    def initialize(self, context):
+        self.datatype_filter.clear()
+
+        for data_type in static_data.attribute_data_types:
+            b = self.datatype_filter.add()
+            b.b_value = True
+            b.name = func.get_friendly_data_type_name(data_type)
+            b.id = data_type
+
+        for domain in static_data.attribute_domains:
+            b = self.domain_filter.add()
+            b.b_value = True
+            b.name = func.get_friendly_domain_name(domain)
+            b.id = domain
+
+        self.prop_group = bpy.context.window_manager.MAME_GUIPropValues
+
+    def filter_items(self, context, data, propname):
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
+        attributes = getattr(gui_prop_group, propname)
+        helper_funcs = bpy.types.UI_UL_list
+        
+        if not len(self.datatype_filter):
+            self.initialize(context)
+
+        filter_list = []
+        sort_ids_list = []
+
+        # Filtering
+
+        # Filtering by name
+        if self.name_filter:
+            filter_list = helper_funcs.filter_items_by_name(self.name_filter, self.bitflag_filter_item, attributes, "attribute_name",
+                                                          reverse=False)
+
+        # make sure something is returned 
+        if not filter_list:
+            filter_list = [self.bitflag_filter_item] * len(attributes)
+
+        # Filter by domain
+        if self.domain_filter_compatible:
+            for i, item in enumerate(attributes):
+                filter_list[i] = filter_list[i] if item.b_domain_compatible else 0
+        else:
+            d_filters = [d.id for d in self.domain_filter if d.b_value]
+            for i, item in enumerate(attributes):
+                filter_list[i] = filter_list[i] if item.domain in d_filters else 0
+
+        # Filter by datatype
+        if self.datatype_filter_compatible:
+            for i, item in enumerate(attributes):
+                filter_list[i] = filter_list[i] if item.b_data_type_compatible else 0
+        else:
+            dt_filters = [dt.id for dt in self.datatype_filter if dt.b_value]
+            for i, item in enumerate(attributes):
+                filter_list[i] = filter_list[i] if item.data_type in dt_filters else 0
+
+
+        # Sorting
+
+        # Sorting by name
+        if self.use_order_name:
+            sort_ids_list = helper_funcs.sort_items_by_name(attributes, "attribute_name")
+        
+        # Reverse sorting
+        if self.sort_reverse:
+            if not len(sort_ids_list):
+                sort_ids_list = [*range(0, len(attributes))]
+                
+            sort_ids_list.reverse()
+
+        return filter_list, sort_ids_list

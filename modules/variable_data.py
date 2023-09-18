@@ -74,7 +74,13 @@ class MAME_GUIPropValues(bpy.types.PropertyGroup):
     to_mesh_data_attributes_list: bpy.props.CollectionProperty(type = etc.AttributeListItem)
 
     # Active attribute selected in UILIst in "To Mesh Data" menu when converting multiple attributes at once
-    to_mesh_data_attributes_list_active_id: bpy.props.IntProperty(name="Active_ID", default=0)
+    to_mesh_data_attributes_list_active_id: bpy.props.IntProperty(name="Mesh Attribute", default=0)
+    
+    # Whether to show "Same as target" button in filter list
+    b_attributes_uilist_show_same_as_target_filter: bpy.props.BoolProperty(name="Same As Target Filter", default=True)
+    
+    # Whether to tint red all data types and domains that do not fit the active attribute type
+    b_attributes_uilist_highlight_different_attrib_types: bpy.props.BoolProperty(name="Same As Target Filter", default=True)
         
     # Sculpt mode bar
     # -------------------------------------------------
