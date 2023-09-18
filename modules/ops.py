@@ -1667,7 +1667,7 @@ class ConditionalSelection(bpy.types.Operator):
     attribute_comparison_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=func.get_attribute_comparison_conditions_enum
+        items=func.get_attribute_comparison_conditions_enum_for_property
     )
     
     # Whether to check strings with case sensitivity
@@ -1727,22 +1727,22 @@ class ConditionalSelection(bpy.types.Operator):
     vec_0_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=func.get_attribute_comparison_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum_for_property,
     )
     vec_1_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=func.get_attribute_comparison_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum_for_property,
     )
     vec_2_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=func.get_attribute_comparison_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum_for_property,
     )
     vec_3_condition_enum: bpy.props.EnumProperty(
         name="Condition",
         description="Select an option",
-        items=func.get_attribute_comparison_conditions_enum,
+        items=func.get_attribute_comparison_conditions_enum_for_property,
     )
 
 

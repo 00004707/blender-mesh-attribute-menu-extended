@@ -2194,7 +2194,7 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
     
     return enum_entries
  
-def get_attribute_comparison_conditions_enum(self,context):
+def get_attribute_comparison_conditions_enum_for_property(self,context):
     """All available conditions for attributes that store numeric values
 
     Args:
