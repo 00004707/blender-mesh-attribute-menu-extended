@@ -729,7 +729,7 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
     else:
         raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {domain} domain is not supported')
 
-def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_value, case_sensitive_string = False):
+def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_value, case_sensitive_string = False, vector_convert_to_srgb= False):
     """Gets indexes of the list that store values that meet selected condition
 
     Currently only one dimensional lists are supported.
@@ -739,16 +739,25 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
         condition (str): The condition to check
         compare_value (variable): The value to check the condition with
         case_sensitive_string (bool, optional): Whether the strings should be compared with case sensitivity or not. Defaults to False.
-
+        convert_to_srgb (bool, optional): When working with BYTE_COLOR, setting the value might be converted to SRGB colorspace
     Returns:
         list: _Indexes of the list that meet the criteria
     """
         # todo flatten the list or handle vectors somehow
         # there has to be an easier way, what the hell is this
 
+    if vector_convert_to_srgb:
+        compare_value = linear_to_srgb(compare_value)
+
+    cmp_val_srgb = linear_to_srgb(compare_value, False)
+
     indexes = []
     if is_verbose_mode_enabled():
-        print(f"Get filtered indexes with settings:\n{condition} to {compare_value}, case sensitive {case_sensitive_string} \non dataset {source_data}")
+        print(f"""Get filtered indexes with settings:
+{condition} to {compare_value}, 
+case sensitive {case_sensitive_string}
+convert compare value to srgb {vector_convert_to_srgb} (SRGB VAL: {cmp_val_srgb})
+on dataset (len {len(source_data)}) {source_data}""")
 
     #booleans
     if type(source_data[0]) is bool:
@@ -760,8 +769,10 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
                 indexes.append(i)
 
     # numeric values & floats invididual vals
-    elif type(source_data[0]) in [int, float]:
+    elif type(source_data[0]) in [int, float, np.int32, np.float, np.float64]:
         for i, data in enumerate(source_data):
+            if vector_convert_to_srgb:
+                data = linear_to_srgb(data)
             if condition == "EQ" and data == compare_value: #equal
                 indexes.append(i)
 
@@ -790,7 +801,8 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
                 cmp = compare_value.upper()
             else:
                 value = data
-            
+                cmp = compare_value
+
             if condition == "EQ" and value == cmp: #equal
                 indexes.append(i)
 
