@@ -2279,7 +2279,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         elif not context.active_object.mode == 'EDIT' :
             self.poll_message_set("Not in edit mode")
             return False
-        elif not context.active_object.data.attributes.active :
+        elif context.active_object.data.attributes.active is None :
             self.poll_message_set("No active attribute")
             return False
         elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
@@ -2456,7 +2456,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
         elif not context.active_object.type == 'MESH':
             self.poll_message_set("Selected object is not a mesh")
             return False
-        elif not context.active_object.data.attributes.active :
+        elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
         elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
