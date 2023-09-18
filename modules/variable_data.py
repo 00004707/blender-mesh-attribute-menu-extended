@@ -25,17 +25,18 @@ class MAME_PropValues(bpy.types.PropertyGroup):
 
     # Assign attribute value in edit mode entries
     # -------------------------------------------------
-
+    # val_datatype, datatype is in lower case eg attribute.data_type.lower()
+    
     val_int: bpy.props.IntProperty(name="Integer Value", default=0)
     val_float: bpy.props.FloatProperty(name="Float Value", default=0.0)
-    val_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
+    val_float_vector: bpy.props.FloatVectorProperty(name="Vector Value", size=3, default=(0.0,0.0,0.0))
     val_string: bpy.props.StringProperty(name="String Value", default="")
-    val_bool: bpy.props.BoolProperty(name="Boolean Value", default=True)
-    val_vector2d: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
+    val_boolean: bpy.props.BoolProperty(name="Boolean Value", default=True)
+    val_float2: bpy.props.FloatVectorProperty(name="Vector 2D Value", size=2, default=(0.0,0.0))
     if etc.get_blender_support(static_data.attribute_data_types['INT8'].min_blender_ver, static_data.attribute_data_types['INT8'].unsupported_from_blender_ver):
         val_int8: bpy.props.IntProperty(name="8-bit Integer Value", min=-128, max=127, default=0)
-    val_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
-    val_bytecolor: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_float_color: bpy.props.FloatVectorProperty(name="Color Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
+    val_byte_color: bpy.props.FloatVectorProperty(name="ByteColor Value", subtype='COLOR', size=4, min=0.0, max=1.0, default=(0.0,0.0,0.0,1.0))
     if etc.get_blender_support(static_data.attribute_data_types['INT32_2D'].min_blender_ver, static_data.attribute_data_types['INT32_2D'].unsupported_from_blender_ver):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
     if etc.get_blender_support(static_data.attribute_data_types['QUATERNION'].min_blender_ver, static_data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
@@ -45,7 +46,8 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     # -------------------------------------------------
 
     face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
-    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Select buttons will select/deselect "non-zero" values instead')
+    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Select buttons will match non-zero, non-empty, non-black and True values or the value in the input field')
+    val_select_casesensitive: bpy.props.BoolProperty(name="Case sensitive", default=False, description='Select only matching case')
 
 class MAME_GUIPropValues(bpy.types.PropertyGroup):
     """
