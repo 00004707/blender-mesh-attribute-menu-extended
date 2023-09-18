@@ -88,13 +88,14 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             and not etc.get_preferences_attrib("disable_bpy_set_attribute")):               # Preferences toggle
             
             etc.pseudo_profiler("OPS_START")
-            if func.is_verbose_mode_enabled():
-                print( f"Using ops.mesh_attribute_set()" )
+            
 
             params = {}
             paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
             params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
-
+            if func.is_verbose_mode_enabled():
+                print( f"Using ops.mesh_attribute_set()" )
+                # print(f"Setting value {prop_group.val_byte_color[:]}")
             bpy.ops.mesh.attribute_set(**params)
             
             etc.pseudo_profiler("OPS_END")
@@ -959,7 +960,7 @@ class RemoveAllAttribute(bpy.types.Operator):
             if editable:
                 return True
             
-        self.poll_message_set("No removeable attributes")
+        self.poll_message_set("No removable attributes")
         return False
 
 
@@ -2065,7 +2066,6 @@ FiltIndex: {filtered_indexes}""")
             subrow.ui_units_x = 5
             row.prop(self, 'vector_value_cmp_type_enum', text="")
 
-
 class AttributeResolveNameCollisions(bpy.types.Operator):
     """
     Adds suffix to attributes with colliding names
@@ -2193,16 +2193,6 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
             self.report({'ERROR'}, f"No selected {func.get_friendly_domain_name(domain)}")
             bpy.ops.object.mode_set(mode='EDIT')
             return {'CANCELLED'}
-        
-        # # Get indexes
-        # if domain == 'POINT':
-        #     domain_indexes = [vert.index for vert in selected]
-        # if domain == 'EDGE':
-        #     domain_indexes = [edge.index for edge in selected]
-        # if domain == 'EDGE':
-        #     domain_indexes = [poly.index for poly in selected]
-        # else:
-        #     domain_indexes = [loop.index for loop in selected]
 
         # Get the value to set in GUI
         if dt in ['STRING', 'BOOLEAN']:
@@ -2391,7 +2381,6 @@ class RandomizeAttributeValue(bpy.types.Operator):
 
         # SELECTION CHECK IS IN EXECUTE TO AVOID RUNNING EXPENSIVE FUNCTIONS TWICE
         return True
-
 
     def execute(self, context):
         obj = context.active_object

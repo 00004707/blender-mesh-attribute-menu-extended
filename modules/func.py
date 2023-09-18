@@ -277,8 +277,6 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
                 og_vals[i] = color_vector_to_hsv(subelement)
 
         for subelement in range(0, v_size):
-
-
             if v_toggles[subelement]:
                 # integer subeleemnts
                 if data_type in ["INT32_2D"]:
@@ -291,7 +289,6 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
                     stacks.append(value)
             else:
                 stacks.append([i[subelement] for i in og_vals])
-
         val = np.column_stack(stacks)
         
         if use_hsv:
@@ -1701,7 +1698,6 @@ def get_all_mesh_data_entries_of_type(obj,data_type):
         raise etc.GenericFunctionParameterError("get_all_mesh_data_indexes_of_type", f"Data type unsupported?: {data_type}")
 # String Getters
 # ------------------------------------------
-# Utility
 
 def get_friendly_domain_name(domain_name_raw, plural=False):
     """Converts internal domain name to friendly name to be used in UI
@@ -2188,7 +2184,6 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
 
     if not domains or not len(domains):
         domains = [dt for dt in static_data.attribute_domains]
-    
 
     for attrib in obj.data.attributes:
         if attrib.domain in domains and attrib.data_type in data_types:
@@ -2213,7 +2208,6 @@ def get_attribute_comparison_conditions_enum(self,context):
     
     return get_attribute_comparison_conditions_enum(a.data_type)
     
-
 def get_attribute_comparison_conditions_enum_strings(self, context):
     return get_attribute_comparison_conditions_enum('STRING')
 

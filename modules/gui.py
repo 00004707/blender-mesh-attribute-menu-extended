@@ -105,8 +105,6 @@ def attribute_assign_panel(self, context):
 
 
         # Quick Attribute Node Menu
-        
-
         if etc.get_preferences_attrib("quick_attribute_node_enable"):
             box = layout.box()
             row = box.row()
@@ -147,8 +145,6 @@ def attribute_assign_panel(self, context):
                 for i, area in enumerate(areas):
                     col.label(text=f"{i+1}: {func.get_node_editor_type(area)}")
         
-
-
 def attribute_context_menu_extension(self, context):
     """
     Extra entries in ^ menu
@@ -181,7 +177,7 @@ def sculpt_mode_mask_menu_extension(self, context):
 
 def sculpt_mode_face_sets_menu_extension(self, context):
     """
-    Extra entries in sculpt mode face sets menu on the menu bar
+    Entries in ^ menu located in Properties > Data > Vertex Groups
     """
     if etc.get_preferences_attrib('extra_context_menu_sculpt'):
         self.layout.operator_context = "INVOKE_DEFAULT"
@@ -236,6 +232,9 @@ def vertex_groups_context_menu_extension(self,context):
         self.layout.operator('mesh.attribute_quick_all_from_vertex_group_assignment', icon='MESH_DATA')
 
 def shape_keys_context_menu_extension(self,context):
+    """
+    Entries in ^ menu located in Properties > Data > Shape Keys
+    """
     if etc.get_preferences_attrib('extra_context_menu_sk'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
@@ -245,6 +244,9 @@ def shape_keys_context_menu_extension(self,context):
         self.layout.operator('mesh.attribute_quick_offset_from_all_shape_keys', icon='MESH_DATA')
 
 def material_context_menu_extension(self,context):
+    """
+    Entries in ^ menu located in Properties > Material > Material
+    """
     if etc.get_preferences_attrib('extra_context_menu_materials'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
@@ -254,20 +256,32 @@ def material_context_menu_extension(self,context):
         self.layout.operator('mesh.attribute_quick_all_from_material_slot_assignment', icon='MESH_DATA')
 
 def edge_context_menu_extension(self,context):
+    """
+    Entries in Edge context menu in edit mode
+    UNUSED
+    """
     if etc.get_preferences_attrib('extra_context_menu_edge_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
 
 def face_context_menu_extension(self,context):
+    """
+    Entries in Face context menu in edit mode
+    UNUSED
+    """
     if etc.get_preferences_attrib('extra_context_menu_face_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
+# Object Mode
+# -----------------------------------------
 
 def object_context_menu_extension(self,context):
     if etc.get_preferences_attrib('extra_context_menu_object'):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.separator()
 
+# Sculpt Mode
+# -----------------------------------------
 
 def sculpt_mode_mask_menu_extension(self, context):
     """
