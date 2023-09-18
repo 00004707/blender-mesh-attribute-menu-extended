@@ -255,6 +255,23 @@ def material_context_menu_extension(self,context):
         self.layout.operator('mesh.attribute_quick_from_material_slot_assignment', icon='MESH_DATA')
         self.layout.operator('mesh.attribute_quick_all_from_material_slot_assignment', icon='MESH_DATA')
 
+def uvmaps_context_menu_extension(self,context):
+    """
+    Entries in ^ menu located in Properties > Data > UVMaps
+    """
+    if etc.get_preferences_attrib('extra_context_menu_uvmaps') and etc.get_blender_support(minver_unsupported=(3,5,0)):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.operator('mesh.attribute_quick_from_uvmap', icon='MESH_DATA')
+
+def facemaps_context_menu_extension(self,context):
+    """
+    Entries in ^ menu located in Properties > Data > Face Maps
+    """
+    if etc.get_preferences_attrib('extra_context_menu_fm') and etc.get_blender_support(minver_unsupported=(4,0,0)):
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.operator('mesh.attribute_quick_from_face_map', icon='MESH_DATA')
+        self.layout.operator('mesh.attribute_quick_from_face_map_index', icon='MESH_DATA')
+
 # Edit Mode
 # -----------------------------------------
 
