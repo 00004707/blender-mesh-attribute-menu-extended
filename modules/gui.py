@@ -538,3 +538,77 @@ class ATTRIBUTE_UL_attribute_multiselect_list(bpy.types.UIList):
             sort_ids_list.reverse()
 
         return filter_list, sort_ids_list
+    
+
+class GenericMessageBox(bpy.types.Operator):
+    """Shows an OK message box.
+
+    """
+    bl_idname = "window_manager.mame_message_box"
+    bl_label = "Mesh Attributes Menu Extended Message"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    # Width of the message box
+    width: bpy.props.IntProperty(default=400)
+
+    # Message to show
+    message: bpy.props.StringProperty(default='')
+
+    # Whether to use custom draw functions stored in MESSAGE_BOX_DRAW_FUNCTION global variable
+    custom_draw: bpy.props.BoolProperty(default=False)
+
+    # trick to make the dialog box open once and not again after pressing ok
+    times = 0
+
+    def execute(self, context):
+        self.times += 1
+        if self.times < 2:
+            return context.window_manager.invoke_props_dialog(self, width=self.width)
+        return {'FINISHED'}
+    
+    def draw(self, context):
+        if self.custom_draw:
+            global MESSAGE_BOX_DRAW_FUNCTION
+            MESSAGE_BOX_DRAW_FUNCTION(self, context, message=self.message)
+        else:
+            layout = self.layout
+            layout.label(text=self.message)
+
+
+def draw_error_list(self, context, message=''):
+    col = self.layout.column()
+    col.label(icon='ERROR', text=message)
+
+    max_errors = 10
+    global MESSAGE_BOX_EXTRA_DATA
+    errors = MESSAGE_BOX_EXTRA_DATA
+    print(f"data{errors}")
+    for error in range(0, min(max_errors+1, len(errors))):
+        col.label(icon='DOT', text=errors[error])
+    if len(errors) > max_errors:
+        col.label(text=f"{len(errors)-max_errors} more...")
+
+
+def set_message_box_function(function):
+    """Assigns a custom draw function when using GenericMessageBox
+
+    Args:
+        function (func): function to call. Will be called with paramters: self, context, message
+    """
+    global MESSAGE_BOX_DRAW_FUNCTION
+    MESSAGE_BOX_DRAW_FUNCTION = function
+
+def set_message_box_extra_data(extra_data):
+    """Stores custom data to use in custom draw function of GenericMessageBox
+
+    Args:
+        extra_data (any): any type of data 
+    """
+    global MESSAGE_BOX_EXTRA_DATA
+    MESSAGE_BOX_EXTRA_DATA = extra_data
+
+# Used in GenericMessageBox to use as a draw function 
+MESSAGE_BOX_DRAW_FUNCTION = None
+
+# Used in GenericMessageBox to use as extra data in draw function
+MESSAGE_BOX_EXTRA_DATA = None

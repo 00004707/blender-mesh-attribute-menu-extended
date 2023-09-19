@@ -66,6 +66,7 @@ classes = [
     etc.AddonPreferences,
     etc.AttributeListItem,
     etc.GenericBoolPropertyGroup,
+    gui.GenericMessageBox,
     gui.ATTRIBUTE_UL_attribute_multiselect_list,
     variable_data.MAME_PropValues,
     variable_data.MAME_GUIPropValues,
