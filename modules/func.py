@@ -2187,6 +2187,18 @@ def get_attribute_data_types_enum(self,context):
             l.append((item, static_data.attribute_data_types[item].friendly_name, ""))
     return l
 
+def get_attribute_data_types():
+    """Gets all attribute data types that are supported by current blender version
+
+    Returns:
+        list: List of strings
+    """
+    l = []  
+    for item in static_data.attribute_data_types:
+        if etc.get_blender_support(static_data.attribute_data_types[item].min_blender_ver, static_data.attribute_data_types[item].unsupported_from_blender_ver):
+            l.append(item)
+    return l
+
 def get_attribute_domains_enum(self, context):
     """Gets all attribute domains that are supported by current blender version as enum entries
 
@@ -2201,6 +2213,23 @@ def get_attribute_domains_enum(self, context):
         if etc.get_blender_support(static_data.attribute_domains[item].min_blender_ver, static_data.attribute_domains[item].unsupported_from_blender_ver):
             l.append((item, static_data.attribute_domains[item].friendly_name, ""))
     return l
+
+def get_attribute_domains():
+    """Gets all attribute domains that are supported by current blender version
+
+    Args:
+        context (Reference): Blender context reference
+
+    Returns:
+        list: List of str
+    """
+
+    l = []
+    for item in static_data.attribute_domains:
+        if etc.get_blender_support(static_data.attribute_domains[item].min_blender_ver, static_data.attribute_domains[item].unsupported_from_blender_ver):
+            l.append(item)
+    return l
+
 
 def get_attribute_invert_modes(self, context):
     """Returns a list of available modes to invert the active attribute, as enum entries.

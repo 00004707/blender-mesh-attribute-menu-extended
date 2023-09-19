@@ -1041,7 +1041,7 @@ class RemoveAllAttribute(bpy.types.Operator):
 
         # Get data type toggles 
         self.remove_datatype_filter.clear()
-        for data_type in static_data.attribute_data_types:
+        for data_type in func.get_attribute_data_types():
             b = self.remove_datatype_filter.add()
             b.b_value = True
             b.name = func.get_friendly_data_type_name(data_type)
@@ -1049,7 +1049,7 @@ class RemoveAllAttribute(bpy.types.Operator):
 
         # Get domain toggles 
         self.remove_domain_filter.clear()
-        for domain in static_data.attribute_domains:
+        for domain in func.get_attribute_domains():
             b = self.remove_domain_filter.add()
             b.b_value = True
             b.name = func.get_friendly_domain_name(domain)
@@ -1066,7 +1066,7 @@ class RemoveAllAttribute(bpy.types.Operator):
         colrow = col.row(align=True)
 
         subcolprop = colrow.row(align=True)
-        subcolprop.enabled = bpy.app.version >= (3,5,0)
+        # subcolprop.enabled = bpy.app.version >= (3,5,0)
         subcolprop.prop(self, "b_include_uvs", text="UVMaps", toggle=True)
         colrow.prop(self, "b_include_color_attribs", text="Color Attributes", toggle=True)
         
