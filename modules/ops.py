@@ -23,6 +23,7 @@ from . import etc
 from bpy_types import bpy_types
 from mathutils import Vector
 import numpy as np
+from . import gui
 
 class AssignActiveAttribValueToSelection(bpy.types.Operator):
     """
@@ -2724,23 +2725,19 @@ class AttributesToFile(bpy.types.Operator):
         default="ALL"
     )
 
-    
+    b_add_domain_and_data_type_to_title_row: bpy.props.BoolProperty(name="Add domain and type to header row", default=True)
+
     domain_filter: bpy.props.EnumProperty(
         name="Filter",
         description="Select an option",
         items=func.get_attribute_domains_enum
     )
 
-    def get_file_type_enum(self, context):
-        l = []
-        for f in static_data.attribute_to_file_supported_formats:
-            l.append((f, static_data.attribute_to_file_supported_formats[f].friendly_name, static_data.attribute_to_file_supported_formats[f].description))
-        
-        return l
+    
     file_type_enum: bpy.props.EnumProperty(
         name="File Type",
         description="Select an option",
-        items=get_file_type_enum
+        items=func.get_export_file_types_enum
     )
 
     show_filetype_options = False
@@ -2748,12 +2745,56 @@ class AttributesToFile(bpy.types.Operator):
     b_dont_show_file_selector: bpy.props.BoolProperty(name="dont_show_file_selector", default=False)
     
 
-    img_width: bpy.props.IntProperty(name="Width", default=1024, min=2, max=32768)
-    img_height: bpy.props.IntProperty(name="Height", default=1024, min=2, max=32768)
+    img_width: bpy.props.IntProperty(name="Width", default=1024, min=2, max=32768, step=2)
+    img_height: bpy.props.IntProperty(name="Height", default=1024, min=2, max=32768, step=2)
     b_force_img_square: bpy.props.BoolProperty(name="Squared", default=True)
+    
+    image_source_enum: bpy.props.EnumProperty(
+        name="Store in",
+        description="Select an option",
+        items=[
+            ("NEW", "New image", "Stores data in new image"),
+            ("EXISTING", "Existing image", "Stores data in existing image"),
+        ],
+        default="NEW"
+    )
+
+    image_dimensions_presets_enum: bpy.props.EnumProperty(
+        name="Image Dimensions",
+        description="Select an option",
+        items=[
+            ("CUSTOM", "Custom", "Specify a resolution"),
+            ("8", "8x8", "8px x 8px"),
+            ("16", "16x16", "16px x 16px"),
+            ("32", "32x32", "32px x 32px"),
+            ("64", "64x64", "64px x 64px"),
+            ("128", "128x128", "128px x 128px"),
+            ("256", "256x256", "256px x 256px"),
+            ("512", "512x512", "512px x 512px"),
+            ("1024", "1024x1024 (1K)", "1024px x 1024px"),
+            ("2048", "2048x2048 (2K)", "2048px x 2048px"),
+            ("4096", "4096x4096 (4K)", "4096px x 4096px"),
+            ("8192", "8192x8192 (8K)", "8192px x 8192px"),
+            ("16384", "16384x16384 (16K)", "16384px x 16384px"),
+        ],
+        default="1024"
+    )
+
+    pixel_index_offset: bpy.props.IntProperty(name="Index Offset", default=0, min=0)
+    x_pixel_offset: bpy.props.IntProperty(name="X Offset", default=0, min=0)
+    y_pixel_offset: bpy.props.IntProperty(name="Y Offset", default=0, min=0)
+    x_max_height: bpy.props.IntProperty(name="X Max Height", default=0, min=0)
+    y_max_width: bpy.props.IntProperty(name="Y Max Width", default=0, min=0)
+
+    
+
+
     # x y z / w optional
     # to existing image
     # create uvmap
+    # clamp value
+    # normalize value
+    # attribute to override index or xy position
 
     @classmethod
     def poll(self, context):
@@ -2775,6 +2816,7 @@ class AttributesToFile(bpy.types.Operator):
         func.refresh_attribute_UIList_elements()
         func.configutre_attribute_uilist(False, False)
         self.filename = bpy.context.active_object.name + "_mesh_attributes"
+        bpy.types.WindowManager.mame_image = bpy.props.PointerProperty(type=bpy.types.Image)
         return context.window_manager.invoke_props_dialog(self)
     
     def execute(self, context):
@@ -2823,7 +2865,7 @@ class AttributesToFile(bpy.types.Operator):
         # case: export all to csv
         if self.file_type_enum == 'CSV':
             try:
-                func.write_csv_attributes_file(filepath_temp, obj, attributes)
+                func.write_csv_attributes_file(filepath_temp, obj, attributes, self.b_add_domain_and_data_type_to_title_row)
             except PermissionError:
                 self.report({'ERROR'}, f'Permission denied to write to file \"{filepath_temp}\"')
                 return {'CANCELLED'}
@@ -2849,10 +2891,10 @@ class AttributesToFile(bpy.types.Operator):
             # file type
             col = layout.row(align=True)
             col.prop_enum(self, "file_type_enum", 'CSV')
-            col.prop_enum(self, "file_type_enum", 'PNG')
+            #col.prop_enum(self, "file_type_enum", 'PNG')
 
         else:
-
+            
             if self.file_type_enum == 'CSV':
             
                 # toggle between single, all, and specific
@@ -2882,23 +2924,150 @@ class AttributesToFile(bpy.types.Operator):
                     col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
                             "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
                 
+                col.label(text="")
+                col.label(text="Extra options")
+                col.prop(self, 'b_add_domain_and_data_type_to_title_row')
+
+                col.label(text="")
                 col.label(icon='INFO', text=f"Header row naming convention:")
-                col.label(icon="LAYER_ACTIVE", text=f"AttributeName(DATATYPE)(DOMAIN)")
+                if self.b_add_domain_and_data_type_to_title_row:
+                    col.label(icon="LAYER_ACTIVE", text=f"AttributeName(DATATYPE)(DOMAIN)")
+                else:
+                    col.label(icon="LAYER_ACTIVE", text=f"AttributeName")
 
             if self.file_type_enum == 'PNG':
-                col.label(text="Data will be written sequentally")
-                subcol = col.column(align=True)
+                rootcol = col.column()
+
+                col = rootcol.column()
+                col.ui_units_y = 10
+                col.label(text='')
+                sourceselect_row = col.row(align = True)
+                sourceselect_row.prop_enum(self, 'image_source_enum', 'NEW')
+                sourceselect_row.prop_enum(self, 'image_source_enum', 'EXISTING')
+
+                if self.image_source_enum == 'NEW':
+
+                    
+                    col.label(text='Dimensions')
+                    col.prop(self, 'image_dimensions_presets_enum', text= '')
+
+                    if self.image_dimensions_presets_enum == 'CUSTOM':
+                        
+                        row = col.row()
+                        row.prop(self, "img_width", text="Width" if not self.b_force_img_square else "Width x Height")
+                        if not self.b_force_img_square:
+                            row.prop(self, "img_height")
+
+                        col.prop(self, "b_force_img_square", toggle = True)
+                else:
+                    col.template_ID(bpy.types.WindowManager, 'mame_image', open='image.open')
+
+                
+
+                subcol = rootcol.column(align=True)
                 subcol.label(icon="INFO", text="To read value of index use formula:")
                 subcol.label(icon="LAYER_ACTIVE", text="x = index%width")
                 subcol.label(icon="LAYER_ACTIVE", text="y = floor(width/index)")
                 subcol.label(text="and read the value at those coordinates")
-                col.label(icon='ERROR', text="The values should be in 0.0 to 1.0 range")
+                subcol.label(icon='ERROR', text="The values should be in 0.0 to 1.0 range")
 
-                col.prop(self, "img_width", text="Width" if not self.b_force_img_square else "Width x Height")
-                sc = col.row()
-                if not self.b_force_img_square:
-                    sc.prop(self, "img_height")
-                else:
-                    sc.label(text="")
-                col.prop(self, "b_force_img_square", toggle = True)
                 
+class AttributesFromFile(bpy.types.Operator):
+    bl_idname = "mesh.attribute_from_file"
+    bl_label = "Import..."
+    bl_description = "Imports attribute data from external file"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath: bpy.props.StringProperty(name="File path", default="", description="File path", subtype="FILE_PATH")
+
+    domain_detect_enum: bpy.props.EnumProperty(
+        name="Domain Detection",
+        description="Select an option",
+        items=[
+            ("NAME", "Search in title row", "Looks for strings like \"(POINT)\" in first row to determine domain"),
+            ("DEFINEDFORALL", "Specify domain", "Assume single domain for all columns"),
+        ],
+        default="NAME"
+    )
+
+    data_type_detect_enum: bpy.props.EnumProperty(
+        name="Data Type Detection",
+        description="Select an option",
+        items=[
+            ("NAME", "Search in title row", "Looks for strings like \"(FLOAT)\" in first row to determine data type"),
+            ("DEFINEDFORALL", "Specify data type", "Assume single data type for all columns"),
+        ],
+        default="NAME"
+    )
+
+    domain_selector_enum: bpy.props.EnumProperty(
+        name="Domain",
+        description="Select an option",
+        items=func.get_attribute_domains_enum
+    )
+
+    data_type_selector_enum: bpy.props.EnumProperty(
+        name="Data Type",
+        description="Select an option",
+        items=func.get_attribute_data_types_enum
+    )
+
+    b_remove_domain_str_from_name: bpy.props.BoolProperty(name="Remove domain string from name", description="Removes parts like \"(POINT)\" from name", default=True)
+    b_remove_data_type_str_from_name: bpy.props.BoolProperty(name="Remove data type string from name", description="Removes parts like \"(FLOAT)\" from name", default=True)
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+
+        return {'RUNNING_MODAL'}
+    
+    def execute(self, context):
+        args = {}
+        if self.domain_detect_enum == "DEFINEDFORALL":
+            args['force_domain'] = self.domain_selector_enum
+        if self.data_type_detect_enum == "DEFINEDFORALL":
+            args['force_data_type'] = self.data_type_selector_enum
+
+        status, errors, count = func.csv_to_attributes(self.filepath, context.active_object, [], self.b_remove_domain_str_from_name, self.b_remove_data_type_str_from_name, **args)
+        
+        if not len(errors):
+            # bpy.ops.window_manager.mame_message_box(icon='INFO', message=f'Successfully imported {count} attributes from CSV file.')
+            self.report({'INFO'}, f'Successfully imported {count} attributes from CSV file.')
+        else:
+            gui.set_message_box_function(gui.draw_error_list)
+            gui.set_message_box_extra_data(errors)
+
+            bpy.ops.window_manager.mame_message_box(message="During import following errors occured:", custom_draw=True, width=700)
+
+        return {'FINISHED'}
+    
+
+    def draw(self, context):
+        obj = context.active_object
+        col = self.layout.column()
+        
+        domain_col = col.column()
+        domain_col.label(text="Domain")
+        row = domain_col.row(align=True)
+        row.prop_enum(self, 'domain_detect_enum', 'NAME')
+        row.prop_enum(self, 'domain_detect_enum', 'DEFINEDFORALL')
+        if self.domain_detect_enum == 'DEFINEDFORALL':
+            domain_col.prop(self,'domain_selector_enum')
+        else:
+            domain_col.label(icon='INFO', text="Looking for strings like \"(FACE)\"")
+
+
+        data_type_col = col.column()
+        data_type_col.label(text="Data type")
+        row = data_type_col.row(align=True)
+        row.prop_enum(self, 'data_type_detect_enum', 'NAME')
+        row.prop_enum(self, 'data_type_detect_enum', 'DEFINEDFORALL')
+        if self.data_type_detect_enum == 'DEFINEDFORALL':
+            data_type_col.prop(self,'data_type_selector_enum')
+        else:
+            data_type_col.label(icon='INFO', text="Looking for strings like \"(FLOAT)\"")
+
+        toggles_col = col.column()
+        toggles_col.label(text="Attribute Name")
+        toggles_col.prop(self,'b_remove_data_type_str_from_name')
+        toggles_col.prop(self, 'b_remove_domain_str_from_name')
+    

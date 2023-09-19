@@ -23,6 +23,7 @@ import random
 import colorsys
 import string 
 import csv
+from ast import literal_eval
 
 # Attribute related
 # ------------------------------------------
@@ -77,18 +78,23 @@ def get_is_attribute_valid_for_manual_val_assignment(attribute):
     """
     return not bool(len([atype for atype in get_attribute_types(attribute) if atype in [static_data.EAttributeType.READONLY, static_data.EAttributeType.NOTPROCEDURAL]]))
 
-def get_attrib_value_propname(attribute):
+def get_attrib_value_propname(attribute = None, data_type:str = ""):
     """Gets the property name of attribute value. Some values are stored in .vector others in .value etc.
 
     Args:
         attribute (Reference): Attribute reference variable
+        data_type (str): alternative to attribute input field
 
     Returns:
         string: Attribute property name
     """
-    if attribute.data_type in ["FLOAT_VECTOR", "FLOAT2"]:
+
+    if data_type == '':
+        data_type = attribute.data_type
+
+    if data_type in ["FLOAT_VECTOR", "FLOAT2"]:
         return "vector"
-    elif attribute.data_type in ["FLOAT_COLOR", "BYTE_COLOR"]:
+    elif data_type in ["FLOAT_COLOR", "BYTE_COLOR"]:
         return "color"
     else:
         return "value"
@@ -380,7 +386,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
 
 # set
 
-def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
+def set_attribute_values(attribute, value, on_indexes = [], flat_list = False, bugbypass_data_type = "", bugbypass_domain = ""):
     """Sets attribute values. Accepts both lists and single values.
     WARNING: OBJECT MODE REQUIRED
 
@@ -389,6 +395,8 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False):
         value (list or value): The value or values to set
         on_indexes (list, optional): Indexes to set the value on. Defaults to []. Duplicates WILL NOT be checked
         flat_list (bool, optional): Only for setting ALL values. Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
+        bugbypass_data_type (str, optional): If the console returns "current value '0' matches no enum in 'ByteIntAttribute', '', 'data_type'" specify the string of the data type
+        bugbypass_domain (str, optional): If the console returns "current value '0' matches no enum in 'ByteIntAttribute', '', 'data_type'" specify the string of the domain
     Raises:
         etc.MeshDataWriteException: On failure
 
@@ -428,12 +436,16 @@ VALUE: {value}
 ON_INDEXES: {on_indexes}
 FLAT_LIST: {flat_list}              
 ON_INDEX_FROM_LIST: {is_list}
+BUGBYPASS_DATA_TYPE: {bugbypass_data_type != ''}
+BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
 """)
     
+    dt = attribute.data_type if bugbypass_data_type == '' else bugbypass_data_type
+    domain = attribute.domain if bugbypass_domain == '' else bugbypass_domain
 
-    if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and attribute.data_type != 'STRING' :
+    if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and dt != 'STRING' :
         etc.pseudo_profiler("FOR_EACH_START")
-        prop_name = get_attrib_value_propname(attribute)
+        prop_name = get_attrib_value_propname(data_type=dt)
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
 
@@ -445,7 +457,7 @@ ON_INDEX_FROM_LIST: {is_list}
                 raise etc.MeshDataWriteException("set_attribute_values", f"Invalid input value data length. Input {len(value)}, expected {len(attribute.data)}")
             
             # convert to single dimension list if of vector type
-            if attribute.data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
+            if dt in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
                 storage = np.array(value).flatten()
                 etc.pseudo_profiler("1D LIST CREATED")
             else:
@@ -463,15 +475,13 @@ ON_INDEX_FROM_LIST: {is_list}
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for {len(on_indexes)} domains. ")
 
-        prop = get_attrib_value_propname(attribute)
-        dt = attribute.data_type
-        domain = attribute.domain
+        prop = get_attrib_value_propname(data_type=dt)
         
         # FOREACH_GET_FOREACH_SET for > 25%
         foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
-        if len(on_indexes) > len(attribute.data)*foreach_get_from and attribute.data_type != 'STRING':
+        if len(on_indexes) > len(attribute.data)*foreach_get_from and dt != 'STRING':
             etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
-            prop_name = get_attrib_value_propname(attribute)
+            prop_name = get_attrib_value_propname(data_type=dt)
             
             if is_list and len(value) < len(on_indexes):
                 raise etc.MeshDataWriteException("set_attribute_values", f"Value input list is shorter [{len(value)}] than index list that the values are supposed to be set on [{len(on_indexes)}]")
@@ -2561,11 +2571,10 @@ def get_node_tree_parent(node_tree, tree_type = None):
     else: 
         return None
 
-# CSV related
-
+# Exporting related
 # ----------------------------------------------
  
-def write_csv_attributes_file(filepath:str, obj, attributes: list):
+def write_csv_attributes_file(filepath:str, obj, attributes: list, add_domain_and_data_type_to_title_row = True):
     """Writes specified attrtibutes to .csv file specified in filepath
 
     Args:
@@ -2576,6 +2585,7 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list):
     Exceptions:
         PermissionError
     """
+
     # add csv extension
     if not filepath.lower().endswith('.csv'):
         filepath += ".csv"
@@ -2590,7 +2600,10 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list):
         values = []
 
         for attribute in attributes:
-            rownames.append(str(attribute.name + "(" + attribute.data_type + ")(" + attribute.domain+")"))
+            if add_domain_and_data_type_to_title_row:
+                rownames.append(str(attribute.name + "(" + attribute.data_type + ")(" + attribute.domain+")"))
+            else:
+                rownames.append(attribute.name)
             datalengths.append(len(attribute.data))
             values.append(get_attrib_values(attribute, obj))
 
@@ -2603,6 +2616,7 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list):
 
             row = {}
             for j, attribute in enumerate(attributes):
+                rownames[j].replace(',', "")
                 if i < datalengths[j]:
                     row[rownames[j]] = values[j][i]
                 else:
@@ -2613,6 +2627,195 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list):
     if is_verbose_mode_enabled():
             print(f"Wrote {max_data_len+1} lines.")
 
+def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_domain_from_name: bool = True, remove_datatype_from_name: bool = True,
+                      force_domain: str = '', force_data_type: str = ''):
+    """Converts CSV file to active mesh attributes
+
+    Args:
+        filepath (str): The path to the CSV file
+        obj (ref): Reference to the object to store the attributes in
+        excluded_attribute_names (list): List of attriubte names that should be ignored while importing+
+        remove_domain_from_name (bool, optional): Whether to remove the strings like (POINT) from attribute name if title row contains it. Defaults to True.
+        remove_datatype_from_name (bool, optional): Whether to remove the strings like (FLOAT) from attribute name if title row constains it. Defaults to True.
+        force_domain (str, optional): Name of the domain to override all imported attributes to be stored in. Use same naming convetion as blender, eg. POINT. Defaults to ''.
+        force_data_type (str, optional): Name of the data type to override all imported attributes to be. Use same naming convetion as blender, eg. FLOAT_VECTOR. Defaults to ''.
+
+    Returns:
+        Status (bool): True on success
+        Errors list (list): List of str elements that contain error descriptions
+        New attribute count (int): the count of attributes imported or created.
+    """
+
+    if is_verbose_mode_enabled():
+            print(f"Creating and writing attributes from CSV file located at \"{filepath}\"")
+    
+    errors = []
+
+    with open(filepath, 'r', newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+
+        attribute_sets = []
+        valid_columns = []
+        data_columns = []
+
+        line = 0
+        for row in reader:
+            line += 1
+            if line == 1:
+                # read attributes
+                for col_id, column in enumerate(row):
+                    if not column.endswith(')') and (force_domain != '' or force_data_type != ''):
+                        errors.append(f"Column {col_id} title invalid: {column}")
+                        continue
+                    
+                    # find domain
+                    attrib_domain = None
+                    domains = get_attribute_domains()
+
+                    if force_domain == '' or remove_domain_from_name:
+                        # check for longest first
+                        domains.sort(key=len, reverse=True)
+
+                        for dom in domains:
+                            foundat = column.rfind("(" + dom.upper() + ")")
+                            if foundat != -1:
+                                attrib_domain = dom
+                                if remove_domain_from_name:
+                                    column = column[:foundat] + column[foundat+len(dom)+2:]
+                                break
+                    
+                    if force_domain != '':
+                        attrib_domain = force_domain
+                    
+
+                    if attrib_domain is None or attrib_domain not in domains:
+                        errors.append(f"Can't determine domain or domain unsupported in this blender version for column {col_id}: {column}")
+                        continue
+
+                    # find data type
+                    attrib_dt = None
+                    data_types = static_data.attribute_data_types #get_attribute_data_types()
+
+                    if force_data_type == '' or remove_datatype_from_name:
+
+                        for dt in data_types:
+                            foundat = column.rfind("(" + dt.upper() + ")")
+                            if foundat != -1:
+                                attrib_dt = dt
+                                if remove_datatype_from_name:
+                                    column = column[:foundat] + column[foundat+len(dt)+2:]
+                                break
+                    
+                    if force_data_type != '':
+                        attrib_dt = force_data_type
+
+                    if attrib_dt is None or attrib_dt not in data_types:
+                        errors.append(f"Can't determine data type in column {col_id}: {column}")
+                        continue
+
+                    if attrib_dt not in get_attribute_data_types():
+                        errors.append(f"Data type \"{attrib_dt}\" unsupported in this blender version in column {col_id}: {column}")
+                        continue
+
+                    
+                    # remove
+                    column = column.replace('(', "")
+                    column = column.replace(')', "")
+
+                    if column in obj.data.attributes:
+                        attribute = obj.data.attributes[column]
+                        if attribute.data_type != attrib_dt:
+                            errors.append(f"This attribute exists, but the data type is different: column {col_id}: {column}")
+                            continue
+                        elif attribute.domain != attrib_domain:
+                            errors.append(f"This attribute exists, but the domain is different: column {col_id}: {column}")
+                            continue
+                    else:
+                        if column == "":
+                            errors.append(f"Cannot create an attribute with empty name, column {col_id}")
+                            continue
+                        
+                        attribute = obj.data.attributes.new(name=column, type=attrib_dt, domain=attrib_domain)
+
+                    if attribute in excluded_attribute_names:
+                        if is_verbose_mode_enabled():
+                            print(f"Attribute on exclude list: {col_id} {column}")
+                        continue
+
+                    # Because this script can create many attributes quickly, blender might not update the data about
+                    # domains and data types fast enough to be accessible via .data_type and .domain
+                    # so this has to be passed through manually
+
+                    aset = {
+                        "attribute": attribute,
+                        "name": column, 
+                        "data_type": attrib_dt,
+                        "domain": attrib_domain
+                    }
+                    attribute_sets.append(aset)
+                    valid_columns.append(col_id)
+                    data_columns.append([])
+                    if is_verbose_mode_enabled():
+                        print(f'Identified column {col_id} as {column}, domain {attrib_domain}, data type {attrib_dt}')
+                
+                obj.data.update()
+            
+            else:
+                if not len(valid_columns):
+                    errors.append('No valid fields detected')
+                    return False, errors, 0
+                
+                for i, col_id in enumerate(valid_columns):
+                    attribute_set = attribute_sets[i]
+                    if is_verbose_mode_enabled():
+                        print(f"[COL {col_id}][ROW: {line-1}] Reading data for attribute {attribute_set['name']}, domain {attribute_set['domain']}, data type {attribute_set['data_type']}")
+                    
+                    cast_type = static_data.attribute_data_types[attribute_set['data_type']].cast_type
+                    
+                    data = row[col_id]
+                    if data == "" and cast_type is not string:
+                        continue
+
+                    try:
+                        if cast_type is not tuple:
+                            data_columns[i].append(cast_type(data))
+                        else:
+                            if type(literal_eval(data)) != cast_type:
+                                raise ValueError
+                            data_columns[i].append(literal_eval(data))
+                    except ValueError:
+                        errors.append(f"Cannot convert {data} from column {col_id}, row {line-1} to {cast_type}, using default value for this data type.")
+                        data_columns[i].append(get_attrib_default_value(attribute))
+
+
+
+        for i, attribute_set in enumerate(attribute_sets):
+            attribute = attribute_set['attribute']
+            input_data_len = len(data_columns[i])
+            storage_len = len(attribute.data)
+            if input_data_len < storage_len:
+                data_columns[i] += [get_attrib_default_value(attribute)] * (storage_len-input_data_len)
+            elif input_data_len > storage_len:
+                data_columns[i] = data_columns[i][:storage_len]
+
+            set_attribute_values(attribute, data_columns[i], bugbypass_data_type=attribute_set['data_type'], bugbypass_domain=attribute_set['domain'])
+
+
+
+
+    return True, errors, len(attribute_sets)
+
+
+def get_export_file_types_enum(self, context):
+    """Returns an enum entries list for user to select the export file format
+    """
+    l = []
+    for f in ['CSV']: #static_data.attribute_to_file_supported_formats:
+        l.append((f, static_data.attribute_to_file_supported_formats[f].friendly_name, static_data.attribute_to_file_supported_formats[f].description))
+    return l
+
+# UILIsts
+# ----------------------------------------------
 
 def refresh_attribute_UIList_elements():
         obj = bpy.context.active_object
@@ -2628,7 +2831,6 @@ def refresh_attribute_UIList_elements():
             el.domain_friendly_name = get_friendly_domain_name(attrib.domain, short=True)
             el.data_type = attrib.data_type
             el.data_type_friendly_name = get_friendly_data_type_name(attrib.data_type)
-
 
 def set_attribute_uilist_compatible_attribute_type(domain, data_type):
     """Updates elements in UIList to red-highlight attributes that do not have specified domain or data type 

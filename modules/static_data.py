@@ -18,6 +18,7 @@ import bpy
 from collections import namedtuple
 from . import etc
 from enum import Enum
+import string
 
 # Defines object data sourc,e
 ObjectDataSource = namedtuple("MeshDataSource", [
@@ -1162,7 +1163,8 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "geonodes_attribute_node_datatype",         # The name of the data type used in Named Attribute node in Geometry nodes. 'FLOAT', 'INT', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BOOLEAN', 'QUATERNION'
     "animnodes_attribute_node_datatype",        # The name of the data type used in Get Custom Attribute node in Animation nodes. ('INT', 'FLOAT', 'FLOAT2', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'BOOLEAN')
     "default_randomize_value_min",              # The suggested minimum random value for this datatype
-    "default_randomize_value_max"               # The suggested maximum random value for this datatype 
+    "default_randomize_value_max",              # The suggested maximum random value for this datatype 
+    "cast_type"                                 # The type to cast the value to to ensure it is valid
 ])
 
 # Defines all supported mesh data types
@@ -1181,7 +1183,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT",
         animnodes_attribute_node_datatype="FLOAT",
         default_randomize_value_min=0.0,
-        default_randomize_value_max=1.0
+        default_randomize_value_max=1.0,
+        cast_type=float
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1197,7 +1200,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="INT",
         animnodes_attribute_node_datatype="INT",
         default_randomize_value_min=0,
-        default_randomize_value_max=100
+        default_randomize_value_max=100,
+        cast_type=int
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1213,7 +1217,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="INT",
         animnodes_attribute_node_datatype="INT",
         default_randomize_value_min=-127,
-        default_randomize_value_max=128
+        default_randomize_value_max=128,
+        cast_type=int
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1229,7 +1234,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
         animnodes_attribute_node_datatype="FLOAT_VECTOR",
         default_randomize_value_min=(0,0,0),
-        default_randomize_value_max=(1,1,1)
+        default_randomize_value_max=(1,1,1),
+        cast_type=tuple
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1245,7 +1251,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT_COLOR",
         animnodes_attribute_node_datatype="FLOAT_COLOR",
         default_randomize_value_min=(0.0,0.0,0.0,1.0),
-        default_randomize_value_max=(1.0,1.0,1.0,1.0)
+        default_randomize_value_max=(1.0,1.0,1.0,1.0),
+        cast_type=tuple
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1261,7 +1268,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT_COLOR",
         animnodes_attribute_node_datatype="BYTE_COLOR",
         default_randomize_value_min=(0.0,0.0,0.0,1.0),
-        default_randomize_value_max=(1.0,1.0,1.0,1.0)
+        default_randomize_value_max=(1.0,1.0,1.0,1.0),
+        cast_type=tuple
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1277,7 +1285,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="",
         animnodes_attribute_node_datatype="",
         default_randomize_value_min=5, # used as length
-        default_randomize_value_max=10
+        default_randomize_value_max=10,
+        cast_type=str
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1293,7 +1302,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="BOOLEAN",
         animnodes_attribute_node_datatype="BOOLEAN",
         default_randomize_value_min=False,
-        default_randomize_value_max=True
+        default_randomize_value_max=True,
+        cast_type=bool
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1309,7 +1319,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
         animnodes_attribute_node_datatype="FLOAT2",
         default_randomize_value_min=(0.0,0.0),
-        default_randomize_value_max=(1.0,1.0)
+        default_randomize_value_max=(1.0,1.0),
+        cast_type=tuple
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1325,7 +1336,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="FLOAT_VECTOR",
         animnodes_attribute_node_datatype="FLOAT2",
         default_randomize_value_min=(0,0),
-        default_randomize_value_max=(100,100)
+        default_randomize_value_max=(100,100),
+        cast_type=tuple
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1341,7 +1353,8 @@ attribute_data_types = {
         geonodes_attribute_node_datatype="QUATERNION",
         animnodes_attribute_node_datatype="",
         default_randomize_value_min=(-1.0,-1.0,-1.0,-1.0),
-        default_randomize_value_max=(1.0,1.0,1.0,1.0)
+        default_randomize_value_max=(1.0,1.0,1.0,1.0),
+        cast_type=tuple
     ),
 }
 

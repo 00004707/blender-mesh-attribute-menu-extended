@@ -88,6 +88,7 @@ classes = [
     etc.MAMEReportIssue,
     gui.MasksManagerPanel,
     ops.AttributesToFile,
+    ops.AttributesFromFile
     
 ]
 

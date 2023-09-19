@@ -165,6 +165,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
     self.layout.operator('mesh.attribute_to_file', icon='FILE_NEW')
+    self.layout.operator('mesh.attribute_from_file', icon='FILEBROWSER')
 
 def vertex_groups_context_menu_extension(self,context):
     """
@@ -377,6 +378,10 @@ class MasksManagerPanel(bpy.types.Panel):
 
 
 class ATTRIBUTE_UL_attribute_multiselect_list(bpy.types.UIList):
+    """
+    Multi-selection list of attributes, with tickboxes, data types and domains on the list entries.
+    Supports filtering and reordering
+    """
 
     name_filter: bpy.props.StringProperty(name="Name", default="")
 
