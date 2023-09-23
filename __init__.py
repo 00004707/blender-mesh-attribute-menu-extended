@@ -128,6 +128,7 @@ classes += [
     quick_ops.QuickUVMapToAttribute,
     quick_ops.QuickFaceMapAssignmentToAttribute,
     quick_ops.QuickFaceMapIndexToAttribute,
+    quick_ops.QuickSelectedInEditModeToSculptMask
 ]
 
 def register():

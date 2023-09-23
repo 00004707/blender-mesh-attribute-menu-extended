@@ -551,6 +551,26 @@ class QuickActiveAttributeToSculptMask(bpy.types.Operator):
         args['enum_expand_sculpt_mask_mode'] = 'REPLACE'
         return bpy.ops.mesh.attribute_convert_to_mesh_data('EXEC_DEFAULT', **args)
 
+class QuickSelectedInEditModeToSculptMask(bpy.types.Operator):
+    bl_idname = "mesh.selected_in_edit_mode_to_sculpt_mode_mask"
+    bl_label = "Mask from Edit Mode Selection (slow)"
+    bl_description = "Converts selected domains in edit mode to mask"
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        return sculpt_facemap_poll(self, context)
+
+    def execute(self, context):
+        obj = context.active_object
+        vals = np.zeros(len(obj.data.vertices), dtype=np.int)
+        
+        for i in func.get_mesh_selected_domain_indexes(obj, 'POINT'):
+            vals[i] = 1.0
+        func.set_mesh_data(obj, "TO_SCULPT_MODE_MASK", None, raw_data=vals, expand_sculpt_mask_mode='EXPAND', normalize_mask=True, invert_sculpt_mask=False)
+        obj.data.update()
+        return {'FINISHED'}
+
 # Quick Face Sets
 
 class QuickFaceSetsToAttribute(bpy.types.Operator):

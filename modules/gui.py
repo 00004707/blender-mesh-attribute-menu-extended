@@ -275,6 +275,7 @@ def sculpt_mode_mask_menu_extension(self, context):
         self.layout.separator()
         self.layout.operator('mesh.attribute_quick_from_current_sculpt_mask', icon='MESH_DATA') 
         self.layout.operator('mesh.attribute_quick_sculpt_mask_from_active_attribute', icon='MOD_MASK')
+        self.layout.operator('mesh.selected_in_edit_mode_to_sculpt_mode_mask')
 
 def sculpt_mode_face_sets_menu_extension(self, context):
     """
@@ -354,6 +355,7 @@ class MasksManagerPanel(bpy.types.Panel):
         row = col.row(align=True)
         row.operator("mesh.mame_attribute_sculpt_mode_extend", text="Add", icon='ZOOM_IN')
         row.operator("mesh.mame_attribute_sculpt_mode_subtract", text="Subtract", icon='ZOOM_OUT')
+        col.operator('mesh.selected_in_edit_mode_to_sculpt_mode_mask', text="From Edit Mode Selection", icon='RESTRICT_SELECT_OFF')
         
         # Manage sub-menu
         row2 = col.row(align=True)
