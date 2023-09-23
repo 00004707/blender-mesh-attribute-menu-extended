@@ -22,6 +22,7 @@ import time
 # ------------------------------------------
 __addon_package_name__ = __package__.replace('.modules','')
 
+LARGE_MESH_VERTICES_COUNT = 500000
 # Exceptions
 # ------------------------------------------
 

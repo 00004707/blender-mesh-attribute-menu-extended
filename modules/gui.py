@@ -97,6 +97,16 @@ def attribute_assign_panel(self, context):
                         sub = sub.row(align=True)
                         sub.ui_units_x = 1
                         sub.prop(prop_group, "val_select_non_zero_toggle", text=f"NZ" if prop_group.val_select_non_zero_toggle else 'V', toggle=True)
+
+                        
+                        if len(ob.data.vertices) > etc.LARGE_MESH_VERTICES_COUNT:
+                            
+                            box = layout.box()
+                            col2 = box.column(align=True)
+                            r= col2.row()
+                            r.label(icon='ERROR', text="Warning")
+                            r.alert=True
+                            col2.label(text="Large amount of vertices - blender may freeze!")
                     
         else:
             if etc.get_preferences_attrib('debug_operators'):
@@ -368,15 +378,25 @@ class MasksManagerPanel(bpy.types.Panel):
         
         col.menu('VIEW3D_MT_select_test', text='Settings', text_ctxt='', translate=True, icon='SETTINGS')
 
+        
         # Show warning for multiresolution
         for mod in context.active_object.modifiers:
             if mod.type == 'MULTIRES':
                 box = col.box()
-                col = box.column(align=True)
-                r= col.row()
+                col2 = box.column(align=True)
+                r= col2.row()
                 r.label(icon='ERROR', text="Warning")
                 r.alert=True
-                col.label(text="Multiresolution is not-compatible")
+                col2.label(text="Multiresolution is not-compatible")
+                break
+
+        if len(context.active_object.data.vertices) > etc.LARGE_MESH_VERTICES_COUNT:
+            box = col.box()
+            col2 = box.column(align=True)
+            r= col2.row()
+            r.label(icon='ERROR', text="Warning")
+            r.alert=True
+            col2.label(text="HiPoly mesh - slow operatons")
 
 
 class ATTRIBUTE_UL_attribute_multiselect_list(bpy.types.UIList):
