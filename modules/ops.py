@@ -1522,19 +1522,7 @@ class ConvertToMeshData(bpy.types.Operator):
             func.set_attribute_uilist_compatible_attribute_type(self.convert_to_domain_enum, comp_datatype)
 
             # draw
-            col = row.column(align=True)
-            label_row = col.row()
-            sr = label_row.row()
-            sr.label(text="Name")
-            sr = label_row.row()
-            sr.scale_x = 0.5
-            sr.label(text="Domain")
-            sr = label_row.row()
-            sr.scale_x = .75
-            sr.label(text="Data Type")
-            gui_prop_group = context.window_manager.MAME_GUIPropValues
-            col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
-                          "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
+            etc.draw_multi_attribute_select_uilist(row)
 
             # Conversion warning
 

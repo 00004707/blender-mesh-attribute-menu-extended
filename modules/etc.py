@@ -516,3 +516,18 @@ class GenericBoolPropertyGroup(bpy.types.PropertyGroup):
     b_value: bpy.props.BoolProperty(name="Boolean", default=True)
     name: bpy.props.StringProperty(name="Name", default="")
     id: bpy.props.StringProperty(name="Identification String", default="")
+
+def draw_multi_attribute_select_uilist(layout):
+    col = layout.column(align=True)
+    label_row = col.row()
+    sr = label_row.row()
+    sr.label(text="Name")
+    sr = label_row.row()
+    sr.scale_x = 0.5
+    sr.label(text="Domain")
+    sr = label_row.row()
+    sr.scale_x = .85
+    sr.label(text="Data Type")
+    gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
+    col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
+                    "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
