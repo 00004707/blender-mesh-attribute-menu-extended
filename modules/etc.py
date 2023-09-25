@@ -300,7 +300,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
             ver_support = get_blender_support((4,0,0))
             row.enabled = ver_support
             row.prop(self, 'set_attribute_raw_quaterion', toggle=True)
-            row.label(text='Treat Quaternions as 4D Vectors' if ver_support else "Not supported in current blender version", icon='INFO')
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Treat Quaternions as 4D Vectors' if ver_support else "Not supported in current blender version", icon='INFO')
      
             row = col.row()
             row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
