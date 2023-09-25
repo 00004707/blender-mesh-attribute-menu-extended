@@ -14,7 +14,7 @@ bl_info = {
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
-    "warning": "",
+    "warning": "Release Candidate 1 (pre-release)",
     "doc_url": "https://github.com/00004707/blender-mesh-attribute-menu-extended",
     "category": "Interface",
     "support": "COMMUNITY",
