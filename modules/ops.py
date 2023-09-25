@@ -84,9 +84,10 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
         # Use bpy.ops.mesh_attribute_set()
         if (etc.get_blender_support((3,5,0))
-            and not (not prop_group.face_corner_spill and mesh_selected_modes[1])               # Face corner spill feature is not supported by the operator
-            and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None  # Strings are unsupported by this, oh well
-            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):               # Preferences toggle
+            and not (dt == 'QUATERNION' and etc.get_preferences_attrib("set_attribute_raw_quaterion"))      # Operator will make sure the values are a valid quaternion
+            and not (not prop_group.face_corner_spill and mesh_selected_modes[1])                               # Face corner spill feature is not supported by the operator
+            and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None               # Strings are unsupported by this, oh well
+            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):                                   # Preferences toggle
             
             etc.pseudo_profiler("OPS_START")
             
