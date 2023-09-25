@@ -87,8 +87,8 @@ classes = [
     etc.FakeFaceCornerSpillDisabledOperator,
     etc.MAMEReportIssue,
     gui.MasksManagerPanel,
-    ops.AttributesToFile,
-    ops.AttributesFromFile
+    ops.AttributesFromCSV,
+    ops.AttributesToCSV
     
 ]
 

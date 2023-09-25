@@ -174,7 +174,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
-    self.layout.operator('mesh.attribute_to_file', icon='FILE_NEW')
+    self.layout.operator('mesh.attribute_to_csv', icon='FILE_NEW')
     self.layout.operator('mesh.attribute_from_file', icon='FILEBROWSER')
 
 def vertex_groups_context_menu_extension(self,context):

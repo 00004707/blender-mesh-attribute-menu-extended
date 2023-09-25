@@ -2768,14 +2768,21 @@ class RandomizeAttributeValue(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
-class AttributesToFile(bpy.types.Operator):
-    bl_idname = "mesh.attribute_to_file"
-    bl_label = "Export..."
-    bl_description = "Exports attribute data to external file"
-    bl_options = {'REGISTER', 'UNDO'}
-    
+class AttributesToCSV(bpy.types.Operator):
+    bl_idname = "mesh.attribute_to_csv"
+    bl_label = "Export to CSV"
+    bl_description = "Exports attribute data to CSV file"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    # General
+
     filepath: bpy.props.StringProperty(name="File path", default="", description="File path", subtype="FILE_PATH")
     filename: bpy.props.StringProperty(name="File name", default="Attributes", description="File Name", subtype="FILE_PATH")
+
+    b_dont_show_file_selector: bpy.props.BoolProperty(name="dont_show_file_selector", default=False)
+
+
+    # To CSV Options
 
     which_attributes_enum: bpy.props.EnumProperty(
         name="Export",
@@ -2784,7 +2791,7 @@ class AttributesToFile(bpy.types.Operator):
             ("ACTIVE", "Active", "Export active attribute to file"),
             ("ALL", "All", "Export all attributes to file"),
             ("BYTYPE", "In Domain", "Export all attributes stored in specific domain to file"),
-            ("SPECIFIC", "Specific", "Export specific attributes to file"),
+            ("SPECIFIC", "Multiple", "Export multiple attributes to file"),
         ],
         default="ALL"
     )
@@ -2797,17 +2804,121 @@ class AttributesToFile(bpy.types.Operator):
         items=func.get_attribute_domains_enum
     )
 
-    
-    file_type_enum: bpy.props.EnumProperty(
-        name="File Type",
-        description="Select an option",
-        items=func.get_export_file_types_enum
-    )
 
-    show_filetype_options = False
-
-    b_dont_show_file_selector: bpy.props.BoolProperty(name="dont_show_file_selector", default=False)
+    @classmethod
+    def poll(self, context):
+        if not context.active_object:
+            self.poll_message_set("No active object")
+            return False
+        elif not context.active_object.type == 'MESH':
+            self.poll_message_set("Selected object is not a mesh")
+            return False
+        elif context.active_object.data.attributes.active is None:
+            self.poll_message_set("No active attribute")
+            return False
+        elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
+            self.poll_message_set("Data type is not yet supported!")
+            return False
+        return True
     
+    def invoke(self, context, event):
+        func.refresh_attribute_UIList_elements()
+        func.configutre_attribute_uilist(False, False)
+        self.filename = bpy.context.active_object.name + "_mesh_attributes"
+        self.filepath = bpy.context.active_object.name + "_mesh_attributes"
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        obj = context.active_object
+        # Gather attributes
+
+        # all
+        if self.which_attributes_enum == 'ALL':
+            attributes = [attrib for attrib in obj.data.attributes]
+        
+        # filter by domain or data type
+        elif self.which_attributes_enum == 'BYTYPE':
+            attributes = [attrib for attrib in obj.data.attributes]
+            na = []
+            for attribute in attributes:
+                if attribute.domain == self.domain_filter:
+                    na.append(attribute)
+            attributes = na
+
+        # just active attribute
+        elif self.which_attributes_enum ==  "ACTIVE":
+            attributes = [func.get_active_attribute(obj)]
+
+        elif self.which_attributes_enum ==  "SPECIFIC":
+            gui_prop_group = context.window_manager.MAME_GUIPropValues
+            attributes = []
+            for a in [a for a in gui_prop_group.to_mesh_data_attributes_list if a.b_select]:
+                attributes.append(obj.data.attributes[a.attribute_name])
+
+        if not len(attributes):
+            self.report({'ERROR'}, f'No attributes to export with selected filters.')
+            return  {'CANCELLED'}
+
+        
+        try:
+            func.write_csv_attributes_file(self.filepath, obj, attributes, self.b_add_domain_and_data_type_to_title_row)
+        except PermissionError:
+            self.report({'ERROR'}, f'Permission denied to write to file \"{self.filepath}\"')
+            return {'CANCELLED'}
+        except OSError as exc:
+            self.report({'ERROR'}, f'System error: \"{str(exc)}\"')
+        
+        self.report({'INFO'}, f'File saved.')
+        return {'FINISHED'}
+
+    def draw(self, context):
+        obj = context.active_object
+        active_attribute = func.get_active_attribute(obj)
+        domain = active_attribute.domain
+        dt = active_attribute.data_type
+
+        # add enum checks
+
+        layout = self.layout
+        col = layout.column()
+
+            
+        # toggle between single, all, and specific
+        
+        col.label(text="Export")
+        row = col.row(align=True)
+        row.prop_enum(self, "which_attributes_enum", 'ACTIVE')
+        row.prop_enum(self, "which_attributes_enum", 'BYTYPE')
+        row.prop_enum(self, "which_attributes_enum", 'ALL')
+        row.prop_enum(self, "which_attributes_enum", 'SPECIFIC')
+
+        if self.which_attributes_enum == 'ACTIVE':
+            col.label(text=f"{active_attribute.name} will be exported.")
+
+        elif self.which_attributes_enum == 'ALL':
+            col.label(text=f"{str(len(obj.data.attributes))} attributes will be exported.")
+
+        elif self.which_attributes_enum == 'BYTYPE':
+            col.label(text="Export all stored in domain:")
+            row = col.row(align=True)
+            for domain in static_data.attribute_domains:
+                row.prop_enum(self, "domain_filter", domain)
+        
+        elif self.which_attributes_enum == 'SPECIFIC':
+            col.label(text="Export selected from list:")
+            etc.draw_multi_attribute_select_uilist(col)
+
+        col.label(text="")
+        col.label(text="Extra options")
+        col.prop(self, 'b_add_domain_and_data_type_to_title_row')
+
+        col.label(text="")
+        col.label(icon='INFO', text=f"Header row naming convention:")
+        if self.b_add_domain_and_data_type_to_title_row:
+            col.label(icon="LAYER_ACTIVE", text=f"AttributeName(DATATYPE)(DOMAIN)")
+        else:
+            col.label(icon="LAYER_ACTIVE", text=f"AttributeName")
 
     img_width: bpy.props.IntProperty(name="Width", default=1024, min=2, max=32768, step=2)
     img_height: bpy.props.IntProperty(name="Height", default=1024, min=2, max=32768, step=2)
@@ -3897,9 +4008,9 @@ class AttributesToImage(bpy.types.Operator):
             ssr.ui_units_x = vector_subelements_x_units
             ssr.prop_tabs_enum(self, 'source_attribute_3_vector_element_enum')
             
-class AttributesFromFile(bpy.types.Operator):
+class AttributesFromCSV(bpy.types.Operator):
     bl_idname = "mesh.attribute_from_file"
-    bl_label = "Import..."
+    bl_label = "Import from CSV"
     bl_description = "Imports attribute data from external file"
     bl_options = {'REGISTER', 'UNDO'}
 
