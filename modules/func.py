@@ -424,7 +424,7 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False, b
         raise etc.MeshDataWriteException("set_attribute_values", f"Input value is NONE")
 
 
-    is_list = type(value) == list or type(value) == np.ndarray
+    is_list = type(value) in [list, np.ndarray]
 
     # Foreach_set
     # Note: Strings do not support FOREACH_SET
@@ -464,12 +464,11 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
                 storage = value
             
         else:
-            storage = np.repeat(value, len(attribute.data))
+            storage = np.tile(value, len(attribute.data))
         etc.pseudo_profiler("STORAGE_CREATED")
         
         attribute.data.foreach_set(prop_name, storage)
         etc.pseudo_profiler("FOREACH SET DONE")
-
     # on selected indexes mode
     else:
         if is_verbose_mode_enabled():
@@ -481,7 +480,9 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
         foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
         if len(on_indexes) > len(attribute.data)*foreach_get_from and dt != 'STRING':
             etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
-            prop_name = get_attrib_value_propname(data_type=dt)
+            if is_verbose_mode_enabled():
+                print(f"Using foreach set (on selected indexes)")
+            prop_name = get_attribute_value_propname(data_type=dt)
             
             if is_list and len(value) < len(on_indexes):
                 raise etc.MeshDataWriteException("set_attribute_values", f"Value input list is shorter [{len(value)}] than index list that the values are supposed to be set on [{len(on_indexes)}]")
@@ -502,6 +503,8 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
         # For loop for < 25% mesh selected
         else:
             etc.pseudo_profiler("SET_VAL_ON_SELECTION_START")
+            if is_verbose_mode_enabled():
+                print(f"Using assign by value")
             if prop == "vector":
                 for i, id in enumerate(on_indexes):
                     attribute.data[id].vector = value[i] if is_list else value
