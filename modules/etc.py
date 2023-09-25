@@ -21,7 +21,6 @@ import time
 # Constants
 # ------------------------------------------
 __addon_package_name__ = __package__.replace('.modules','')
-
 LARGE_MESH_VERTICES_COUNT = 500000
 
 
@@ -178,6 +177,7 @@ class MAMEReportIssue(bpy.types.Operator):
 
 # Profiler
 # ------------------------------
+# aka printer with timestamps
 
 profiler_timestamp_start = 0
 
@@ -227,6 +227,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     # General
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
     attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
+    set_attribute_raw_quaterion: bpy.props.BoolProperty(name="Set Raw Quaternions Value", description="If you want to use quaternion attributes as 4D vectors instead of quaternions, enable this", default=True)
     select_attribute_precise_facecorners: bpy.props.BoolProperty(name="Precise Face Corner Select (Slow)", description="If you want to select individual edges that identify a face corner, this has to be enabled. Not requried for face painting", default=False)
 
     # Specials
@@ -237,7 +238,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     extra_context_menu_uvmaps: bpy.props.BoolProperty(name="UVMap Menu", description="Adds extra operators to UVMap Menu", default=True)
     extra_context_menu_fm: bpy.props.BoolProperty(name="Face Maps Menu", description="Adds extra operators to Face Maps Menu", default=True)
     extra_context_menu_materials: bpy.props.BoolProperty(name="Materials Menu", description="Adds extra operators to Materials Menu", default=True)
-    
+    extra_context_menu_color_attributes: bpy.props.BoolProperty(name="Color Attributes Menu", description="Adds extra operators to Color Attributes Menu", default=True)
     # Context
     
     extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
@@ -263,6 +264,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
     set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
+    bakematerial_donotdelete: bpy.props.BoolProperty(name="bakematerial_donotdelete", description="", default=False)
 
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
@@ -293,6 +295,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
+            
+            row = col.row()
+            ver_support = get_blender_support((4,0,0))
+            row.enabled = ver_support
+            row.prop(self, 'set_attribute_raw_quaterion', toggle=True)
+            row.label(text='Treat Quaternions as 4D Vectors' if ver_support else "Not supported in current blender version", icon='INFO')
      
             row = col.row()
             row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
@@ -372,6 +380,25 @@ class AddonPreferences(bpy.types.AddonPreferences):
             # subrow.label(text='3D View > N-Panel > Edit', icon='INFO')
 
             # row = col.row()
+            # row.prop(self, 'extra_context_menu_object', toggle=True)
+            # subrow = row.row()
+            # subrow.label(text='3D View Menu Bar > Object', icon='INFO')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
+
+            row = col.row()
+            row.prop(self, 'extra_context_menu_face_menu', toggle=True)
+            subrow = row.row()
+            subrow.label(text='3D View Menu Bar > Face', icon='INFO')
+
         def draw_quick(layout):
             titlebox = layout.box()
             titlebox.label(text="Quick Buttons - Extra buttons that repeat last actions or other")
@@ -425,6 +452,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'verbose_mode')
                 box.prop(self, 'debug_operators')
                 box.prop(self, 'pseudo_profiler')
+                box.prop(self, 'bakematerial_donotdelete')
                 box.prop(self, 'disable_bpy_set_attribute')
                 box.prop(self, 'disable_version_checks')
                 box.prop(self, 'set_algo_tweak')
