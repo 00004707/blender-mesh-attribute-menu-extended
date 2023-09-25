@@ -227,6 +227,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     # General
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
     attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
+    select_attribute_precise_facecorners: bpy.props.BoolProperty(name="Precise Face Corner Select (Slow)", description="If you want to select individual edges that identify a face corner, this has to be enabled. Not requried for face painting", default=False)
 
     # Specials
     add_set_attribute: bpy.props.BoolProperty(name="Add \"Set Attribute\" operator", description="Set Attribute operator in dropdown menu", default=True)
@@ -292,6 +293,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
+     
+            row = col.row()
+            row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
+            row.label(text='Select face corner edges', icon='INFO')
+       
+            
 
         def draw_specials(layout):
             titlebox = layout.box()

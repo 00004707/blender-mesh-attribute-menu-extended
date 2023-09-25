@@ -1371,33 +1371,52 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
             raise Exception(e)
 
     else:
-        edge_indexes_to_select = []
-
-        for cornerindex in indexes:
-            loop = obj.data.loops[cornerindex]
-
-            # get the face index that has this corner
-            faceindex = -1
-            for face in bm.faces:
-                if cornerindex in [loop.index for loop in face.loops]:
-                    faceindex = face.index
+        if etc.get_preferences_attrib("select_attribute_precise_facecorners"):
+            edge_indexes_to_select = [] 
             
-            # get edges that are connected to vertex assinged to this corner
-            edges = bm.verts[loop.vertex_index].link_edges
+            for cornerindex in indexes:
+                loop = obj.data.loops[cornerindex]
+
+                # get the face index that has this corner
+                faceindex = -1
+                for face in bm.faces:
+                    if cornerindex in [loop.index for loop in face.loops]:
+                        faceindex = face.index
+                
+                # get edges that are connected to vertex assinged to this corner
+                edges = bm.verts[loop.vertex_index].link_edges
+                if is_verbose_mode_enabled():
+                    print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
+                    print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
+                
+                # get edges that are in face index of this corner
+                for edge in edges:
+                    if edge in bm.faces[faceindex].edges:
+                        edge_indexes_to_select.append(edge.index)
+            
+            bm.free()
             if is_verbose_mode_enabled():
-                print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
-                print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
-            
-            # get edges that are in face index of this corner
-            for edge in edges:
-                if edge in bm.faces[faceindex].edges:
-                    edge_indexes_to_select.append(edge.index)
+                print(f"Filtered edges of the corner are {edge_indexes_to_select}")
+            set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
         
-        bm.free()
-        if is_verbose_mode_enabled():
-            print(f"Filtered edges of the corner are {edge_indexes_to_select}")
-        set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
+        # The fast method
+        elif len(indexes):
+            mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
 
+            storage = np.zeros(len(obj.data.loops), dtype=np.int)
+
+            # User is in edit mode with edge or face selection mode
+            if mesh_selected_modes[1] or mesh_selected_modes[2]:
+                obj.data.loops.foreach_get('edge_index', storage)
+                storage = np.take(storage, indexes)
+                set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', storage, state, selection)
+
+            # Any other mode 
+            else:
+                obj.data.loops.foreach_get('vertex_index', storage)
+                storage = np.take(storage, indexes)
+                set_selection_or_visibility_of_mesh_domain(obj, 'POINT', storage, state, selection)
+                
 def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwrite = False, **kwargs):
     """Sets mesh data from selected attribute
 
