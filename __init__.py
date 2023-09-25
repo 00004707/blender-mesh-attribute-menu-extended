@@ -10,7 +10,7 @@ If not, see <https://www.gnu.org/licenses/>.
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (0, 5, 0),
+    "version": (1, 0, 0),
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
@@ -47,7 +47,7 @@ else:
 Attribute access is prone to unexpected behaviour.
 Using operators, changing context, object mode and possibly other actions DESTROY the variables holding the attribute
 ie. using a = obj.data.attributes.active, and then using some operator might change the attribute that you're working on!
-Please use funciton in func file to set active attribute, as setting the obj.data.attributes.active can be broken in some scenarios
+Please use funciton in func file to set and get active attribute, as setting the obj.data.attributes.active can be broken in some scenarios
 
 """
 
@@ -88,6 +88,7 @@ classes = [
     etc.MAMEReportIssue,
     gui.MasksManagerPanel,
     ops.AttributesFromCSV,
+    ops.AttributesToImage,
     ops.AttributesToCSV
     
 ]
@@ -151,6 +152,7 @@ def register():
         # Per-object Property Values
         bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
         bpy.types.WindowManager.MAME_GUIPropValues = bpy.props.PointerProperty(type=variable_data.MAME_GUIPropValues)
+        bpy.types.WindowManager.mame_image_ref = bpy.props.PointerProperty(name='Image', type=bpy.types.Image)
 
         # GUI Extensions
         bpy.types.DATA_PT_mesh_attributes.append(gui.attribute_assign_panel)
@@ -167,6 +169,7 @@ def register():
         bpy.types.DATA_PT_uv_texture.append(gui.uvmaps_context_menu_extension)
         if bpy.app.version < (4,0,0):
             bpy.types.DATA_PT_face_maps.append(gui.facemaps_context_menu_extension)
+        bpy.types.MESH_MT_color_attribute_context_menu.append(gui.color_attributes_menu_extension)
 
 def unregister():
     if bpy.app.version < req_bl_ver:
@@ -190,11 +193,18 @@ def unregister():
             bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
             if bpy.app.version < (4,0,0):
                 bpy.types.DATA_PT_face_maps.remove(gui.facemaps_context_menu_extension)
+            bpy.types.MESH_MT_color_attribute_context_menu.remove(gui.color_attributes_menu_extension)
 
             for c in classes:
                 bpy.utils.unregister_class(c)
+
+            del bpy.types.Object.MAME_PropValues
+            del bpy.types.WindowManager.MAME_GUIPropValues
+            del bpy.types.WindowManager.mame_image_ref
         except Exception:
             pass
+
+        
 
 
 

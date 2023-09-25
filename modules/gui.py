@@ -89,6 +89,7 @@ def attribute_assign_panel(self, context):
 
                         #Selection buttons
                         sub = col.row(align=True)
+                        sub.enabled = len(context.active_object.data.vertices) < etc.LARGE_MESH_VERTICES_COUNT or prop_group.val_enable_slow_ops
                         sub.operator_context = 'EXEC_DEFAULT'
                         sub.operator("mesh.attribute_select_button", text=f"Select")
                         sub.operator("mesh.attribute_deselect_button", text=f"Deselect")
@@ -107,6 +108,9 @@ def attribute_assign_panel(self, context):
                             r.label(icon='ERROR', text="Warning")
                             r.alert=True
                             col2.label(text="Large amount of vertices - blender may freeze!")
+                            r2 = col2.row()
+                            r2.label(text='Allow slow operators')
+                            r2.prop(prop_group, 'val_enable_slow_ops', toggle=True, text="Enable")
                     
         else:
             if etc.get_preferences_attrib('debug_operators'):
@@ -174,6 +178,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
+    self.layout.operator('mesh.attribute_to_image', icon="TEXTURE")
     self.layout.operator('mesh.attribute_to_csv', icon='FILE_NEW')
     self.layout.operator('mesh.attribute_from_file', icon='FILEBROWSER')
 
@@ -229,6 +234,12 @@ def facemaps_context_menu_extension(self,context):
         self.layout.operator_context = "INVOKE_DEFAULT"
         self.layout.operator('mesh.attribute_quick_from_face_map', icon='MESH_DATA')
         self.layout.operator('mesh.attribute_quick_from_face_map_index', icon='MESH_DATA')
+
+def color_attributes_menu_extension(self, context):
+    if etc.get_preferences_attrib('extra_context_menu_color_attributes'):
+        self.layout.separator()
+        self.layout.operator_context = "INVOKE_DEFAULT"
+        self.layout.operator('mesh.color_attribute_quick_bake', icon='OUTPUT')
 
 # Edit Mode
 # -----------------------------------------

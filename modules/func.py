@@ -191,7 +191,7 @@ def get_attribute_default_value(attribute = None, datatype:str = None):
     else:
         raise etc.MeshDataReadException('get_attrib_default_value', f"Data type {datatype} is unsupported.")
 
-def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
+def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute", check_attributes = False):
     """Gets safe attribute name to avoid crashes in some instances.
     ie. Naming attribute the same name as Vertex Group can crash blender.
 
@@ -207,11 +207,12 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute"):
             if is_verbose_mode_enabled():
                 print(f"{attribute_name} exists in vertex groups! Renaming")
             attribute_name += " " + suffix
-            
-    while(attribute_name in obj.data.attributes):
-            if is_verbose_mode_enabled():
-                print(f"{attribute_name} exists in attributes! Renaming")
-            attribute_name += " " + suffix
+    
+    if check_attributes:
+        while(attribute_name in obj.data.attributes):
+                if is_verbose_mode_enabled():
+                    print(f"{attribute_name} exists in attributes! Renaming")
+                attribute_name += " " + suffix
             
     if attribute_name.startswith('.'):
         if is_verbose_mode_enabled():
@@ -633,19 +634,16 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
     """
 
     if domain == 'POINT': 
-        #return [v for v in obj.data.vertices if v.select]
         storage = np.zeros(len(obj.data.vertices), dtype=np.bool)
         obj.data.vertices.foreach_get('select', storage)
         return np.arange(0, len(obj.data.vertices))[storage]
     
     elif domain == 'EDGE': 
-        #return [e for e in obj.data.edges if e.select]
         storage = np.zeros(len(obj.data.edges), dtype=np.bool)
         obj.data.edges.foreach_get('select', storage)
         return np.arange(0, len(obj.data.edges))[storage]
     
     elif domain == 'FACE': 
-        #return [f for f in obj.data.polygons if f.select]
         storage = np.zeros(len(obj.data.polygons), dtype=np.bool)
         obj.data.polygons.foreach_get('select', storage)
         return np.arange(0, len(obj.data.polygons))[storage]
@@ -760,17 +758,20 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
         # there has to be an easier way, what the hell is this
 
     if vector_convert_to_srgb:
-        compare_value = linear_to_srgb(compare_value)
-
-    cmp_val_srgb = linear_to_srgb(compare_value, False)
+        compare_value = linear_to_srgb(compare_value, False)
 
     indexes = []
     if is_verbose_mode_enabled():
+        
         print(f"""Get filtered indexes with settings:
 {condition} to {compare_value}, 
 case sensitive {case_sensitive_string}
-convert compare value to srgb {vector_convert_to_srgb} (SRGB VAL: {cmp_val_srgb})
-on dataset (len {len(source_data)}) {source_data}""")
+convert compare value to srgb {vector_convert_to_srgb}""")
+        if vector_convert_to_srgb:
+            srgbs = [linear_to_srgb(i, return_float=False) for i in source_data]
+            print(f"on dataset (int) (len {len(source_data)}) {srgbs}""")
+        else:
+            print(f"on dataset (float) (len {len(source_data)}) {source_data}""")
 
     #booleans
     if type(source_data[0]) is bool:
@@ -785,7 +786,7 @@ on dataset (len {len(source_data)}) {source_data}""")
     elif type(source_data[0]) in [int, float, np.int32, np.float, np.float64]:
         for i, data in enumerate(source_data):
             if vector_convert_to_srgb:
-                data = linear_to_srgb(data)
+                data = linear_to_srgb(data, False)
             if condition == "EQ" and data == compare_value: #equal
                 indexes.append(i)
 
@@ -1440,6 +1441,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
         * invert_sculpt_mask        boolean, 1-clamped sculpt mask val
         * expand_sculpt_mask_mode   enum REPLACE EXPAND SUBTRACT
         * normalize_mask            boolean
+        * raw_data                  list, if attribute is none this can set the values directly
 
 
     Raises:
@@ -1463,11 +1465,15 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
         data.foreach_set(prop, values)
         return True
 
-    a_vals = get_attrib_values(src_attrib, obj)
+    if 'raw_data' in kwargs:
+        a_vals = kwargs['raw_data']
+    else:
+        a_vals = get_attribute_values(src_attrib, obj)
     if is_verbose_mode_enabled():
         print(f"Setting mesh data {data_target} from {src_attrib}, \nvalues: {a_vals}, \nkwargs: {kwargs}, \ncustom name: {new_data_name}")
     
-    src_attrib_name = src_attrib.name # for setting active attribute ONLY
+    if 'raw_data' not in kwargs:
+        src_attrib_name = src_attrib.name # for setting active attribute ONLY
 
     # QUICK BOOLEANS
     # -----------------------------
@@ -1520,14 +1526,15 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
 
         # case: no mask layer, user never used mask on this mesh
         if not len(obj.data.vertex_paint_masks):
-            src_attrib_name = src_attrib.name
             # I have not found a way to create a mask layer without using bmesh, so here it goes
             bm = bmesh.new()
             bm.from_mesh(obj.data)
             bm.verts.layers.paint_mask.verify()
             bm.to_mesh(obj.data)
             bm.free()
-            src_attrib = obj.data.attributes[src_attrib_name] # !important
+            
+            if 'raw_data' not in kwargs:
+                src_attrib = obj.data.attributes[src_attrib_name] # !important
         
         if kwargs['invert_sculpt_mask']:
             for i in range(0, len(a_vals)):
@@ -1553,7 +1560,7 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
         
     # TO VERTEX GROUP
     elif data_target == "TO_VERTEX_GROUP":
-        name = get_safe_attrib_name(obj, new_data_name, 'Group')
+        name = get_safe_attrib_name(obj, new_data_name, 'Group', check_attributes=True)
         if name in obj.vertex_groups and overwrite:
             vg = obj.vertex_groups[name]
         else:
@@ -1811,6 +1818,7 @@ def get_all_mesh_data_indexes_of_type(obj,data_type):
     
     else:
         raise etc.GenericFunctionParameterError("get_all_mesh_data_indexes_of_type", f"Data type unsupported?: {data_type}")
+
 
 # String Getters
 # ------------------------------------------
@@ -2106,6 +2114,8 @@ def get_source_data_enum(self, context, include_separators=True):
         elif "INSERT_NEWLINE" in item and include_separators:
              e.append(("","","","",i))
         else:
+            if static_data.object_data_sources[item] is None:
+                continue
             minver = static_data.object_data_sources[item].min_blender_ver
             unsupported_from = static_data.object_data_sources[item].unsupported_from_blender_ver
 
@@ -2262,7 +2272,6 @@ def get_attribute_domains():
             l.append(item)
     return l
 
-
 def get_attribute_invert_modes(self, context):
     """Returns a list of available modes to invert the active attribute, as enum entries.
 
@@ -2337,7 +2346,10 @@ def get_sculpt_mode_attributes_enum(self, context):
                     break
             return attrs
 
-def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POINT']):
+def get_texture_coordinate_attributes_enum(self, context):
+    return get_attributes_of_type_enum(self, context, ['FLOAT2', 'INT32_2D', 'FLOAT_VECTOR'], exclude_names=['position'])
+
+def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POINT'], exclude_names = [], case_sensitive_name_filter = True):
     """Gets all attributes by data type to use in enum dropdown.
 
     Args:
@@ -2361,7 +2373,8 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
 
     for attrib in obj.data.attributes:
         if attrib.domain in domains and attrib.data_type in data_types:
-            enum_entries.append((attrib.name, attrib.name, f"Use {attrib.name} as a source attribute"))
+            if (attrib.name not in exclude_names and not case_sensitive_name_filter) or (attrib.name.upper() not in [en.upper() for en in exclude_names] and case_sensitive_name_filter):
+                enum_entries.append((attrib.name, attrib.name, f"Use {attrib.name} as a source attribute"))
     
     if not len(enum_entries):
         return [inv_data_entry]
@@ -2390,6 +2403,116 @@ def get_attribute_comparison_conditions_enum(data_type):
     for mode in static_data.attribute_data_types[data_type].supported_comparison_modes:
         l.append(static_data.attribute_comparison_modes[mode])
     return l
+
+def get_image_channel_datasource_enum(self, context, index):
+    obj = context.active_object
+    
+    sourcetype = getattr(self, f'source_attribute_{index}_datasource_enum')
+    
+    l = []
+
+    # enum dirty fix
+    if sourcetype == "":
+        setattr(self, f'source_attribute_{index}_datasource_enum', 0)
+        return []
+
+    l.append(("NULL", "None (Leave as is)", "Leave initial value in this channel intact"))
+    
+    if sourcetype == 'ATTRIBUTE':
+        for a in obj.data.attributes:
+            l.append((a.name, a.name, f"Use value from {a.name}"))
+    else:
+        for img in bpy.data.images:
+            l.append((img.name, img.name, f"Use image channel value from {img.name}"))       
+    return l
+
+def get_image_channel_datasource_type_enum(self, context):
+    l = []
+    l.append(("ATTRIBUTE", "Attribute", "Leave initial value in this channel intact"))
+    l.append(("IMAGE", "Image", "Leave initial value in this channel intact"))
+    return l
+
+def get_image_channel_datasource_vector_subelement_enum(attr_or_tex, texture= False, individual_channels_only = False, alpha_allowed = False):
+    
+    # 0 = R X
+    # 1 = G Y
+    # 2 = B Z
+    # 3 = A W
+    # 4 = XY
+    # 5 = RGB XYZ
+    # 6 = RGBA XYZW
+
+    l = []
+
+    if texture:
+        if attr_or_tex.alpha_mode != 'NONE' and alpha_allowed and not individual_channels_only:
+            l.append(("6", 'RGBA', f"Use RGBA subelements"))
+
+        if not individual_channels_only:
+            l.append(("5", 'RGB', f"Use RGB subelements"))
+
+        l.append(("0", 'R', f"Use R subelement"))
+        l.append(("1", 'G', f"Use G subelement"))
+        l.append(("2", 'B', f"Use B subelement"))
+        if attr_or_tex.alpha_mode != 'NONE':
+            l.append(("3", 'A', f"Use A subelement"))
+        return l
+    else:
+        gui_proptype = static_data.attribute_data_types[attr_or_tex.data_type].gui_prop_subtype
+        if gui_proptype not in [static_data.EDataTypeGuiPropType.COLOR, static_data.EDataTypeGuiPropType.VECTOR]:
+            return []
+        
+        vec_el = static_data.attribute_data_types[attr_or_tex.data_type].vector_subelements_names
+
+        # get xyzw
+        if len(vec_el) == 4 and not individual_channels_only and alpha_allowed:
+            x = str(vec_el[0]+vec_el[1]+vec_el[2]+vec_el[3])
+            l.append(("6", x, f"Use {x} subelements"))
+
+        # get xyz
+        if len(vec_el) >= 3 and not individual_channels_only:
+            x = str(vec_el[0]+vec_el[1]+vec_el[2])
+            l.append(("5", x, f"Use {x} subelements"))
+
+        # xy for uvmaps
+        if len(vec_el) == 2 and not individual_channels_only:
+            x = str(vec_el[0]+vec_el[1])
+            l.append(("4", x, f"Use {x} subelements"))
+
+        # get x,y,z,w
+        for i, el in enumerate(vec_el):
+            l.append((str(i), el, f"Use {el} subelement"))
+
+        return l
+
+def get_image_channel_datasource_vector_element_enum(self, context, index, alpha_allowed):
+    """The function that detects which of the the XYZW XYZ X Y Z  channel of the attribute 
+    to bake to texture should be shown in GUI.
+
+    Can't put it in the operator
+
+    Returns:
+        enum list
+    """
+    src_attribute_enum = getattr(self, f'source_attribute_{index}_enum')
+    
+    # enum dirty fix
+    if src_attribute_enum == "":
+        setattr(self, f'source_attribute_{index}_enum', 0)
+        return []
+    elif src_attribute_enum == 'NULL':
+        return []
+    
+
+    
+    is_texture = getattr(self, f'source_attribute_{index}_datasource_enum') == 'IMAGE'
+    only_subelements = self.image_channels_type_enum == 'ALL' 
+    if is_texture:
+        attr_or_img = bpy.data.images[src_attribute_enum]
+    else:
+        attr_or_img = context.active_object.data.attributes[src_attribute_enum]
+        
+    return get_image_channel_datasource_vector_subelement_enum(attr_or_img, is_texture, only_subelements, alpha_allowed)
 
 
 # Multi-use operator poll functions
@@ -2593,7 +2716,8 @@ def get_node_tree_parent(node_tree, tree_type = None):
     else: 
         return None
 
-# Exporting related
+
+# CSV Export related
 # ----------------------------------------------
  
 def write_csv_attributes_file(filepath:str, obj, attributes: list, add_domain_and_data_type_to_title_row = True):
@@ -2828,14 +2952,6 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
     return True, errors, len(attribute_sets)
 
 
-def get_export_file_types_enum(self, context):
-    """Returns an enum entries list for user to select the export file format
-    """
-    l = []
-    for f in ['CSV']: #static_data.attribute_to_file_supported_formats:
-        l.append((f, static_data.attribute_to_file_supported_formats[f].friendly_name, static_data.attribute_to_file_supported_formats[f].description))
-    return l
-
 # UILIsts
 # ----------------------------------------------
 
@@ -2874,92 +2990,22 @@ def configutre_attribute_uilist(enable_same_as_target_filter_btn: bool,
     
     gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
     gui_prop_group.b_attributes_uilist_show_same_as_target_filter = enable_same_as_target_filter_btn
-    gui_prop_group.b_attributes_uilist_highlight_different_attrib_types = enable_incompatible_type_highlight    """Returns an RGB values tuple of pixel at index
+    gui_prop_group.b_attributes_uilist_highlight_different_attrib_types = enable_incompatible_type_highlight
 
-    Args:
-        pixel_buffer (list): The pixel buffer to sample
-        image (ref): Reference to the image that the pixel buffer was created from
-        index (int): The index to sample the value
-        subpixel (int, optional): Whether to sample the subpixel R/G/B/A float instead of RGBA tuple. Defaults to None.
+
+# Rendering & Images
+# ----------------------------------------------
+
+def get_cycles_available():
+    """Checks if the Cycles Render Engine is enabled and available
 
     Returns:
-        tuple. float or None: None if out of range, tuple if subpixel is none, float if subpixel is in [0,1,2,3]
+        bool: status
     """
-    # ignore pixels out of range
-    if image.size[0]*image.size[1] >= index or index < 0:
-        return
-
-    if subpixel is not None:
-        return pixel_buffer[index*4+subpixel] 
-    return [pixel_buffer[index*4+i] for i in range(0, 4)]
-
-
-def get_pixelbuffer_pixel_x_y(pixel_buffer, image, x, y, subpixel = None):
-    """Gets the pixelbuffer value at X and Y coordinates
-
-    Args:
-        pixel_buffer (list): The pixel buffer to sample
-        image (ref): Reference to the image that the pixel buffer was created from
-        x (int): x coodrinate of the image texture
-        y (int): y coodrinate of the image texture
-        subpixel (int, optional): Whether to sample the subpixel R/G/B/A float instead of RGBA tuple. Defaults to None.
-   
-    Returns:
-        tuple. float or None: None if out of range, tuple if subpixel is none, float if subpixel is in [0,1,2,3]
-    """
-    # ignore pixels out of range
-    if image.size[0] >= x or x < 0 or image.size[1] > y or y < 0:
-        return
-    
-    index = y * image.size[1] + x
-    return get_pixelbuffer_pixel(pixel_buffer, image, index, subpixel)
-
-def set_pixelbuffer_pixel(pixel_buffer, image, index, value, subpixel = None):
-    """Sets the RGBA or float value to pixel at index in pixelbuffer
-
-    Args:
-        pixel_buffer (list): Reference to the pixel buffer list
-        image (ref): Reference to the image that pixel buffer was created from
-        index (int): The index of the pixel to assign the value
-        value (tuple or int): RGBA tuple value or float value if subpixel is in [0,1,2,3]
-        subpixel (int, optional): The subpixel to assign float value to. Defaults to None.
-    """
-
-    # ignore pixels out of range
-    if image.size[0]*image.size[1] <= index or index < 0:
-        return pixel_buffer
-    
-    # subpixel set
-    if subpixel is not None and value is not None:
-        pixel_buffer[index*4+subpixel] = value
-
-    # tuple set
-    else:
-        for i in range(0,4):
-            if value[i] is not None:
-                pixel_buffer[index*4+i] = value[i]
-    
-    return pixel_buffer
-
-def set_pixelbuffer_pixel_x_y(pixel_buffer, image, x, y, value, subpixel = None):
-    """Sets the RGBA or float value to pixel or subpixel at x y coordinate in pixelbuffer
-
-    Args:
-        pixel_buffer (list): Reference to the pixel buffer
-        image (ref): Reference to the image that pixel buffer was created from
-        x (int): X coordinate to set the value at
-        y (int): Y coordinate to set the value at
-        value (tuple or int): RGBA value tuple or float value if subpixel is in [0,1,2,3]
-        subpixel (int, optional): The subpixel to set the value to. Defaults to None.
-    """
-
-    # ignore pixels out of range
-    if image.size[0] <= x or image.size[1] <= y:
-        return pixel_buffer
-    
-    pixel = int(y * image.size[1] + x)
-    set_pixelbuffer_pixel(pixel_buffer, image, pixel, value, subpixel)
-    return pixel_buffer
-
+    return 'cycles' in bpy.context.preferences.addons
 
 def get_alpha_channel_enabled_texture_bake_op(self):
+    # Used in AttributesToImage operqtor, can't put it in the operator.
+    # Checks if alpha channel is enabled to bake it
+    img_ref = bpy.context.window_manager.mame_image_ref
+    return((self.image_source_enum == 'NEW' and self.b_new_image_alpha) or (self.image_source_enum == 'EXISTING' and img_ref is not None and img_ref.alpha_mode != 'NONE'))

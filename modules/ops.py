@@ -2922,15 +2922,9 @@ class AttributesToCSV(bpy.types.Operator):
         else:
             col.label(icon="LAYER_ACTIVE", text=f"AttributeName")
 
-    img_width: bpy.props.IntProperty(name="Width", default=1024, min=2, max=32768, step=2)
-    img_height: bpy.props.IntProperty(name="Height", default=1024, min=2, max=32768, step=2)
-    b_force_img_square: bpy.props.BoolProperty(name="Squared", default=True)
-    
 class AttributesToImage(bpy.types.Operator):
     """
     Writes attributes to image texture
-
-    NOTE: Sequental write has been partially implemented, but disabled 
     """
 
     bl_idname = "mesh.attribute_to_image"
@@ -3010,23 +3004,6 @@ class AttributesToImage(bpy.types.Operator):
         default="UV"
     )
 
-    # Sequental write settings
-
-    # The offset of starting pixel to start writing from
-    pixel_index_offset: bpy.props.IntProperty(name="Start Pixel Index Offset", default=0, min=0)
-
-    # the offset of the starting postiition to write in X axis
-    x_pixel_offset: bpy.props.IntProperty(name="X Offset", default=0, min=0)
-
-    # the offset of the starting postiition to write in Y axis
-    y_pixel_offset: bpy.props.IntProperty(name="Y Offset", default=0, min=0)
-
-    # The maximum X position from 0 + pixel_offset + x_max_height to write to
-    x_max_height: bpy.props.IntProperty(name="Write Box Max X", default=0, min=0)
-
-    # The maximum Y position from 0 + pixel_offset + x_max_height to write to
-    y_max_width: bpy.props.IntProperty(name="Write Box Max Y", default=0, min=0)
-
     # UVMap write mode settings
 
     # UVMap to sample to write the data
@@ -3073,36 +3050,36 @@ class AttributesToImage(bpy.types.Operator):
     )
     
     # THE ATTRIBUTE/IMAGE selector enum for each image channel
-    def get_image_channel_datasource_red_enum(self, context):
-        return func.get_image_channel_datasource_enum(self, context, self.source_attribute_0_datasource_enum)
+    def get_image_channel_datasource_0_enum(self, context):
+        return func.get_image_channel_datasource_enum(self, context, 0)
     
-    def get_image_channel_datasource_green_enum(self, context):
-        return func.get_image_channel_datasource_enum(self, context, self.source_attribute_1_datasource_enum)
+    def get_image_channel_datasource_1_enum(self, context):
+        return func.get_image_channel_datasource_enum(self, context, 1)
     
-    def get_image_channel_datasource_blue_enum(self, context):
-        return func.get_image_channel_datasource_enum(self, context, self.source_attribute_2_datasource_enum)
+    def get_image_channel_datasource_2_enum(self, context):
+        return func.get_image_channel_datasource_enum(self, context, 2)
     
-    def get_image_channel_datasource_alpha_enum(self, context):
-        return func.get_image_channel_datasource_enum(self, context, self.source_attribute_3_datasource_enum)
+    def get_image_channel_datasource_3_enum(self, context):
+        return func.get_image_channel_datasource_enum(self, context, 3)
 
     # THE XYZ XYZW X Y Z  or RGBA RGB R G B selectors for each image channel
-    def get_image_channel_datasource_red_vector_element_enum(self, context):
+    def get_image_channel_datasource_0_vector_element_enum(self, context):
         return func.get_image_channel_datasource_vector_element_enum(self, context, 0, func.get_alpha_channel_enabled_texture_bake_op(self))
     
-    def get_image_channel_datasource_green_vector_element_enum(self, context):
+    def get_image_channel_datasource_1_vector_element_enum(self, context):
         return func.get_image_channel_datasource_vector_element_enum(self, context, 1, func.get_alpha_channel_enabled_texture_bake_op(self))
     
-    def get_image_channel_datasource_blue_vector_element_enum(self, context):
+    def get_image_channel_datasource_2_vector_element_enum(self, context):
         return func.get_image_channel_datasource_vector_element_enum(self, context, 2, func.get_alpha_channel_enabled_texture_bake_op(self))
     
-    def get_image_channel_datasource_alpha_vector_element_enum(self, context):
+    def get_image_channel_datasource_3_vector_element_enum(self, context):
         return func.get_image_channel_datasource_vector_element_enum(self, context, 3, func.get_alpha_channel_enabled_texture_bake_op(self))
     
     # The attribute to write in Red channel or all channels if GRAYSCALE was selected in image_channels_type_enum
     source_attribute_0_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_red_enum
+        items=get_image_channel_datasource_0_enum
     )
 
     # Toggle between attribute and image to select the input value in Red channel
@@ -3116,14 +3093,14 @@ class AttributesToImage(bpy.types.Operator):
     source_attribute_0_vector_element_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_red_vector_element_enum
+        items=get_image_channel_datasource_0_vector_element_enum
     )
     
     # The attribute to write in Green channel
     source_attribute_1_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_green_enum
+        items=get_image_channel_datasource_1_enum
         )
     
     # Toggle between attribute and image to select the input value in Green channel
@@ -3136,14 +3113,14 @@ class AttributesToImage(bpy.types.Operator):
     source_attribute_1_vector_element_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_green_vector_element_enum
+        items=get_image_channel_datasource_1_vector_element_enum
     )
 
     # The attribute to write in Blue channel
     source_attribute_2_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_blue_enum
+        items=get_image_channel_datasource_2_enum
     )
 
     # Toggle between attribute and image to select the input value in Blue channel
@@ -3156,14 +3133,14 @@ class AttributesToImage(bpy.types.Operator):
     source_attribute_2_vector_element_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_blue_vector_element_enum
+        items=get_image_channel_datasource_2_vector_element_enum
     )
 
     # The attribute to write in Alpha channel if supported
     source_attribute_3_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_alpha_enum
+        items=get_image_channel_datasource_3_enum
     )
 
     # Toggle between attribute and image to select the input value in Alpha channel
@@ -3176,7 +3153,7 @@ class AttributesToImage(bpy.types.Operator):
     source_attribute_3_vector_element_enum:  bpy.props.EnumProperty(
         name="Attribute",
         description="Select an option",
-        items=get_image_channel_datasource_alpha_vector_element_enum
+        items=get_image_channel_datasource_3_vector_element_enum
     )
 
     def is_selected_enum_entry_a_vector_value(self, context, enum, source_attribute_datasource_enum):
@@ -3188,12 +3165,6 @@ class AttributesToImage(bpy.types.Operator):
         elif enum in context.active_object.data.attributes:
             return static_data.attribute_data_types[context.active_object.data.attributes[enum].data_type].gui_prop_subtype in [static_data.EDataTypeGuiPropType.VECTOR, static_data.EDataTypeGuiPropType.COLOR]
         return False
-            
-
-    # Internal
-
-    # The pixel buffer to write to the image used in sequental and select position modes.
-    pixel_buffer = np.array([])
 
     @classmethod
     def poll(self, context):
@@ -3203,12 +3174,6 @@ class AttributesToImage(bpy.types.Operator):
         elif not context.active_object.type == 'MESH':
             self.poll_message_set("Selected object is not a mesh")
             return False
-        elif context.active_object.data.attributes.active is None:
-            self.poll_message_set("No active attribute")
-            return False
-        elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
-            self.poll_message_set("Data type is not yet supported!")
-            return False
         elif not func.get_cycles_available():
             self.poll_message_set("Cycles render engine is disabled - required for this function to work")
             return False
@@ -3216,11 +3181,8 @@ class AttributesToImage(bpy.types.Operator):
         return True
 
     def invoke(self, context, event):
-        bpy.types.WindowManager.mame_image_ref = bpy.props.PointerProperty(name='Image', type=bpy.types.Image)
         func.refresh_attribute_UIList_elements()
         func.configutre_attribute_uilist(False, False)
-        self.filename = bpy.context.active_object.name + "_mesh_attributes"
-        bpy.types.WindowManager.mame_image = bpy.props.PointerProperty(type=bpy.types.Image)
         return context.window_manager.invoke_props_dialog(self, width=400)
     
     def get_user_set_new_image_size(self):
@@ -3239,106 +3201,7 @@ class AttributesToImage(bpy.types.Operator):
             # Return whatever is set in enum, squared.
             return (int(self.image_dimensions_presets_enum), int(self.image_dimensions_presets_enum))
 
-    def read_pixelbuffer(self, image):
-        "Gets the float values for each subpixel in an image  and stores it in workable buffer."
-        self.pixel_buffer = [0.0] * len(image.pixels)
-        image.pixels.foreach_get(self.pixel_buffer)
-    
-    def write_pixelbuffer(self, image):
-        "Stores pixelbuffer to the blender image "
-        if func.is_verbose_mode_enabled():
-            print(f'Writing pixelbuffer to image {image.name}, storage = {image.size[0]*image.size[1]*4}, pixelbuffer = {len(self.pixel_buffer)}')
-        image.pixels.foreach_set(self.pixel_buffer)
-        image.update()
-    
-    def detect_vector_from_enum_name(self, obj, name):
-        l = len(name)
-        vector_index = -1
-        magic_string = "_mame_texture_image_input_vector_attribute_"
-        if name[l-1:l] in ["0","1","2","3"] and magic_string in name:
-            pot_vec_attr_name = name[0:l-len(magic_string)-1]
-            if pot_vec_attr_name in obj.data.attributes:
-                vector_index = int(name[l-1:l])
-                attribute_name = pot_vec_attr_name
-        else:
-            attribute_name = name
-
-        return vector_index, attribute_name
-    
-    def get_subpixel_attribute_values(self, attribute_name, obj):
-        "Gets the attribute values from enum selection"
-
-        if attribute_name == 'NULL':
-            return None
-
-        vector_index, attribute_name = self.detect_vector_from_enum_name(obj, attribute_name)
-        
-        attribute = obj.data.attributes[attribute_name]
-
-        vals = func.get_attrib_values(attribute, obj)
-
-        if vector_index > -1:
-            return [v[vector_index] for v in vals]
-        return vals
-
-    def write_raw_image(self, obj, image):
-        current_mode = obj.mode
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        # Read the pixel buffer
-        self.read_pixelbuffer(image)
-        
-        pixel_count = int(len(image.pixels)/4)
-    
-        if self.image_channels_type_enum == 'GRAYSCALE':
-            vals_r = vals_g = vals_b = vals_a = self.get_subpixel_attribute_values(self.source_attribute_0_enum, obj)
-        else:
-            vals_r = self.get_subpixel_attribute_values(self.source_attribute_0_enum, obj)
-            vals_g = self.get_subpixel_attribute_values(self.source_attribute_1_enum, obj)
-            vals_b = self.get_subpixel_attribute_values(self.source_attribute_2_enum, obj)
-            vals_a = self.get_subpixel_attribute_values(self.source_attribute_3_enum, obj)
-
-        # Get the attribute with coordinates.
-        if self.image_write_mode_enum == 'ATTRIBUTE':
-            coord_attrib = obj.data.attributes[self.texture_coordinate_attribute_selector_enum]
-            # obj mode required
-            coords = func.get_attrib_values(coord_attrib, obj)
-            max_coords_index = len(coords)-1
-
-
-        min_index = 0
-        max_index = pixel_count # assuming a single val
-        for i in range(min_index, max_index):
-
-            val_r = vals_r[i] if vals_r is not None and i < len(vals_r) else None
-            val_g = vals_g[i] if vals_g is not None and i < len(vals_g) else None
-            val_b = vals_b[i] if vals_b is not None and i < len(vals_b) else None
-            val_a = vals_a[i] if (vals_a is not None and i < len(vals_a) and func.get_alpha_channel_enabled_texture_bake_op(self)) else None
-
-            rgba = (val_r, val_g, val_b, val_a)
-            
-            
-
-            if self.image_write_mode_enum == 'SEQUENTAL':
-                if i < 10 and func.is_verbose_mode_enabled():
-                    print(f'Setting Pixelbuffer pixel { i + self.pixel_index_offset} to {rgba}')
-                self.pixel_buffer = func.set_pixelbuffer_pixel(self.pixel_buffer, image, i + self.pixel_index_offset, rgba)
-            else:
-                x = coords[min(i, max_coords_index)][0]
-                y = coords[min(i, max_coords_index)][1]
-                self.pixel_buffer = func.set_pixelbuffer_pixel_x_y(self.pixel_buffer, image, x, y, rgba)
-                if x != 0 and y != 0 and func.is_verbose_mode_enabled():
-                    print(f"set value at coordinate {x} {y} to {rgba}")
-                    print(self.pixel_buffer)
-
-        self.write_pixelbuffer(image)
-
-        bpy.ops.object.mode_set(mode=current_mode)
-
-        return {'FINISHED'}
-
     def bake_to_texture(self, context, obj, image):
-
         # Object has to be selected, (happens to be active but not selected)
         if not obj.select_get():
             obj.select_set(True)
@@ -3473,7 +3336,7 @@ class AttributesToImage(bpy.types.Operator):
                 print(f"Baking RGB from {source_attribute_name}")
 
             # Case: Not a vector attribute nor an image
-            if not len(self.get_image_channel_datasource_red_vector_element_enum(context)):
+            if not len(self.get_image_channel_datasource_0_vector_element_enum(context)):
                 # For each RGB channel
                 for texture_ch in range(0, 3):
                     create_attrib_to_combine_color_nodes(source_attribute_name, 
@@ -3530,13 +3393,16 @@ class AttributesToImage(bpy.types.Operator):
                 if func.is_verbose_mode_enabled():
                     print(f"Baking channel {texture_ch} from {source_attribute_name}")
 
-                if len(self.get_image_channel_datasource_red_vector_element_enum(context)):
+                if len(self.get_image_channel_datasource_0_vector_element_enum(context)):
+                    
                     attrib_vector_id = getattr(self, f'source_attribute_{texture_ch}_vector_element_enum')
+                    if attrib_vector_id == '':
+                        attrib_vector_id = -1
                 else:
                     attrib_vector_id = -1
                 create_attrib_to_combine_color_nodes(source_attribute_name, 
                                                      texture_ch, 
-                                                     attrib_vector_id, 
+                                                     int(attrib_vector_id), 
                                                      sn_colormix, 
                                                      uvmap, 
                                                      getattr(self, f'source_attribute_{texture_ch}_datasource_enum'))
@@ -3545,8 +3411,8 @@ class AttributesToImage(bpy.types.Operator):
 
         if self.image_channels_type_enum == 'GRAYSCALE':
             bake_alpha = (func.get_alpha_channel_enabled_texture_bake_op(self) and                              # check if the image supports alpha
-                                len(self.get_image_channel_datasource_red_vector_element_enum(context)    # if the source attribute is even a vector/image
-                                and self.source_attribute_0_vector_element_enum == '6'))                        # and if the RGBA/XYZW was selected
+                                len(self.get_image_channel_datasource_0_vector_element_enum(context))    # if the source attribute is even a vector/image
+                                and self.source_attribute_0_vector_element_enum == '6')                        # and if the RGBA/XYZW was selected
             
         else:
             bake_alpha = func.get_alpha_channel_enabled_texture_bake_op(self) and self.source_attribute_3_enum != 'NULL'
@@ -3569,8 +3435,8 @@ class AttributesToImage(bpy.types.Operator):
                     sn_alphatexture_uv.attribute_name = uvmap
                     sn_alphatexture_uv.attribute_type = 'GEOMETRY'
                     mat_nt.links.new(sn_alphatexture_uv.outputs['Vector'], sn_alphatexture.inputs['Vector'])
-
-                    alpha_source_node = [sn_alphatexture_separate, 'Alpha']
+                    
+                    alpha_source_node = [sn_alphatexture, 'Alpha']
 
                 else:
                     sn_alphaattrib = mat_nt.nodes.new('ShaderNodeAttribute')
@@ -3598,11 +3464,14 @@ class AttributesToImage(bpy.types.Operator):
                     sn_alphatexture_uv.attribute_type = 'GEOMETRY'
                     mat_nt.links.new(sn_alphatexture_uv.outputs['Vector'], sn_alphatexture.inputs['Vector'])
 
-                    # Split RGB
-                    sn_alphatexture_separate = mat_nt.nodes.new('ShaderNodeSeparateXYZ')
-                    mat_nt.links.new(sn_alphatexture.outputs['Color'], sn_alphatexture.inputs['Vector'])
+                    if self.source_attribute_3_vector_element_enum == 3:
+                        alpha_source_node = [sn_alphatexture, 'Alpha']
+                    else:
+                        # Split RGB
+                        sn_alphatexture_separate = mat_nt.nodes.new('ShaderNodeSeparateXYZ')
+                        mat_nt.links.new(sn_alphatexture.outputs['Color'], sn_alphatexture_separate.inputs['Vector'])
 
-                    alpha_source_node = [sn_alphatexture_separate, int(self.source_attribute_3_vector_element_enum)]
+                        alpha_source_node = [sn_alphatexture_separate, int(self.source_attribute_3_vector_element_enum)]
 
                 else:
                     sn_alphaattrib = mat_nt.nodes.new('ShaderNodeAttribute')
@@ -3610,7 +3479,7 @@ class AttributesToImage(bpy.types.Operator):
                     sn_alphaattrib.attribute_type = 'GEOMETRY'
 
                     # scalar
-                    if not len(self.get_image_channel_datasource_alpha_vector_element_enum(context)):
+                    if not len(self.get_image_channel_datasource_3_vector_element_enum(context)):
                         alpha_source_node = [sn_alphaattrib, 'Fac']
                     # vector
                     else:
@@ -3696,45 +3565,53 @@ class AttributesToImage(bpy.types.Operator):
         for i, a in enumerate(change_settings):
             setattr(a[0], a[1], mame_settings[i])
 
-        bpy.context.active_object.data.update()
+        current_mode = obj.mode
+        bpy.ops.object.mode_set(mode='OBJECT')
         
-        # Bake alpha if applicable
-        if bake_alpha:
-            # Create a new image to store the alpha in
-            new_img_size = self.get_user_set_new_image_size()
-            alpha_image = bpy.data.images.new("Temporary baked alpha texture (safe to remove)", new_img_size[0], new_img_size[1], float_buffer=True, is_data=True)
-            alpha_image.alpha_mode = 'NONE'
-            alpha_image.generated_color = self.new_image_fill
-
-            # Set the image node to new image
-            sn_texture.image = alpha_image
-            sn_texture.select = True
-
-            # Connect the node to emit shader input
-            
-            mat_nt.links.new(alpha_source_node[0].outputs[alpha_source_node[1]], sn_emit.inputs['Color'])
-
-            # Bake again
-            bpy.ops.object.bake(type='EMIT')
-
+        bpy.context.active_object.data.update()
+    
         # Bake RGB
+        sn_texture.image = image
+        sn_texture.select = True
         bpy.ops.object.bake(type='EMIT')
         
         # Write alpha to RGB
         if bake_alpha:
-            # Copy red channel to alpha channel to first image
-            pixelbuffer_RGB = np.zeros(len(image.pixels), dtype=np.float)
-            image.pixels.foreach_get(pixelbuffer_RGB)
-            np.delete(pixelbuffer_RGB, [a for a in range(3,len(pixelbuffer_RGB), 4)]) # remove exising alpha
+            # Create a new image to store the alpha in
+                new_img_size = self.get_user_set_new_image_size()
+                alpha_image = bpy.data.images.new("Temporary baked alpha texture (safe to remove)", new_img_size[0], new_img_size[1], float_buffer=True, is_data=True)
+                alpha_image.alpha_mode = 'NONE'
+                alpha_image.generated_color = self.new_image_fill
 
-            pixelbuffer_A = np.zeros(len(alpha_image.pixels), dtype=np.float)
-            alpha_image.pixels.foreach_get(pixelbuffer_A)
-            pixelbuffer_A = np.take(pixelbuffer_A, [a for a in range(0,len(pixelbuffer_A), 3)]) # get r channel
+                # Set the image node to new image
+                sn_texture.image = alpha_image
+                sn_texture.select = True
 
-            np.insert(pixelbuffer_RGB, [i for i in range(0, len(pixelbuffer_RGB), 3)], pixelbuffer_A) # insert new alpha
+                # Connect the node to emit shader input
+                
+                mat_nt.links.new(alpha_source_node[0].outputs[alpha_source_node[1]], sn_emit.inputs['Color'])
 
-            # cleanup
-            bpy.data.images.remove(alpha_image)
+                # Bake again
+                bpy.ops.object.bake(type='EMIT')
+
+                # Copy red channel to alpha channel to first image
+                pixelbuffer_RGB = np.zeros(len(image.pixels), dtype=np.float32)
+                image.update()
+                image.pixels.foreach_get(pixelbuffer_RGB)
+                np.delete(pixelbuffer_RGB, [a for a in range(3,len(pixelbuffer_RGB), 4)]) # remove exising alpha
+
+                alpha_image.update()
+                pixelbuffer_A = np.zeros(len(alpha_image.pixels), dtype=np.float32)
+                alpha_image.pixels.foreach_get(pixelbuffer_A)
+                pixelbuffer_A = np.take(pixelbuffer_A, [a for a in range(0,len(pixelbuffer_A), 4)]) # get r channel
+
+                np.put(pixelbuffer_RGB, [i for i in range(3, len(pixelbuffer_RGB), 4)], pixelbuffer_A) # insert new alpha
+
+                image.pixels.foreach_set(pixelbuffer_RGB)
+                image.update()
+                # cleanup
+                if not etc.get_preferences_attrib('bakematerial_donotdelete'):
+                    bpy.data.images.remove(alpha_image)
         
         # Clean up
         for i, a in enumerate(change_settings):
@@ -3744,12 +3621,10 @@ class AttributesToImage(bpy.types.Operator):
             for i, slot in enumerate(obj.material_slots):
                 slot.material = current_mats[i]
         
-        bpy.data.materials.remove(mat)
+        if not etc.get_preferences_attrib('bakematerial_donotdelete'):
+            bpy.data.materials.remove(mat)
         
         if remove_slot:
-            # Changing modes will change references to enums, come on...
-            current_mode = obj.mode
-            bpy.ops.object.mode_set(mode='OBJECT')
             bpy.ops.object.material_slot_remove()
 
         bpy.ops.object.mode_set(mode=current_mode)
@@ -3759,11 +3634,17 @@ class AttributesToImage(bpy.types.Operator):
     def execute(self, context):
         obj = context.active_object
         image = None
+        
+        # store references to images -_-
+        enums = []
+        for i in range(0, 4):
+            enums.append(getattr(self, f'source_attribute_{i}_enum'))
+
 
         # Create a new image with specified dimensions and color fill
         if self.image_source_enum == 'NEW':
             new_img_size = self.get_user_set_new_image_size()
-            image = bpy.data.images.new(self.new_image_name, new_img_size[0], new_img_size[1], float_buffer=True, is_data=True)
+            image = bpy.data.images.new(self.new_image_name, new_img_size[0], new_img_size[1], float_buffer=False, is_data=True)
             image.alpha_mode = 'CHANNEL_PACKED' if self.b_new_image_alpha else 'NONE'
             image.generated_color = self.new_image_fill
         
@@ -3778,18 +3659,39 @@ class AttributesToImage(bpy.types.Operator):
             if self.b_create_image_copy:
                 image = image.copy()
 
-
-        # Write modes
-
-        # # using direct access to the bitmap and setting the values at index
-        # if self.image_write_mode_enum != 'UV':
-
-        #     return self.write_raw_image(obj, image)
-        
-        # Using cycles to bake the texture, UV Bake
-        # else:
+        for i in range(0, 4):
+            enums.append(setattr(self, f'source_attribute_{i}_enum', enums[i]))
 
         return self.bake_to_texture(context, obj, image)
+
+    def enum_watchdog(self, context):
+        "Bugfix for blender handling of dynamic enums"
+        for i in range(0, 4):
+            try:
+                if getattr(self, f'source_attribute_{i}_enum') == '':
+                    setattr(self, f'source_attribute_{i}_enum', exec(f'self.get_image_channel_datasource_{i}_enum(context)[0][0]'))
+            except TypeError:
+                pass
+
+        for i in range(0, 4):
+            try:
+                if getattr(self, f'source_attribute_{i}_datasource_enum') == '':
+                    setattr(self, f'source_attribute_{i}_datasource_enum', func.get_image_channel_datasource_type_enum(self, context)[0][0])
+            except TypeError:
+                pass
+                    
+        for i in range(0, 4):
+            try:
+                if self.is_selected_enum_entry_a_vector_value(context, getattr(self, f'source_attribute_{i}_enum')):
+                    ve = getattr(self, f'source_attribute_{i}_vector_element_enum')
+                    if  ve == '' and len(exec(f'self.get_image_channel_datasource_{i}_vector_element_enum(context)')):
+                        setattr(self, f'source_attribute_{i}_vector_element_enum', exec(f'self.get_image_channel_datasource_{i}_vector_element_enum(context)[0][0]'))
+            except TypeError:
+                pass
+        
+        
+        
+        
 
     def draw(self, context):
         obj = context.active_object
@@ -3798,6 +3700,7 @@ class AttributesToImage(bpy.types.Operator):
         dt = active_attribute.data_type
 
         # add enum checks
+        self.enum_watchdog(context)
 
         layout = self.layout
         col = layout.column()
@@ -3848,6 +3751,15 @@ class AttributesToImage(bpy.types.Operator):
             sr = col.row()
             sr.label(text="Copy image")
             sr.prop(self, 'b_create_image_copy', toggle = True)
+
+            sr = col.row()
+            sr.label(text="Alpha channel")
+            img = context.window_manager.mame_image_ref
+            if img is not None:
+                alpha_en = img.alpha_mode != 'NONE'
+            else:
+                alpha_en = False
+            sr.label(text="Supported" if alpha_en else 'Unsupported', icon="CHECKMARK" if alpha_en else "X")
 
             if context.window_manager.mame_image_ref is not None and not context.window_manager.mame_image_ref.is_float:
                 sr = col.column()
@@ -3951,8 +3863,8 @@ class AttributesToImage(bpy.types.Operator):
             ssr.prop(self, 'source_attribute_0_enum', text='')
             
             sr = subcol.row()
-            if self.is_selected_enum_entry_a_vector_value(context, self.source_attribute_0_enum, self.source_attribute_0_datasource_enum):
-                sr.label(text="Channels")
+            if self.is_selected_enum_entry_a_vector_value(context, self.source_attribute_0_enum, self.source_attribute_0_datasource_enum) and len(self.get_image_channel_datasource_0_vector_element_enum(context)):
+                sr.label(text="Source Channels")
                 ssr = sr.row()
                 ssr.ui_units_x = right_el_x_size
                 ssr.prop_tabs_enum(self, 'source_attribute_0_vector_element_enum')
