@@ -46,7 +46,7 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     # -------------------------------------------------
 
     face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
-    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Select buttons will match non-zero, non-empty, non-black and True values or the value in the input field')
+    val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Non-zero Select\n\nON: Select domains with non-zero, non-empty, non-black and True values \nOFF: Select domains containing the value in the input field')
     val_select_casesensitive: bpy.props.BoolProperty(name="Case sensitive", default=False, description='Select only matching case')
 
 class MAME_GUIPropValues(bpy.types.PropertyGroup):
