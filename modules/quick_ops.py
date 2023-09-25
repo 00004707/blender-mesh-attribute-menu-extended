@@ -1005,7 +1005,7 @@ class SelectDomainButton(bpy.types.Operator):
             params[f'val_vector_3_toggle'] = False
 
         if select_nonzero:
-            params[f'val_{dt.lower()}'] = func.get_attrib_default_value(datatype=dt)
+            params[f'val_{dt.lower()}'] = func.get_attribute_default_value(datatype=dt)
             params['vec_0_condition_enum'] = 'NEQ'
             params['vector_value_cmp_type_enum'] = 'OR'
         else:

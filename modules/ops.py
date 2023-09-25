@@ -120,7 +120,7 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
                 gui_value = tuple(gui_value)
             
-            value = func.get_attrib_default_value(attribute) if self.b_clear else gui_value
+            value = func.get_attribute_default_value(attribute) if self.b_clear else gui_value
             etc.pseudo_profiler("GET_DEFAULT_VAL")
 
             # Set the value
@@ -736,7 +736,7 @@ class DuplicateAttribute(bpy.types.Operator):
 
         new_attrib = obj.data.attributes.new(name=src_attrib.name, type=src_attrib.data_type, domain=src_attrib.domain)
 
-        func.set_attribute_values(new_attrib, func.get_attrib_values(src_attrib, obj))
+        func.set_attribute_values(new_attrib, func.get_attribute_values(src_attrib, obj))
         
         bpy.ops.object.mode_set(mode=current_mode)
         return {'FINISHED'}
@@ -828,9 +828,9 @@ class InvertAttribute(bpy.types.Operator):
         
         # # numbers:
         # else:
-        prop_name = func.get_attrib_value_propname(src_attrib)
+        prop_name = func.get_attribute_value_propname(src_attrib)
         
-        storage = func.get_attrib_values(src_attrib, obj)
+        storage = func.get_attribute_values(src_attrib, obj)
         
         # int just get and multiply by -1
         if src_attrib.data_type in ['INT','INT8']:
@@ -860,7 +860,7 @@ class InvertAttribute(bpy.types.Operator):
             invert_mode = self.color_invert_mode_enum if src_attrib.data_type in ['FLOAT_COLOR', 'BYTE_COLOR'] else self.invert_mode_enum
 
             #ah vectors, yes
-            skip = len(func.get_attrib_default_value(src_attrib)) if not src_attrib.data_type == 'FLOAT' else 1
+            skip = len(func.get_attribute_default_value(src_attrib)) if not src_attrib.data_type == 'FLOAT' else 1
             if invert_mode == "MULTIPLY_MINUS_ONE":
                 storage = [v * -1 if not self.b_edit_mode_selected_only or int(i/skip) in selected else v for i, v in enumerate(storage)]
             elif invert_mode == "SUBTRACT_FROM_ONE":
@@ -1209,13 +1209,12 @@ class ConvertToMeshData(bpy.types.Operator):
             self.report({'ERROR'}, "Invalid source weights attribute. Nothing done")
             input_invalid = True
         
-        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR"] and not len(obj.data.uv_layers):
+        elif self.data_target_enum in ["TO_SELECTED_VERTICES_IN_UV_EDITOR", "TO_SELECTED_EDGES_IN_UV_EDITOR", "TO_PINNED_VERTICES_IN_UV_EDITOR"] and not len(obj.data.uv_layers):
             self.report({'ERROR'}, "No UVMaps. Nothing done")
             input_invalid = True
-
-        if input_invalid:
-            bpy.ops.object.mode_set(mode=current_mode)
-            return {'CANCELLED'}
+            print(self.data_target_enum)
+        
+        return not input_invalid
 
     def create_temp_converted_attrib(self, obj, convert_from_name:str, name_suffix:str, target_domain:str, target_data_type:str):
         """
@@ -1236,7 +1235,7 @@ class ConvertToMeshData(bpy.types.Operator):
             print(f"Created temporary attribute {new_attrib_name}")
         
         convert_from = obj.data.attributes[convert_from_name] # After the new attribute has been created, reference is invalid
-        func.set_attribute_values(new_attrib, func.get_attrib_values(convert_from, obj))
+        func.set_attribute_values(new_attrib, func.get_attribute_values(convert_from, obj))
         func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', target_domain, target_data_type)
         if func.is_verbose_mode_enabled():
             print(f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}")
@@ -1266,7 +1265,8 @@ class ConvertToMeshData(bpy.types.Operator):
         current_mode = context.active_object.mode
 
         # Check if user input is valid.
-        self.perform_user_input_test(obj, current_mode)
+        if not self.perform_user_input_test(obj, current_mode):
+            return {'CANCELLED'}
 
         # Get list of attributes to convert
         convert_attribute_list = []
@@ -1290,7 +1290,7 @@ class ConvertToMeshData(bpy.types.Operator):
 
             # rename the attribute if converting to vertex group with same name as attribute
             if self.data_target_enum in ['TO_VERTEX_GROUP'] and self.b_delete_if_converted and can_remove:
-                src_attrib.name = func.get_safe_attrib_name(obj, src_attrib_name)
+                src_attrib.name = func.get_safe_attrib_name(obj, src_attrib_name, check_attributes=True)
                 src_attrib_name = src_attrib.name
 
             src_attrib_domain = src_attrib.domain
@@ -1383,7 +1383,7 @@ class ConvertToMeshData(bpy.types.Operator):
     def invoke(self, context, event):
         func.refresh_attribute_UIList_elements()
         func.configutre_attribute_uilist(True, True)
-        return context.window_manager.invoke_props_dialog(self)
+        return context.window_manager.invoke_props_dialog(self, width=350)
     
     last_selected_data_target = None
 
@@ -1535,7 +1535,7 @@ class ConvertToMeshData(bpy.types.Operator):
                 if not el.b_domain_compatible or not el.b_data_type_compatible:
                     all_compatible = False
                     break
-
+            col = self.layout.column()
             if not all_compatible:
 
                 col.label(icon='ERROR', text=f"Some data will be converted. Result might be unexpected.")
@@ -1773,7 +1773,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
         for sel_obj in [sel_obj for sel_obj in bpy.context.selected_objects if sel_obj.type =='MESH' and sel_obj is not src_obj]:
             for src_attrib_name in attribute_names_to_copy:
                 src_attrib = src_obj.data.attributes[src_attrib_name] # !important
-                a_vals = func.get_attrib_values(src_attrib, src_obj)
+                a_vals = func.get_attribute_values(src_attrib, src_obj)
 
                 # get size of the source attribute domain
                 source_size = self.get_attribute_data_length(src_obj, src_attrib)
@@ -1830,7 +1830,7 @@ class CopyAttributeToSelected(bpy.types.Operator):
 
                         # With 'zero' value
                         elif self.extend_mode_enum =='ZERO':
-                            fill_value = func.get_attrib_default_value(src_attrib)
+                            fill_value = func.get_attribute_default_value(src_attrib)
                             fill_value = [fill_value]
 
                         target_a_vals = a_vals + (fill_value * (target_size-source_size))
@@ -2033,6 +2033,7 @@ class ConditionalSelection(bpy.types.Operator):
             print(f"""ConditionalSelectionTrigger
 Cond: {condition}
 CompVal: {comparison_value}
+CmpType: {self.vector_value_cmp_type_enum}
 DataType: {attrib_data_type}
 CaseSensitive: {self.b_string_case_sensitive}
 FiltIndex: {filtered_indexes}
@@ -2046,12 +2047,11 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             Compares each dimension of vals_list input if all of them contain that index (AND), or any of them (OR)
             """
             if mode == 'AND':
+                common = np.array(vals_list[0], dtype=np.int)
                 # check 2nd and higher dimension
                 for i in range(1, len(vals_list)):
-                    for num in vals_list[0]:
-                        if num not in vals_list[i]:
-                            vals_list[0].remove(num)
-                return vals_list[0]
+                    common = np.intersect1d(common, vals_list[i])
+                return common
             
             elif mode == 'OR':
                 r = []
@@ -2068,7 +2068,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
                                 static_data.EDataTypeGuiPropType.STRING]:
             comparison_value = getattr(self, f'val_{attrib_data_type.lower()}')
             
-            filtered_indexes = func.get_filtered_indexes_by_condition(func.get_attrib_values(attrib, obj), 
+            filtered_indexes = func.get_filtered_indexes_by_condition(func.get_attribute_values(attrib, obj), 
                                                                       condition, 
                                                                       comparison_value, 
                                                                       self.b_string_case_sensitive)
@@ -2079,7 +2079,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
                                   static_data.EDataTypeGuiPropType.COLOR]:
             vals_to_cmp = []
             filtered_indexes = []
-            src_data = np.array(func.get_attrib_values(attrib, obj))
+            src_data = np.array(func.get_attribute_values(attrib, obj))
             use_hsv = self.color_value_type_enum == 'HSVA' and gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR
             
             if use_hsv:
@@ -2104,6 +2104,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
         if func.is_verbose_mode_enabled():
             debug_print()
 
+        
         func.set_selection_or_visibility_of_mesh_domain(obj, attrib.domain, filtered_indexes, not self.b_deselect)
 
         bpy.ops.object.mode_set(mode=current_mode)
@@ -2177,7 +2178,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             # Toggles
             row3 = row2.row(align=True)
             subrow = row3.column(align=True)
-            for el in range(0, len(func.get_attrib_default_value(attribute))):
+            for el in range(0, len(func.get_attribute_default_value(attribute))):
                 subrow.ui_units_x = 3
                 subrow.prop(self, f"val_vector_{el}_toggle", text=f"{v_subelements[el].upper()}", toggle=True)
             
@@ -2185,7 +2186,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             row3 = row2.row(align=True)
             subrow = row3.column(align=True)
 
-            for el in range(0, len(func.get_attrib_default_value(attribute))):
+            for el in range(0, len(func.get_attribute_default_value(attribute))):
                 disable_cond = not (el != 0 and self.b_single_condition_vector)
                 disabler_row = subrow.row()
                 if (getattr(self, f'val_vector_{el if not disable_cond else 0}_toggle') if not disable_cond else True) and disable_cond:
@@ -2196,7 +2197,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             subrow = row3.column(align=True)
 
             if not self.b_use_color_picker:
-                for el in range(0, len(func.get_attrib_default_value(attribute))):
+                for el in range(0, len(func.get_attribute_default_value(attribute))):
                     disable_cond = not (el != 0 and self.b_single_value_vector)
                     disabler_row = subrow.row()
                     if disable_cond:
@@ -2204,7 +2205,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
 
 
             else:
-                for el in range(0, len(func.get_attrib_default_value(attribute))):
+                for el in range(0, len(func.get_attribute_default_value(attribute))):
                     subrow.prop(self, f"val_{dt.lower()}", text="")
             
             if gui_prop_subtype == static_data.EDataTypeGuiPropType.COLOR:
@@ -2355,19 +2356,19 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
             # get the value from first index of selection
             if len(domain_indexes) > 1:
                 self.report({'WARNING'}, f"It's best to select single {func.get_friendly_domain_name(domain)} instead to always get expected result for {func.get_friendly_data_type_name(dt)}s")
-            attribute_value = getattr(obj.data.attributes[active_attribute_name].data[domain_indexes[0]], func.get_attrib_value_propname(attribute))
+            attribute_value = getattr(obj.data.attributes[active_attribute_name].data[domain_indexes[0]], func.get_attribute_value_propname(attribute))
         else:
             # Get average for numeric
 
 
             # get default value to calc the avg
-            attribute_value = func.get_attrib_default_value(attribute)
+            attribute_value = func.get_attribute_default_value(attribute)
             if type(attribute_value) == list:
                     attribute_value = tuple(attribute_value)
 
             # get the total
             for vi in domain_indexes:
-                val = getattr(obj.data.attributes[active_attribute_name].data[vi], func.get_attrib_value_propname(attribute))
+                val = getattr(obj.data.attributes[active_attribute_name].data[vi], func.get_attribute_value_propname(attribute))
                 
                 if type(val) in [bpy_types.bpy_prop_array, Vector]:
                     val = tuple(val)
@@ -2605,7 +2606,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
         
         
         # Read current values
-        storage = func.get_attrib_values(attribute, obj)
+        storage = func.get_attribute_values(attribute, obj)
         if func.is_verbose_mode_enabled():
             print(f"Current values:{np.array(storage)}")
 
@@ -2695,14 +2696,14 @@ class RandomizeAttributeValue(bpy.types.Operator):
                     row.prop(self, f"{dt.lower()}_val_{minmax}", text="")
                 else:
                     row = col2.row(align=True)
-                    for i in range(0,len(func.get_attrib_default_value(active_attribute))):
+                    for i in range(0,len(func.get_attribute_default_value(active_attribute))):
                         sub_row = row.row(align=True)
                         sub_row.enabled = getattr(self, f'val_vector_{i}_toggle')
                         sub_row.prop(self, f"{dt.lower()}_val_{minmax}", text="", index=i)
             
             # Each toggle for each vector subelement
             row = col2.row(align=True)
-            for i in range(0,len(func.get_attrib_default_value(active_attribute))):
+            for i in range(0,len(func.get_attribute_default_value(active_attribute))):
                 if vector_is_a_color and self.color_randomize_type == 'HSVA':
                     gui_vector_subel = ['H','S','V','A'][i]
                 else:

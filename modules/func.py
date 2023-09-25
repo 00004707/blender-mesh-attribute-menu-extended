@@ -78,7 +78,7 @@ def get_is_attribute_valid_for_manual_val_assignment(attribute):
     """
     return not bool(len([atype for atype in get_attribute_types(attribute) if atype in [static_data.EAttributeType.READONLY, static_data.EAttributeType.NOTPROCEDURAL]]))
 
-def get_attrib_value_propname(attribute = None, data_type:str = ""):
+def get_attribute_value_propname(attribute = None, data_type:str = ""):
     """Gets the property name of attribute value. Some values are stored in .vector others in .value etc.
 
     Args:
@@ -99,7 +99,7 @@ def get_attrib_value_propname(attribute = None, data_type:str = ""):
     else:
         return "value"
 
-def get_attrib_values(attribute, obj):
+def get_attribute_values(attribute, obj):
     """Reads all attribute values using foreach_get
 
     Args:
@@ -113,7 +113,7 @@ def get_attrib_values(attribute, obj):
         list: Attribute values, data type unchanged
     """
 
-    value_attrib_propname = get_attrib_value_propname(attribute)
+    value_attrib_propname = get_attribute_value_propname(attribute)
     dt = attribute.data_type
 
     if is_verbose_mode_enabled():
@@ -169,7 +169,7 @@ def get_attrib_values(attribute, obj):
     else:
         raise etc.MeshDataReadException('get_attrib_values', f"Data type {dt} is unsupported.")
 
-def get_attrib_default_value(attribute = None, datatype:str = None):
+def get_attribute_default_value(attribute = None, datatype:str = None):
     """Returns the zero value for attribute data type. Does not return a list with the length of the attribute data!
 
     Args:
@@ -298,7 +298,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
             if no_list:
                 og_vals = [kwargs['original_vector']]
             else:
-                og_vals = get_attrib_values(src_attribute, obj)
+                og_vals = get_attribute_values(src_attribute, obj)
 
         # Convert them to HSV if applicable
         if use_hsv:
@@ -445,7 +445,7 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
 
     if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and dt != 'STRING' :
         etc.pseudo_profiler("FOR_EACH_START")
-        prop_name = get_attrib_value_propname(data_type=dt)
+        prop_name = get_attribute_value_propname(data_type=dt)
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
 
@@ -475,7 +475,7 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for {len(on_indexes)} domains. ")
 
-        prop = get_attrib_value_propname(data_type=dt)
+        prop = get_attribute_value_propname(data_type=dt)
         
         # FOREACH_GET_FOREACH_SET for > 25%
         foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
@@ -550,7 +550,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print(f"Attribute data length: {len(active_attrib.data)}")
         print(f"Selected domains: [{len(selected_el)} total] - {selected_el}")
         print(f"Setting value: {value}")
-        a_vals = get_attrib_values(attribute, obj)
+        a_vals = get_attribute_values(attribute, obj)
         print(f"Pre-set values: {str(a_vals)}")
 
     # Write the new values
@@ -560,7 +560,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     set_attribute_values(active_attrib, value, selected_el)
     etc.pseudo_profiler("SET_VALUES_END")
     if is_verbose_mode_enabled():
-        a_vals = get_attrib_values(attribute, obj)
+        a_vals = get_attribute_values(attribute, obj)
         print(f"Post-set values: {str(a_vals)}")
 
     return True
@@ -2624,7 +2624,7 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list, add_domain_an
             else:
                 rownames.append(attribute.name)
             datalengths.append(len(attribute.data))
-            values.append(get_attrib_values(attribute, obj))
+            values.append(get_attribute_values(attribute, obj))
 
         max_data_len = max(datalengths)
 
@@ -2804,7 +2804,7 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
                             data_columns[i].append(literal_eval(data))
                     except ValueError:
                         errors.append(f"Cannot convert {data} from column {col_id}, row {line-1} to {cast_type}, using default value for this data type.")
-                        data_columns[i].append(get_attrib_default_value(attribute))
+                        data_columns[i].append(get_attribute_default_value(attribute))
 
 
 
@@ -2813,7 +2813,7 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
             input_data_len = len(data_columns[i])
             storage_len = len(attribute.data)
             if input_data_len < storage_len:
-                data_columns[i] += [get_attrib_default_value(attribute)] * (storage_len-input_data_len)
+                data_columns[i] += [get_attribute_default_value(attribute)] * (storage_len-input_data_len)
             elif input_data_len > storage_len:
                 data_columns[i] = data_columns[i][:storage_len]
 
