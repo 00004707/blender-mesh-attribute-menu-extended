@@ -2852,4 +2852,92 @@ def configutre_attribute_uilist(enable_same_as_target_filter_btn: bool,
     
     gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
     gui_prop_group.b_attributes_uilist_show_same_as_target_filter = enable_same_as_target_filter_btn
-    gui_prop_group.b_attributes_uilist_highlight_different_attrib_types = enable_incompatible_type_highlight
+    gui_prop_group.b_attributes_uilist_highlight_different_attrib_types = enable_incompatible_type_highlight    """Returns an RGB values tuple of pixel at index
+
+    Args:
+        pixel_buffer (list): The pixel buffer to sample
+        image (ref): Reference to the image that the pixel buffer was created from
+        index (int): The index to sample the value
+        subpixel (int, optional): Whether to sample the subpixel R/G/B/A float instead of RGBA tuple. Defaults to None.
+
+    Returns:
+        tuple. float or None: None if out of range, tuple if subpixel is none, float if subpixel is in [0,1,2,3]
+    """
+    # ignore pixels out of range
+    if image.size[0]*image.size[1] >= index or index < 0:
+        return
+
+    if subpixel is not None:
+        return pixel_buffer[index*4+subpixel] 
+    return [pixel_buffer[index*4+i] for i in range(0, 4)]
+
+
+def get_pixelbuffer_pixel_x_y(pixel_buffer, image, x, y, subpixel = None):
+    """Gets the pixelbuffer value at X and Y coordinates
+
+    Args:
+        pixel_buffer (list): The pixel buffer to sample
+        image (ref): Reference to the image that the pixel buffer was created from
+        x (int): x coodrinate of the image texture
+        y (int): y coodrinate of the image texture
+        subpixel (int, optional): Whether to sample the subpixel R/G/B/A float instead of RGBA tuple. Defaults to None.
+   
+    Returns:
+        tuple. float or None: None if out of range, tuple if subpixel is none, float if subpixel is in [0,1,2,3]
+    """
+    # ignore pixels out of range
+    if image.size[0] >= x or x < 0 or image.size[1] > y or y < 0:
+        return
+    
+    index = y * image.size[1] + x
+    return get_pixelbuffer_pixel(pixel_buffer, image, index, subpixel)
+
+def set_pixelbuffer_pixel(pixel_buffer, image, index, value, subpixel = None):
+    """Sets the RGBA or float value to pixel at index in pixelbuffer
+
+    Args:
+        pixel_buffer (list): Reference to the pixel buffer list
+        image (ref): Reference to the image that pixel buffer was created from
+        index (int): The index of the pixel to assign the value
+        value (tuple or int): RGBA tuple value or float value if subpixel is in [0,1,2,3]
+        subpixel (int, optional): The subpixel to assign float value to. Defaults to None.
+    """
+
+    # ignore pixels out of range
+    if image.size[0]*image.size[1] <= index or index < 0:
+        return pixel_buffer
+    
+    # subpixel set
+    if subpixel is not None and value is not None:
+        pixel_buffer[index*4+subpixel] = value
+
+    # tuple set
+    else:
+        for i in range(0,4):
+            if value[i] is not None:
+                pixel_buffer[index*4+i] = value[i]
+    
+    return pixel_buffer
+
+def set_pixelbuffer_pixel_x_y(pixel_buffer, image, x, y, value, subpixel = None):
+    """Sets the RGBA or float value to pixel or subpixel at x y coordinate in pixelbuffer
+
+    Args:
+        pixel_buffer (list): Reference to the pixel buffer
+        image (ref): Reference to the image that pixel buffer was created from
+        x (int): X coordinate to set the value at
+        y (int): Y coordinate to set the value at
+        value (tuple or int): RGBA value tuple or float value if subpixel is in [0,1,2,3]
+        subpixel (int, optional): The subpixel to set the value to. Defaults to None.
+    """
+
+    # ignore pixels out of range
+    if image.size[0] <= x or image.size[1] <= y:
+        return pixel_buffer
+    
+    pixel = int(y * image.size[1] + x)
+    set_pixelbuffer_pixel(pixel_buffer, image, pixel, value, subpixel)
+    return pixel_buffer
+
+
+def get_alpha_channel_enabled_texture_bake_op(self):
