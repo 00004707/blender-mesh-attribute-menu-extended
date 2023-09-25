@@ -233,32 +233,94 @@ def facemaps_context_menu_extension(self,context):
 # Edit Mode
 # -----------------------------------------
 
+class VIEW3D_MT_edit_mesh_vertices_attribute_from_data(bpy.types.Menu):
+    bl_label = "New Attribute from..."
+
+    def draw(self, _context):
+        layout = self.layout
+        for edt in [edt for edt in func.get_source_data_enum_without_separators(self, bpy.context) if 'POINT' in static_data.object_data_sources[edt[0]].domains_supported]:
+            row = layout.row()
+            row.operator_context = static_data.object_data_sources[edt[0]].quick_ui_exec_type
+            op = self.layout.operator('mesh.attribute_create_from_data',
+                                      icon = func.get_mesh_data_enum_entry_icon(static_data.object_data_sources[edt[0]]),
+                                      text=edt[1])
+            op.attrib_name = ''
+            op.domain_data_type_enum = edt[0]
+            op.target_attrib_domain_enum = 'POINT'
+            op.b_batch_convert_enabled
+            op.b_offset_from_offset_to_toggle
+            op.b_overwrite
+            op.b_enable_name_formatting
+            op.b_auto_convert = False
+
 def vertex_context_menu_extension(self,context):
     """
     Entries in Vertex context menu in edit mode
-    UNUSED
     """
     if etc.get_preferences_attrib('extra_context_menu_vertex_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        # self.layout.separator()
+        self.layout.separator()
+        self.layout.menu("VIEW3D_MT_edit_mesh_vertices_attribute_from_data")
+
+class VIEW3D_MT_edit_mesh_edges_attribute_from_data(bpy.types.Menu):
+    bl_label = "New Attribute from..."
+
+    def draw(self, _context):
+        layout = self.layout
+        for edt in [edt for edt in func.get_source_data_enum_without_separators(self, bpy.context) if 'EDGE' in static_data.object_data_sources[edt[0]].domains_supported]:
+            row = layout.row()
+            row.operator_context = static_data.object_data_sources[edt[0]].quick_ui_exec_type
+            op = self.layout.operator('mesh.attribute_create_from_data',
+                                      icon = func.get_mesh_data_enum_entry_icon(static_data.object_data_sources[edt[0]]),
+                                      text=edt[1])
+            op.attrib_name = ''
+            op.domain_data_type_enum = edt[0]
+            op.target_attrib_domain_enum = 'EDGE'
+            op.b_batch_convert_enabled
+            op.b_offset_from_offset_to_toggle
+            op.b_overwrite
+            op.b_enable_name_formatting
+            op.b_auto_convert = False
 
 def edge_context_menu_extension(self,context):
     """
     Entries in Edge context menu in edit mode
-    UNUSED
     """
     if etc.get_preferences_attrib('extra_context_menu_edge_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        # self.layout.separator()
+        self.layout.separator()
+        self.layout.menu("VIEW3D_MT_edit_mesh_edges_attribute_from_data")
+
+class VIEW3D_MT_edit_mesh_faces_attribute_from_data(bpy.types.Menu):
+    bl_label = "New Attribute from..."
+
+    def draw(self, _context):
+        layout = self.layout
+        
+        for edt in [edt for edt in func.get_source_data_enum_without_separators(self, bpy.context) if 'FACE' in static_data.object_data_sources[edt[0]].domains_supported]:
+            row = layout.row()
+            row.operator_context = static_data.object_data_sources[edt[0]].quick_ui_exec_type
+            op = row.operator('mesh.attribute_create_from_data',
+                                      icon = func.get_mesh_data_enum_entry_icon(static_data.object_data_sources[edt[0]]),
+                                      text=edt[1])
+            op.attrib_name = ''
+            op.domain_data_type_enum = edt[0]
+            op.target_attrib_domain_enum = 'FACE'
+            op.b_batch_convert_enabled
+            op.b_offset_from_offset_to_toggle
+            op.b_overwrite
+            op.b_enable_name_formatting
+            op.b_auto_convert = False
+
 
 def face_context_menu_extension(self,context):
     """
     Entries in Face context menu in edit mode
-    UNUSED
     """
     if etc.get_preferences_attrib('extra_context_menu_face_menu'):
         self.layout.operator_context = "INVOKE_DEFAULT"
-        # self.layout.separator()
+        self.layout.separator()
+        self.layout.menu("VIEW3D_MT_edit_mesh_faces_attribute_from_data")
 
 # Object Mode
 # -----------------------------------------

@@ -23,6 +23,8 @@ import time
 __addon_package_name__ = __package__.replace('.modules','')
 
 LARGE_MESH_VERTICES_COUNT = 500000
+
+
 # Exceptions
 # ------------------------------------------
 
@@ -52,6 +54,7 @@ class GenericFunctionParameterError(Exception):
         self.function_name = function_name
         self.message = message
         super().__init__("[PARAM] " + self.function_name + ": " + self.message)
+
 
 # Extra Functions
 # ------------------------------
@@ -94,13 +97,14 @@ def get_enhanced_enum_titles_enabled():
     else:
         return False
 
+
 # Fake operators
 # ------------------------------
 
 class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
     """
     Fake operator to occupy GUI place
-    .disabled is not available for properties in gui, so this is the hack
+    It looks better than using .enabled = False for UI elemtent
     """
 
     bl_idname = "mesh.always_disabled_face_corner_spill_operator"
@@ -112,6 +116,7 @@ class FakeFaceCornerSpillDisabledOperator(bpy.types.Operator):
     def poll(self, context):
         self.poll_message_set("Active attribute is not on Face Corner domain")
         return False
+
 
 # Utility operators
 # -----------------------------
@@ -184,6 +189,7 @@ def pseudo_profiler(info_string:str):
     if get_preferences_attrib("pseudo_profiler"):
         print(f"[PROFILER][{time.time()-profiler_timestamp_start}] {info_string}")
 
+
 # ------------------------------------------
 # Preferences
 
@@ -233,15 +239,14 @@ class AddonPreferences(bpy.types.AddonPreferences):
     
     # Context
     
-    # extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
-    # extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
-    # extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
-    # extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
+    extra_context_menu_edge_menu: bpy.props.BoolProperty(name="Edge Context Menu", description="Adds extra operators to Edge Context Menu in Edit Mode", default=True)
+    extra_context_menu_vertex_menu: bpy.props.BoolProperty(name="Vertex Context Menu", description="Adds extra operators to Vertex Context Menu in Edit Mode", default=True)
+    extra_context_menu_face_menu: bpy.props.BoolProperty(name="Face Context Menu", description="Adds extra operators to Face Context Menu in Edit Mode", default=True)
+    #extra_context_menu_object: bpy.props.BoolProperty(name="Object Context Menu", description="Adds extra operators to Object Context Menu in Object Mode", default=True)
 
     # 3D View
     extra_header_sculpt: bpy.props.BoolProperty(name="Masks Manager", description="Adds menu to Tool N-panel tab", default=True)
     extra_context_menu_sculpt: bpy.props.BoolProperty(name="Mask & Face Sets Menus", description="Adds extra operators to sculpting 3D View menus", default=True)
-    # extra_context_menu_npanel_item: bpy.props.BoolProperty(name="N-Panel Item Tab", description="Adds extra operators to N-Panel Item Tab in Edit Mode", default=False)
 
     # Quick
     extra_context_menu_geometry_data: bpy.props.BoolProperty(name="Geometry Data Menu", description="Adds extra operators to Geometry Data Menu", default=False)
@@ -261,7 +266,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
         ("SPECIALS", "Specials Menus", "Specials Menus Settings"),
-        #("CONTEXT", "Context Menu", "Context Menus Settings"),
         ("3DVIEW", "3D View", "3D View Extensions Settings"),
         ("QUICK", "Quick Buttons", "Quick Extensions Settings"),
         ("DEBUG", "Troubleshooting", "Troubleshooting and Debug menus"),
@@ -334,30 +338,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
 
-        #def draw_context(layout):
-        #     titlebox = layout.box()
-        #     titlebox.label(text="Context Menus - Extensions to right-click menus")
-        #     col = layout.column()
-
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_object', toggle=True)
-        #     subrow = row.row()
-        #     subrow.label(text='3D View Menu Bar > Object', icon='INFO')
-
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
-        #     subrow = row.row()
-        #     subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
-
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
-        #     subrow = row.row()
-        #     subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
-
-        #     row = col.row()
-        #     row.prop(self, 'extra_context_menu_face_menu', toggle=True)
-        #     subrow = row.row()
-        #     subrow.label(text='3D View Menu Bar > Face', icon='INFO')
+            row = col.row()
+            row.prop(self, 'extra_context_menu_color_attributes', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Properties > Data > Color Attributes', icon='INFO')
 
         def draw_3dview(layout):
             titlebox = layout.box()
@@ -379,6 +364,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
             # subrow = row.row()
             # subrow.label(text='3D View > N-Panel > Edit', icon='INFO')
 
+            # row = col.row()
         def draw_quick(layout):
             titlebox = layout.box()
             titlebox.label(text="Quick Buttons - Extra buttons that repeat last actions or other")
@@ -447,8 +433,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 draw_general(layout)
             elif self.addonproperties_tabs == 'SPECIALS':
                 draw_specials(layout)
-            # elif self.addonproperties_tabs == 'CONTEXT':
-            #    draw_context(layout)
             elif self.addonproperties_tabs == '3DVIEW':
                 draw_3dview(layout)
             elif self.addonproperties_tabs == 'QUICK':
@@ -459,8 +443,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
             draw_general(layout)
             layout.separator()
             draw_specials(layout)
-            # layout.separator()
-            # draw_context(layout)
             layout.separator()
             draw_3dview(layout)
             layout.separator()
@@ -469,10 +451,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
             draw_debug(layout)            
 
             
-            
-            
+# Generic UI elements
+# ------------------------------------------ 
 
-        
 class AttributeListItem(bpy.types.PropertyGroup):
     """
     Group of properties representing an item in mesh attribute list
@@ -512,11 +493,8 @@ class AttributeListItem(bpy.types.PropertyGroup):
     b_data_type_compatible: bpy.props.BoolProperty(
             name="Boolean", 
             default=True)
-    
-class GenericBoolPropertyGroup(bpy.types.PropertyGroup):
-    b_value: bpy.props.BoolProperty(name="Boolean", default=True)
-    name: bpy.props.StringProperty(name="Name", default="")
-    id: bpy.props.StringProperty(name="Identification String", default="")
+
+ # Generic datatypes
 
 def draw_multi_attribute_select_uilist(layout):
     col = layout.column(align=True)
@@ -532,3 +510,14 @@ def draw_multi_attribute_select_uilist(layout):
     gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
     col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
                     "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
+
+
+# Generic data types
+# ------------------------------------------
+
+class GenericBoolPropertyGroup(bpy.types.PropertyGroup):
+    "list of boolean props"
+    b_value: bpy.props.BoolProperty(name="Boolean", default=True)
+    name: bpy.props.StringProperty(name="Name", default="")
+    id: bpy.props.StringProperty(name="Identification String", default="")
+

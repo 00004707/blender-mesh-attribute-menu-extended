@@ -22,18 +22,19 @@ import string
 
 # Defines object data sourc,e
 ObjectDataSource = namedtuple("MeshDataSource", [
-    "enum_gui_friendly_name",
-    "enum_gui_friendly_name_no_special_characters",
-    "enum_gui_description",
-    "attribute_auto_name",
-    "attribute_domain_on_default",
-    "domains_supported",
-    "data_type",
-    "min_blender_ver",
-    "unsupported_from_blender_ver",
-    "batch_convert_support",
-    "valid_data_sources", # futureproofing for other object types
-    "icon"
+    "enum_gui_friendly_name",                                   # Friendly name shown in UI
+    "enum_gui_friendly_name_no_special_characters",             # Friendly name shown in UI without non-standard character set
+    "enum_gui_description",                                     # Friendly item description
+    "attribute_auto_name",                                      # Automatic name with formatting elements
+    "attribute_domain_on_default",                              # Default domain choice for this data source
+    "domains_supported",                                        # All supported domains for this data source
+    "data_type",                                                # Datatype of the attribute created
+    "min_blender_ver",                                          # Minimum blender version to support this mesh data
+    "unsupported_from_blender_ver",                             # Minimum blender version that removed support for this data
+    "batch_convert_support",                                    # Whether the converting of multiple mesh data is supported, eg. shape keys.
+    "valid_data_sources",                                       # futureproofing for other object types (unused, set to 'MESH')
+    "icon",                                                     # Icon in UI
+    "quick_ui_exec_type"                                        # Used when operator is called and is meant to be executed instantly (no menu) INVOKE_DEFAULT or EXEC_DEFAULT
 ])
 
 # Contains object data sources
@@ -59,7 +60,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     # ON VERTEX EDGE FACE
@@ -78,7 +80,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "HIDE_OFF"
+        icon= "HIDE_OFF",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "POSITION": ObjectDataSource(
@@ -93,7 +96,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "GIZMO"
+        icon= "GIZMO",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
     
     # ON VERTEX FACE
@@ -112,7 +116,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "NORMALS_FACE"
+        icon= "NORMALS_FACE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     # QUICK BOOLEANS
@@ -131,7 +136,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "RESTRICT_SELECT_OFF"
+        icon= "RESTRICT_SELECT_OFF",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "NOT_SELECTED": ObjectDataSource(
@@ -146,7 +152,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "RESTRICT_SELECT_ON"
+        icon= "RESTRICT_SELECT_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
     
     # VERTEX ONLY
@@ -165,7 +172,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MOD_MASK"
+        icon= "MOD_MASK",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "VERT_MEAN_BEVEL": ObjectDataSource(
@@ -180,7 +188,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MOD_BEVEL"
+        icon= "MOD_BEVEL",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "VERT_MEAN_CREASE": ObjectDataSource(
@@ -195,7 +204,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINCURVE"
+        icon= "LINCURVE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "VERT_FROM_VERTEX_GROUP": ObjectDataSource(
@@ -210,7 +220,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "GROUP_VERTEX"
+        icon= "GROUP_VERTEX",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "VERT_IS_IN_VERTEX_GROUP": ObjectDataSource(
@@ -225,7 +236,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "GROUP_VERTEX"
+        icon= "GROUP_VERTEX",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "VERT_SHAPE_KEY_POSITION": ObjectDataSource(
@@ -240,7 +252,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "SHAPEKEY_DATA"
+        icon= "SHAPEKEY_DATA",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "VERT_SHAPE_KEY_POSITION_OFFSET": ObjectDataSource(
@@ -255,7 +268,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "SHAPEKEY_DATA"
+        icon= "SHAPEKEY_DATA",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     # EDGE ONLY
@@ -274,7 +288,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "OUTLINER_DATA_EMPTY"
+        icon= "OUTLINER_DATA_EMPTY",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_BEVEL_WEIGHT": ObjectDataSource(
@@ -289,7 +304,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MOD_BEVEL"
+        icon= "MOD_BEVEL",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_CREASE": ObjectDataSource(
@@ -304,7 +320,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINCURVE"
+        icon= "LINCURVE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_SHARP": ObjectDataSource(
@@ -319,7 +336,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "SHARPCURVE"
+        icon= "SHARPCURVE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_FREESTYLE_MARK": ObjectDataSource(
@@ -334,7 +352,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "OUTLINER_OB_EMPTY"
+        icon= "OUTLINER_OB_EMPTY",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_IS_LOOSE": ObjectDataSource(
@@ -349,7 +368,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MOD_EDGESPLIT"
+        icon= "MOD_EDGESPLIT",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "EDGE_VERTICES": ObjectDataSource(
@@ -364,7 +384,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "VERTEXSEL"
+        icon= "VERTEXSEL",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     # FACE ONLY
@@ -383,7 +404,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "FACE_MAPS"
+        icon= "FACE_MAPS",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_USE_SMOOTH": ObjectDataSource(
@@ -398,7 +420,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "SMOOTHCURVE"
+        icon= "SMOOTHCURVE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_AREA": ObjectDataSource(
@@ -413,7 +436,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "SNAP_FACE"
+        icon= "SNAP_FACE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_MATERIAL_INDEX": ObjectDataSource(
@@ -428,7 +452,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MATERIAL"
+        icon= "MATERIAL",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     # "FACE_MATERIAL_SLOT_INDEX": ObjectDataSource(
@@ -458,7 +483,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_CORNER_INDEXES": ObjectDataSource(
@@ -473,7 +499,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_CORNER_TOTAL": ObjectDataSource(
@@ -488,7 +515,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= ""
+        icon= "",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_CORNER_START_INDEX": ObjectDataSource(
@@ -503,7 +531,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_FROM_FACE_MAP": ObjectDataSource(
@@ -518,7 +547,8 @@ object_data_sources = {
         unsupported_from_blender_ver=(4,0),
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "FACE_MAPS"
+        icon= "FACE_MAPS",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "FACE_MAP_INDEX": ObjectDataSource(
@@ -533,7 +563,8 @@ object_data_sources = {
         unsupported_from_blender_ver=(4,0),
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "FACE_IS_MATERIAL_ASSIGNED": ObjectDataSource(
@@ -548,7 +579,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "MATERIAL"
+        icon= "MATERIAL",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "FACE_IS_MATERIAL_SLOT_ASSIGNED": ObjectDataSource(
@@ -563,7 +595,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "MATERIAL"
+        icon= "MATERIAL",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     # FACE CORNER ONLY
@@ -582,7 +615,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "MOD_NORMALEDIT"
+        icon= "MOD_NORMALEDIT",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "CORNER_TANGENT": ObjectDataSource(
@@ -597,7 +631,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "CORNER_BITANGENT": ObjectDataSource(
@@ -612,7 +647,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "CORNER_BITANGENT_SIGN": ObjectDataSource(
@@ -627,7 +663,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "DRIVER_ROTATIONAL_DIFFERENCE"
+        icon= "DRIVER_ROTATIONAL_DIFFERENCE",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "CORNER_EDGE_INDEX": ObjectDataSource(
@@ -642,7 +679,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
     "CORNER_VERTEX_INDEX": ObjectDataSource(
@@ -657,7 +695,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
-        icon= "LINENUMBERS_ON"
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
     "UVMAP": ObjectDataSource(
         enum_gui_friendly_name="UVMap ⁻ ᶜᵒʳⁿᵉʳ",
@@ -671,7 +710,8 @@ object_data_sources = {
         unsupported_from_blender_ver=(3,5),
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "UV"
+        icon= "UV",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "INSERT_SEPARATOR_SPECIAL": None,
@@ -693,7 +733,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "UV"
+        icon= "UV",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
 
@@ -709,7 +750,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "UV"
+        icon= "UV",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
     "PINNED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
@@ -724,7 +766,8 @@ object_data_sources = {
         unsupported_from_blender_ver=None,
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
-        icon= "UV"
+        icon= "UV",
+        quick_ui_exec_type = 'INVOKE_DEFAULT'
     ),
 
 }

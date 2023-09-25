@@ -128,7 +128,11 @@ classes += [
     quick_ops.QuickUVMapToAttribute,
     quick_ops.QuickFaceMapAssignmentToAttribute,
     quick_ops.QuickFaceMapIndexToAttribute,
-    quick_ops.QuickSelectedInEditModeToSculptMask
+    quick_ops.QuickBakeColorAttribute,
+    quick_ops.QuickSelectedInEditModeToSculptMask,
+    gui.VIEW3D_MT_edit_mesh_vertices_attribute_from_data,
+    gui.VIEW3D_MT_edit_mesh_edges_attribute_from_data,
+    gui.VIEW3D_MT_edit_mesh_faces_attribute_from_data
 ]
 
 def register():
@@ -157,9 +161,9 @@ def register():
         bpy.types.MESH_MT_shape_key_context_menu.append(gui.shape_keys_context_menu_extension)
         bpy.types.MATERIAL_MT_context_menu.append(gui.material_context_menu_extension)
         bpy.types.VIEW3D_MT_object.append(gui.object_context_menu_extension)
-        # bpy.types.VIEW3D_MT_edit_mesh_faces.append(gui.face_context_menu_extension)
-        # bpy.types.VIEW3D_MT_edit_mesh_edges.append(gui.edge_context_menu_extension)
-        # bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_context_menu_extension)
+        bpy.types.VIEW3D_MT_edit_mesh_faces.append(gui.face_context_menu_extension)
+        bpy.types.VIEW3D_MT_edit_mesh_edges.append(gui.edge_context_menu_extension)
+        bpy.types.VIEW3D_MT_edit_mesh_vertices.append(gui.vertex_context_menu_extension)
         bpy.types.DATA_PT_uv_texture.append(gui.uvmaps_context_menu_extension)
         if bpy.app.version < (4,0,0):
             bpy.types.DATA_PT_face_maps.append(gui.facemaps_context_menu_extension)
@@ -179,9 +183,9 @@ def unregister():
             bpy.types.MESH_MT_shape_key_context_menu.remove(gui.shape_keys_context_menu_extension)
             bpy.types.MATERIAL_MT_context_menu.remove(gui.material_context_menu_extension)
             bpy.types.VIEW3D_MT_object.remove(gui.object_context_menu_extension)
-            # bpy.types.VIEW3D_MT_edit_mesh_faces.remove(gui.face_context_menu_extension)
-            # bpy.types.VIEW3D_MT_edit_mesh_edges.remove(gui.edge_context_menu_extension)
-            # bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_context_menu_extension)
+            bpy.types.VIEW3D_MT_edit_mesh_faces.remove(gui.face_context_menu_extension)
+            bpy.types.VIEW3D_MT_edit_mesh_edges.remove(gui.edge_context_menu_extension)
+            bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_context_menu_extension)
             bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
             bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
             if bpy.app.version < (4,0,0):
