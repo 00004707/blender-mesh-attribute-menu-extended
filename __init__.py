@@ -169,7 +169,11 @@ def register():
         bpy.types.DATA_PT_uv_texture.append(gui.uvmaps_context_menu_extension)
         if bpy.app.version < (4,0,0):
             bpy.types.DATA_PT_face_maps.append(gui.facemaps_context_menu_extension)
-        bpy.types.MESH_MT_color_attribute_context_menu.append(gui.color_attributes_menu_extension)
+        
+        if bpy.app.version < (3,3,0):
+            bpy.types.DATA_PT_vertex_colors.append(gui.color_attributes_menu_extension)
+        else:
+            bpy.types.MESH_MT_color_attribute_context_menu.append(gui.color_attributes_menu_extension)
 
 def unregister():
     if bpy.app.version < req_bl_ver:
@@ -193,7 +197,11 @@ def unregister():
             bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
             if bpy.app.version < (4,0,0):
                 bpy.types.DATA_PT_face_maps.remove(gui.facemaps_context_menu_extension)
-            bpy.types.MESH_MT_color_attribute_context_menu.remove(gui.color_attributes_menu_extension)
+            
+            if bpy.app.version < (3,3,0):
+                bpy.types.DATA_PT_vertex_colors.remove(gui.color_attributes_menu_extension)
+            else:
+                bpy.types.MESH_MT_color_attribute_context_menu.remove(gui.color_attributes_menu_extension)
 
             for c in classes:
                 bpy.utils.unregister_class(c)
