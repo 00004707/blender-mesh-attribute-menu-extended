@@ -925,7 +925,7 @@ class QuickSculptModeNewAttribute(bpy.types.Operator):
 
 class QuickSculptModeOverwriteAttribute(bpy.types.Operator):
     bl_idname = "mesh.mame_attribute_sculpt_mode_overwrite"
-    bl_label = "Overwrite"
+    bl_label = "Overwrite Attribute"
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
@@ -960,7 +960,7 @@ class QuickSculptModeOverwriteAttribute(bpy.types.Operator):
             args['b_batch_convert_enabled'] = False
             args['b_overwrite'] = True
             args['b_enable_name_formatting'] = True
-            args['b_normalize_mask'] = prop_group.qops_sculpt_mode_mask_normalize
+            # args['b_normalize_mask'] = prop_group.qops_sculpt_mode_mask_normalize
             return bpy.ops.mesh.attribute_create_from_data('EXEC_DEFAULT', **args)
         else:
             args = {}

@@ -447,7 +447,7 @@ class MasksManagerPanel(bpy.types.Panel):
         row.operator("mesh.mame_attribute_sculpt_mode_new",text="Store", icon='FILE_NEW')
         row.operator("mesh.mame_attribute_sculpt_mode_remove",text="Remove", icon='PANEL_CLOSE')
         row = col.row(align=True)
-        row.operator("mesh.mame_attribute_sculpt_mode_overwrite",text="Overwrite", icon='COPYDOWN')
+        row.operator("mesh.mame_attribute_sculpt_mode_overwrite",text="Overwrite Attribute", icon='COPYDOWN')
         
         col.menu('VIEW3D_MT_select_test', text='Settings', text_ctxt='', translate=True, icon='SETTINGS')
 
