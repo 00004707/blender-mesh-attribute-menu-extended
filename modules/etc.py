@@ -356,10 +356,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow.label(text='Properties > Data > Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
 
             row = col.row()
+            ver_support = get_blender_support((3,3,0))
+            row.enabled = ver_support
             row.prop(self, 'extra_context_menu_color_attributes', toggle=True)
             subrow = row.row()
             subrow.alert = not ver_support
-            subrow.label(text='Properties > Data > Color Attributes', icon='INFO')
+            subrow.label(text='Properties > Data > Color Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
 
         def draw_3dview(layout):
             titlebox = layout.box()

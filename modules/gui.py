@@ -177,8 +177,9 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
-    self.layout.operator('mesh.attribute_remove_all', icon='REMOVE') 
-    self.layout.operator('mesh.attribute_to_image', icon="TEXTURE")
+    self.layout.operator('mesh.attribute_remove_all', icon='REMOVE')
+    if etc.get_blender_support(minver=(3,3,0)): 
+        self.layout.operator('mesh.attribute_to_image', icon="TEXTURE")
     self.layout.operator('mesh.attribute_to_csv', icon='FILE_NEW')
     self.layout.operator('mesh.attribute_from_file', icon='FILEBROWSER')
 

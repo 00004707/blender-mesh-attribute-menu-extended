@@ -88,10 +88,13 @@ classes = [
     etc.MAMEReportIssue,
     gui.MasksManagerPanel,
     ops.AttributesFromCSV,
-    ops.AttributesToImage,
     ops.AttributesToCSV
     
 ]
+
+# blender 3.3+
+if bpy.app.version >= (3,3,0):
+    classes += [ops.AttributesToImage]
 
 # Debug
 classes += [
@@ -170,9 +173,7 @@ def register():
         if bpy.app.version < (4,0,0):
             bpy.types.DATA_PT_face_maps.append(gui.facemaps_context_menu_extension)
         
-        if bpy.app.version < (3,3,0):
-            bpy.types.DATA_PT_vertex_colors.append(gui.color_attributes_menu_extension)
-        else:
+        if bpy.app.version >= (3,3,0):
             bpy.types.MESH_MT_color_attribute_context_menu.append(gui.color_attributes_menu_extension)
 
 def unregister():
@@ -198,9 +199,7 @@ def unregister():
             if bpy.app.version < (4,0,0):
                 bpy.types.DATA_PT_face_maps.remove(gui.facemaps_context_menu_extension)
             
-            if bpy.app.version < (3,3,0):
-                bpy.types.DATA_PT_vertex_colors.remove(gui.color_attributes_menu_extension)
-            else:
+            if bpy.app.version >= (3,3,0):
                 bpy.types.MESH_MT_color_attribute_context_menu.remove(gui.color_attributes_menu_extension)
 
             for c in classes:

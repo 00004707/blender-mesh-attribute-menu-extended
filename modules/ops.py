@@ -3515,9 +3515,7 @@ class AttributesToImage(bpy.types.Operator):
             [scene.cycles, "adaptive_min_samples"],
             [scene.cycles, "time_limit"],
             [scene.cycles, "use_denoising"],
-            [scene.cycles, "use_guiding"],
             [scene.cycles, "bake_type"],
-            [scene.render.bake, "view_from"],
             [scene.render.bake, "target"],
             [scene.render.bake, "use_selected_to_active"],
             [scene.render.bake, "use_clear"]]
@@ -3525,7 +3523,15 @@ class AttributesToImage(bpy.types.Operator):
         if hasattr(bpy.context.scene.render.bake, 'margin_type'):
             change_settings += [
                 [scene.render.bake, "margin_type"]]
+            
+        if hasattr(bpy.context.scene.cycles, "use_guiding"):
+            change_settings += [
+                [scene.cycles, "use_guiding"]]
         
+        if hasattr(bpy.context.scene.render.bake, "view_from"):
+            change_settings += [
+                [scene.render.bake, "view_from"]]
+
         change_settings += [
             [scene.render.bake, "margin"]
         ]
@@ -3540,16 +3546,21 @@ class AttributesToImage(bpy.types.Operator):
             0,
             0,
             False,
-            False, 
             'EMIT',
-            'ABOVE_SURFACE',
             'IMAGE_TEXTURES',
             False,
-            False]
+            False,
+            ]
         
         if hasattr(bpy.context.scene.render.bake, 'margin_type'):
             mame_settings += [
                 self.image_bake_margin_type_enum]
+            
+        if hasattr(bpy.context.scene.cycles, "use_guiding"):
+            mame_settings += [False]
+        
+        if hasattr(bpy.context.scene.render.bake, "view_from"):
+            mame_settings += ['ABOVE_SURFACE']
         
         mame_settings +=[
             self.image_bake_margin
