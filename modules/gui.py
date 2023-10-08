@@ -160,7 +160,17 @@ def attribute_assign_panel(self, context):
                 col = box.column(align=True)
                 for i, area in enumerate(areas):
                     col.label(text=f"{i+1}: {func.get_node_editor_type(area)}")
+
+
+
+class DATA_PT_mesh_pinned_attributes(bpy.types.Panel):
+    bl_label = "Pinned Attributes"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
         
+            mesh.attributes,
 def attribute_context_menu_extension(self, context):
     """
     Extra entries in ^ menu

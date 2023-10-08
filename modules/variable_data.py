@@ -48,7 +48,7 @@ class MAME_PropValues(bpy.types.PropertyGroup):
     face_corner_spill: bpy.props.BoolProperty(name="Face Corner Spill", default = False, description="Allow setting value to nearby corners of selected vertices or limit it only to selected face")
     val_select_non_zero_toggle: bpy.props.BoolProperty(name="Select Non-Zero", default=True, description='Non-zero Select\n\nON: Select domains with non-zero, non-empty, non-black and True values \nOFF: Select domains containing the value in the input field')
     val_select_casesensitive: bpy.props.BoolProperty(name="Case sensitive", default=False, description='Select only matching case')
-
+    val_enable_slow_ops: bpy.props.BoolProperty(name="Allow Slow Operations", default=False, description='Enable operations that can freeze blender')
 class MAME_GUIPropValues(bpy.types.PropertyGroup):
     """
     The values stored in blender UI
