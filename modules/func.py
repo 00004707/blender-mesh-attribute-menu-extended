@@ -1704,13 +1704,13 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
     # TO MATERIAL INDEX
     elif data_target == "TO_MATERIAL_SLOT_INDEX":
         if len(obj.data.polygons):
-            
+            max_index = max((len(obj.material_slots)-1), 0)
+
             if hasattr(obj.data.polygons[0], 'material_index'):
                 if max_index > 0:
                     set_domain_attribute_values(obj, 'material_index', src_attrib.domain, a_vals) 
 
             else: # futureproofing
-                max_index = max((len(obj.material_slots)-1), 0)
                 if not 'material_index' in obj.data.attributes:
                     obj.data.attributes.new('material_index', 'INT', 'FACE')
                 set_attribute_values(obj.data.attributes['material_index'], a_vals)
