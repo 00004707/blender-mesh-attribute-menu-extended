@@ -722,7 +722,7 @@ object_data_sources = {
     # data len == len(loops) for both, idk how to proceed with this 
 
     "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="Selected Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name="UV Editor Selected Vertices ⁻ ᵘᵛ",
         enum_gui_friendly_name_no_special_characters="Selected Vertices in UV Editor",
         enum_gui_description="Create Selected Vertices attribute from selected UVMap",
         attribute_auto_name="UVMap Selected Vertices",
@@ -739,7 +739,7 @@ object_data_sources = {
 
 
     "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="Selected Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name="UV Editor Selected Edges ⁻ ᵘᵛ",
         enum_gui_friendly_name_no_special_characters="Selected Edges in UV Editor",
         enum_gui_description="Create Selected Edges attribute from selected UVMap",
         attribute_auto_name="UVMap Selected Edges",
@@ -755,7 +755,7 @@ object_data_sources = {
     ),
 
     "PINNED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="Pinned Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+        enum_gui_friendly_name="UV Editor Pinned Vertices ⁻ ᵘᵛ",
         enum_gui_friendly_name_no_special_characters="Pinned Vertices in UV Editor",
         enum_gui_description="Create Pinned Vertices attribute from selected UVMap",
         attribute_auto_name="UVMap Pinned Vertices",
@@ -1095,7 +1095,7 @@ object_data_targets = {
     "INSERT_SEPARATOR_SPECIAL": None, 
 
     "TO_SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
-            enum_gui_friendly_name="Selected UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name="Selected UV Editor Vertices ⁻ ᵘᵛ",
             enum_gui_friendly_name_no_special_characters="Selected UV Vertices (UV Editor)",
             enum_gui_description="Convert this attribute to selected vertices in UV Editor Panel",
             domains_supported=['CORNER'],
@@ -1107,7 +1107,7 @@ object_data_targets = {
         ),    
     
     "TO_SELECTED_EDGES_IN_UV_EDITOR": ObjectDataTarget(
-            enum_gui_friendly_name="Selected UV Edges ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name="Selected UV Editor  Edges ⁻ ᵘᵛ",
             enum_gui_friendly_name_no_special_characters="Selected UV Edges (UV Editor)",
             enum_gui_description="Convert this attribute to selected edges in UV Editor Panel",
             domains_supported=['CORNER'],
@@ -1119,7 +1119,7 @@ object_data_targets = {
         ),    
 
     "TO_PINNED_VERTICES_IN_UV_EDITOR": ObjectDataTarget(
-            enum_gui_friendly_name="Pinned UV Vertices ⁻ ᵘᵛ ᵉᵈᶦᵗᵒʳ",
+            enum_gui_friendly_name="Pinned UV Editor Vertices ⁻ ᵘᵛ",
             enum_gui_friendly_name_no_special_characters="Pinned UV Vertices (UV Editor)",
             enum_gui_description="Convert this attribute to pinned vertices in UV Editor Panel",
             domains_supported=['CORNER'],
