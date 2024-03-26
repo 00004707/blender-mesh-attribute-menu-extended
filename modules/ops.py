@@ -2053,7 +2053,7 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             Compares each dimension of vals_list input if all of them contain that index (AND), or any of them (OR)
             """
             if mode == 'AND':
-                common = np.array(vals_list[0], dtype=np.int)
+                common = np.array(vals_list[0], dtype=int)
                 # check 2nd and higher dimension
                 for i in range(1, len(vals_list)):
                     common = np.intersect1d(common, vals_list[i])

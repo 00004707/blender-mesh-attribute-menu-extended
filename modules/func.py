@@ -634,17 +634,17 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
     """
 
     if domain == 'POINT': 
-        storage = np.zeros(len(obj.data.vertices), dtype=np.bool)
+        storage = np.zeros(len(obj.data.vertices), dtype=bool)
         obj.data.vertices.foreach_get('select', storage)
         return np.arange(0, len(obj.data.vertices))[storage]
     
     elif domain == 'EDGE': 
-        storage = np.zeros(len(obj.data.edges), dtype=np.bool)
+        storage = np.zeros(len(obj.data.edges), dtype=bool)
         obj.data.edges.foreach_get('select', storage)
         return np.arange(0, len(obj.data.edges))[storage]
     
     elif domain == 'FACE': 
-        storage = np.zeros(len(obj.data.polygons), dtype=np.bool)
+        storage = np.zeros(len(obj.data.polygons), dtype=bool)
         obj.data.polygons.foreach_get('select', storage)
         return np.arange(0, len(obj.data.polygons))[storage]
 
@@ -652,12 +652,12 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
         # boneless chicken 
         if spill: 
             # Get selected verts ids
-            storage = np.zeros(len(obj.data.vertices), dtype=np.bool)
+            storage = np.zeros(len(obj.data.vertices), dtype=bool)
             obj.data.vertices.foreach_get('select', storage)
             sel_verts = np.arange(0, len(obj.data.vertices))[storage]
             
             # Get loop assigned verts
-            storage = np.zeros(len(obj.data.loops), dtype=np.int)
+            storage = np.zeros(len(obj.data.loops), dtype=int)
             obj.data.loops.foreach_get('vertex_index', storage)
 
             # Get the loops with the selected verts
@@ -671,11 +671,11 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
             if mesh_selected_modes[2]: # faces
 
                 # Get selected faces
-                face_select = np.zeros(len(obj.data.polygons), dtype=np.bool)
+                face_select = np.zeros(len(obj.data.polygons), dtype=bool)
                 obj.data.polygons.foreach_get('select', face_select)
                 
                 # Get face loop indexes
-                #face_loop_start_ids = np.zeros(len(obj.data.polygons), dtype=np.int)
+                #face_loop_start_ids = np.zeros(len(obj.data.polygons), dtype=int)
                 #obj.data.polygons.foreach_get('loop_start', face_loop_indices) # why not?
 
                 face_loop_indices = []
@@ -687,7 +687,7 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
             else:
                 
                 # get selected edges
-                b_sel_edges = np.zeros(len(obj.data.edges), dtype=np.bool)
+                b_sel_edges = np.zeros(len(obj.data.edges), dtype=bool)
                 obj.data.edges.foreach_get('select', b_sel_edges)
                 sel_edges = np.arange(0, len(obj.data.edges))[b_sel_edges]
                 
@@ -696,7 +696,7 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
                     return []
                 
                 # get edge indexes for all loops
-                loops_edge_index = np.zeros(len(obj.data.loops), dtype=np.int)
+                loops_edge_index = np.zeros(len(obj.data.loops), dtype=int)
                 obj.data.loops.foreach_get('edge_index', loops_edge_index)
 
                 # get loops that are connected to selected edges
@@ -1407,7 +1407,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
         elif len(indexes):
             mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
 
-            storage = np.zeros(len(obj.data.loops), dtype=np.int)
+            storage = np.zeros(len(obj.data.loops), dtype=int)
 
             # User is in edit mode with edge or face selection mode
             if mesh_selected_modes[1] or mesh_selected_modes[2]:

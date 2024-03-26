@@ -564,7 +564,7 @@ class QuickSelectedInEditModeToSculptMask(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.active_object
-        vals = np.zeros(len(obj.data.vertices), dtype=np.int)
+        vals = np.zeros(len(obj.data.vertices), dtype=int)
         
         for i in func.get_mesh_selected_domain_indexes(obj, 'POINT'):
             vals[i] = 1.0
