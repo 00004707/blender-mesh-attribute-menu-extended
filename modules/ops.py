@@ -83,25 +83,30 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Use bpy.ops.mesh_attribute_set()
-        if (etc.get_blender_support((3,5,0))
-            and not (dt == 'QUATERNION' and etc.get_preferences_attrib("set_attribute_raw_quaterion"))      # Operator will make sure the values are a valid quaternion
-            and not (not prop_group.face_corner_spill and mesh_selected_modes[1])                               # Face corner spill feature is not supported by the operator
-            and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None               # Strings are unsupported by this, oh well
-            and not etc.get_preferences_attrib("disable_bpy_set_attribute")):                                   # Preferences toggle
-            
-            etc.pseudo_profiler("OPS_START")
-            
+        try:
+            if (etc.get_blender_support((3,5,0))
+                and not (dt == 'QUATERNION' and etc.get_preferences_attrib("set_attribute_raw_quaterion"))      # Operator will make sure the values are a valid quaternion
+                and not (not prop_group.face_corner_spill and mesh_selected_modes[1])                               # Face corner spill feature is not supported by the operator
+                and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None               # Strings are unsupported by this, oh well
+                and not etc.get_preferences_attrib("disable_bpy_set_attribute")):                                   # Preferences toggle
+                
+                etc.pseudo_profiler("OPS_START")
+                
 
-            params = {}
-            paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
-            params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
-            if func.is_verbose_mode_enabled():
-                print( f"Using ops.mesh_attribute_set()" )
-                # print(f"Setting value {prop_group.val_byte_color[:]}")
-            bpy.ops.mesh.attribute_set(**params)
-            
-            etc.pseudo_profiler("OPS_END")
-            return {"FINISHED"}
+                params = {}
+                paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
+                params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
+                if func.is_verbose_mode_enabled():
+                    print( f"Using ops.mesh_attribute_set()" )
+                    # print(f"Setting value {prop_group.val_byte_color[:]}")
+                bpy.ops.mesh.attribute_set(**params)
+                
+                etc.pseudo_profiler("OPS_END")
+                return {"FINISHED"}
+        except TypeError:
+            if etc.get_blender_support((4,1,0)) and dt in ["INT32_2D", "QUATERNION", "FLOAT4X4"]:
+                if func.is_verbose_mode_enabled():
+                    print( f"Using ops.mesh_attribute_set() failed due to a blender bug, using pre 3.5 method")
         
 
         bpy.ops.object.mode_set(mode='OBJECT')
