@@ -1811,7 +1811,8 @@ def get_all_mesh_data_indexes_of_type(obj,data_type):
         return [i for i, mat_slot in enumerate(obj.material_slots)]
 
     elif data_type in ["FACE_IS_MATERIAL_ASSIGNED"]:
-        return [f.material_index for f in obj.data.polygons]
+        mats = list(set([mat_slot.material for mat_slot in obj.material_slots if mat_slot.material is not None]))
+        return [list(bpy.data.materials).index(mat) for mat in mats]
     
     elif data_type in ["SELECTED_VERTICES_IN_UV_EDITOR", "SELECTED_EDGES_IN_UV_EDITOR", "PINNED_VERTICES_IN_UV_EDITOR", 'UVMAP']:
         return [i for i, uv in enumerate(obj.data.uv_layers)]

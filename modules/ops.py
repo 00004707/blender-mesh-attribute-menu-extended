@@ -459,6 +459,10 @@ class CreateAttribFromData(bpy.types.Operator):
         # "PINNED_VERTICES_IN_UV_EDITOR", 
         # 'UVMAP'
         else:
+            if func.is_verbose_mode_enabled():
+                print(f"Batch converting {self.domain_data_type_enum}, "\
+                        f"element count: {func.get_all_mesh_data_indexes_of_type(obj, self.domain_data_type_enum)}")
+
             for element_index, element in enumerate(func.get_all_mesh_data_indexes_of_type(obj, self.domain_data_type_enum)):
                 
                 if func.is_verbose_mode_enabled():
@@ -518,6 +522,8 @@ class CreateAttribFromData(bpy.types.Operator):
                 # case: check for each material if it's assigned
                 # -> iterates over every material
                 elif self.domain_data_type_enum == "FACE_IS_MATERIAL_ASSIGNED":
+                    if func.is_verbose_mode_enabled():
+                        print(f"All materials: {func.get_materials_enum(self, context)}")
                     material = func.get_materials_enum(self, context)[element][1]
                     sel_mat = element    
 
