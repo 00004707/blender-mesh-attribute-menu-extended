@@ -939,6 +939,12 @@ class RemoveAllAttribute(bpy.types.Operator):
         default=False
         )
     
+    b_include_sculpt_mask: bpy.props.BoolProperty(
+        name="Include Sculpt Mask", 
+        description=".sculpt_mask attribute", 
+        default=False
+        )
+    
 
     #Collection with all datatypes filter toggles
     remove_datatype_filter: bpy.props.CollectionProperty(type = etc.GenericBoolPropertyGroup)
@@ -1007,8 +1013,13 @@ class RemoveAllAttribute(bpy.types.Operator):
             # Check for color attributes
             conditions.append(self.b_include_color_attribs if self.is_color_attrib(a) else True)
 
+            # Check if it is a sculpt mode mask
+            if name == '.sculpt_mask' and etc.get_blender_support(static_data.defined_attributes['.sculpt_mask'].min_blender_ver):
+                conditions.append(self.b_include_sculpt_mask)
+            
             # Check if it's hidden
-            conditions.append(self.b_include_hidden if static_data.EAttributeType.HIDDEN in a_types else True)
+            else:
+                conditions.append(self.b_include_hidden if static_data.EAttributeType.HIDDEN in a_types else True)
 
             # Check if it's non-recommended
             conditions.append(self.b_include_all if static_data.EAttributeType.DONOTREMOVE in a_types else True)
@@ -1077,6 +1088,10 @@ class RemoveAllAttribute(bpy.types.Operator):
         # subcolprop.enabled = bpy.app.version >= (3,5,0)
         subcolprop.prop(self, "b_include_uvs", text="UVMaps", toggle=True)
         colrow.prop(self, "b_include_color_attribs", text="Color Attributes", toggle=True)
+
+        # Sculpt mode mask if supported
+        if etc.get_blender_support(static_data.defined_attributes['.sculpt_mask'].min_blender_ver):
+            colrow.prop(self, "b_include_sculpt_mask", text="Sculpt Mask", toggle=True)
         
         colrow = col.row(align=True)
 
