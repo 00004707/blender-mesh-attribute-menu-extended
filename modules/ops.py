@@ -2839,6 +2839,8 @@ class AttributesToCSV(bpy.types.Operator):
 
     def execute(self, context):
         obj = context.active_object
+        current_mode = context.active_object.mode
+        bpy.ops.object.mode_set(mode='OBJECT')
         # Gather attributes
 
         # all
@@ -2876,6 +2878,8 @@ class AttributesToCSV(bpy.types.Operator):
             return {'CANCELLED'}
         except OSError as exc:
             self.report({'ERROR'}, f'System error: \"{str(exc)}\"')
+        
+        bpy.ops.object.mode_set(mode=current_mode)
         
         self.report({'INFO'}, f'File saved.')
         return {'FINISHED'}
