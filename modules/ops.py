@@ -3614,6 +3614,7 @@ class AttributesToImage(bpy.types.Operator):
         # Bake RGB
         sn_texture.image = image
         sn_texture.select = True
+        mat.node_tree.nodes.active = sn_texture
         bpy.ops.object.bake(type='EMIT')
         
         # Write alpha to RGB
@@ -3627,6 +3628,7 @@ class AttributesToImage(bpy.types.Operator):
                 # Set the image node to new image
                 sn_texture.image = alpha_image
                 sn_texture.select = True
+                mat.node_tree.nodes.active = sn_texture
 
                 # Connect the node to emit shader input
                 
