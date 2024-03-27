@@ -1468,7 +1468,7 @@ class ConvertToMeshData(bpy.types.Operator):
         
         # Show a toggle for enabling auto smooth to see the result auto smooth needs to be enabled.
         elif self.data_target_enum in ['TO_SPLIT_NORMALS']:
-            if not obj.data.use_auto_smooth:
+            if not etc.get_blender_support((4,1,0)) and not obj.data.use_auto_smooth:
                 row.prop(self, 'b_enable_auto_smooth', text="Enable Auto Smooth (Required to preview)")
             else:
                 row.label(text="")

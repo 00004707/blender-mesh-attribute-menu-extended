@@ -979,10 +979,16 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     
     # SCULPT MODE MASK ON VERTEX
     elif data_type == "SCULPT_MODE_MASK":
-        if not len(obj.data.vertex_paint_masks):
-            return [0.0] * len(obj.data.vertices)
+        if bpy.app.version < (4,1):
+            if not len(obj.data.vertex_paint_masks):
+                return [0.0] * len(obj.data.vertices)
+            else:
+                return [mask.value for mask in obj.data.vertex_paint_masks[0].data]
         else:
-            return [mask.value for mask in obj.data.vertex_paint_masks[0].data]
+            if not ".sculpt_mask" in obj.data.attributes:
+                return [0.0] * len(obj.data.vertices)
+            else:
+                return [sm.value for sm in obj.data.attributes[".sculpt_mask"].data]
         
     # VERT_IS_IN_VERTEX_GROUP
     elif data_type == "VERT_IS_IN_VERTEX_GROUP":        
@@ -1525,23 +1531,31 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
     elif data_target == "TO_SCULPT_MODE_MASK":
 
         # case: no mask layer, user never used mask on this mesh
-        if not len(obj.data.vertex_paint_masks):
-            # I have not found a way to create a mask layer without using bmesh, so here it goes
-            bm = bmesh.new()
-            bm.from_mesh(obj.data)
-            bm.verts.layers.paint_mask.verify()
-            bm.to_mesh(obj.data)
-            bm.free()
-            
-            if 'raw_data' not in kwargs:
-                src_attrib = obj.data.attributes[src_attrib_name] # !important
+
+        if etc.get_blender_support((4,1,0)):
+            if not obj.data.vertex_paint_mask:
+                obj.data.vertex_paint_mask_ensure()
+        else:
+            if not len(obj.data.vertex_paint_masks):
+                # I have not found a way to create a mask layer without using bmesh, so here it goes
+                bm = bmesh.new()
+                bm.from_mesh(obj.data)
+                bm.verts.layers.paint_mask.verify()
+                bm.to_mesh(obj.data)
+                bm.free()
+                
+                if 'raw_data' not in kwargs:
+                    src_attrib = obj.data.attributes[src_attrib_name] # !important
         
         if kwargs['invert_sculpt_mask']:
             for i in range(0, len(a_vals)):
                 a_vals[i] = 1 - a_vals[i]
 
         if kwargs['expand_sculpt_mask_mode'] != 'REPLACE':
-            storage = foreach_get_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value')
+            if etc.get_blender_support((4,1,0)):
+                storage = get_attribute_values(obj.data.attributes[".sculpt_mask"], obj)
+            else:
+                storage = foreach_get_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value')
 
             if kwargs['expand_sculpt_mask_mode'] == 'EXPAND':
                 for i in range(0, len(storage)):
@@ -1554,8 +1568,10 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
             for i, val in enumerate(a_vals):
                 a_vals[i] = min(max(val, 0.0), 1.0)
 
-        
-        foreach_set_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value', a_vals)
+        if etc.get_blender_support((4,1,0)):
+            set_attribute_values(obj.data.attributes[".sculpt_mask"], a_vals)
+        else:
+            foreach_set_mesh_data_value(obj.data.vertex_paint_masks[0].data, 'value', a_vals)
 
         
     # TO VERTEX GROUP
@@ -1727,7 +1743,8 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
 
     # TO SPLIT NORMALS
     elif data_target == 'TO_SPLIT_NORMALS':
-        obj.data.use_auto_smooth = kwargs['enable_auto_smooth']
+        if not etc.get_blender_support((4,1,0)):
+            obj.data.use_auto_smooth = kwargs['enable_auto_smooth']
         if src_attrib.domain == 'POINT':
             obj.data.normals_split_custom_set_from_vertices([[vec[0],vec[1],vec[2]] for vec in a_vals])
         elif src_attrib.domain == 'CORNER':
