@@ -2381,7 +2381,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         if dt in ['STRING', 'BOOLEAN']:
             # get the value from first index of selection
             if len(domain_indexes) > 1:
-                self.report({'WARNING'}, f"It's best to select single {func.get_friendly_domain_name(domain)} instead to always get expected result for {func.get_friendly_data_type_name(dt)}s")
+                self.report({'WARNING'}, f"Tip: select single {func.get_friendly_domain_name(domain)} instead to always get expected result for {func.get_friendly_data_type_name(dt)}s")
             attribute_value = getattr(obj.data.attributes[active_attribute_name].data[domain_indexes[0]], func.get_attribute_value_propname(attribute))
         else:
             # Get average for numeric
