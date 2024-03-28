@@ -74,7 +74,11 @@ def attribute_assign_panel(self, context):
                             col2.prop(prop_group, "face_corner_spill", text=f"Spill", toggle=True)
                         else:
                             col2.operator("mesh.always_disabled_face_corner_spill_operator", text=f"Spill")
-                        col2.operator("mesh.attribute_read_value_from_selected_domains", text="Read")
+                        sub = col2.row(align=True)
+                        sub.enabled = not (len(context.active_object.data.vertices) > etc.LARGE_MESH_VERTICES_COUNT 
+                                           and not prop_group.face_corner_spill 
+                                           and ob.data.attributes.active.domain == "CORNER") or prop_group.val_enable_slow_ops
+                        sub.operator("mesh.attribute_read_value_from_selected_domains", text="Read")
 
                         col = layout.row()
 
