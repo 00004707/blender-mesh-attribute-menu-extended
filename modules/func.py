@@ -783,7 +783,7 @@ convert compare value to srgb {vector_convert_to_srgb}""")
                 indexes.append(i)
 
     # numeric values & floats invididual vals
-    elif type(source_data[0]) in [int, float, np.int32, np.float, np.float64]:
+    elif type(source_data[0]) in [int, float, np.int32, np.float32, np.float64]:
         for i, data in enumerate(source_data):
             if vector_convert_to_srgb:
                 data = linear_to_srgb(data, False)
