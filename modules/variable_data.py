@@ -100,3 +100,7 @@ class MAME_GUIPropValues(bpy.types.PropertyGroup):
 
         if self.enum_sculpt_mode_attribute_selector not in sm_attribs:
             self.enum_sculpt_mode_attribute_selector = sm_attribs[len(sm_attribs)-1]
+
+    # UI Pinning support
+    # -------------------------------------------------
+    last_object_refs: bpy.props.CollectionProperty(name="Collection of references to Object Datablock by Mesh Datatblock", type = etc.PropPanelPinMeshLastObject)

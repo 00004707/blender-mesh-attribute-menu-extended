@@ -560,3 +560,8 @@ class GenericBoolPropertyGroup(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", default="")
     id: bpy.props.StringProperty(name="Identification String", default="")
 
+class PropPanelPinMeshLastObject(bpy.types.PropertyGroup):
+    "Stores a (named) reference to last object by mesh datablock"
+    mesh_ref_name: bpy.props.StringProperty(name="Mesh Datablock Name")
+    obj_ref_name: bpy.props.StringProperty(name="Object Datablock Name")
+    id: bpy.props.StringProperty(name="Identification String", default="")

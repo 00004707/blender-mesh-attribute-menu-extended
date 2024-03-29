@@ -31,24 +31,63 @@ def attribute_assign_panel(self, context):
 
     layout = self.layout
     row = layout.row()
-    ob = context.active_object
 
-    if ( ob and ob.type == 'MESH'):
+    # Show options available if pin is enabled
+    mesh_data_pinned = context.space_data.use_pin_id
+    
+    # Get object data and active object
+    if context.object:
+       ob_data = context.object.data
+    else:
+        ob_data = context.mesh
+    active_obj = bpy.context.active_object
+    
+    prop_group = ob_data.MAME_PropValues
+    gui_prop_group = context.window_manager.MAME_GUIPropValues
+
+    # Store reference to last active object before pin
+    # Find reference
+    pin_ref = None
+    valid_other_ref_ids = func.get_all_open_properties_panel_pinned_mesh_names() # Remove all other unused pins
+    
+    if func.is_verbose_mode_enabled():
+        print(f"[Pinned Mesh Refs] Valid Ref IDs: {valid_other_ref_ids}")
+
+    for i, el in enumerate(gui_prop_group.last_object_refs):
+        # Garbage collection. Length check avoids losing data if switching tabs.
+        if len(valid_other_ref_ids) and (el.id not in valid_other_ref_ids or (pin_ref and el.id == pin_ref.id)):
+            gui_prop_group.last_object_refs.remove(i)
+
+        if el.id == ob_data.name:
+            pin_ref = el
+
+    # Make or refresh reference if not pinned yet
+    if context.object:
+        if not pin_ref:
+            pin_ref = gui_prop_group.last_object_refs.add() 
+
+        pin_ref.mesh_ref = ob_data.name
+        pin_ref.obj_ref = context.object.name
+        pin_ref.id = ob_data.name
+    
+    else:
+        if not pin_ref and func.is_verbose_mode_enabled():
+            print(f"[Pinned Mesh Refs] No reference yet for {ob_data.name}")
+
+    if ((context.object and context.object.type == 'MESH') or (mesh_data_pinned and context.mesh)):
 
         # Edit mode menu
-        if ( ob.mode == 'EDIT' and ob.data.attributes.active):
-
+        if ( active_obj.mode == 'EDIT' and ob_data.attributes.active):
             if etc.get_preferences_attrib('attribute_assign_menu'):
                     
                 # Do not edit hidden attributes
-                if not func.get_is_attribute_valid_for_manual_val_assignment(ob.data.attributes.active):
+                if not func.get_is_attribute_valid_for_manual_val_assignment(ob_data.attributes.active):
                     row.label(text="Editing of non-editable and hidden attributes is disabled.")
                 else:
-                    dt = ob.data.attributes.active.data_type
-                    prop_group = context.object.MAME_PropValues
+                    dt = ob_data.attributes.active.data_type
 
                     # Check for supported types
-                    if not func.get_attribute_compatibility_check(ob.data.attributes.active):
+                    if not func.get_attribute_compatibility_check(ob_data.attributes.active):
                         sublayout = layout.column()
                         sublayout.alert = True
                         sublayout.label(text="This attribute type is not supported by MAME addon.", icon='ERROR')
@@ -62,7 +101,18 @@ def attribute_assign_panel(self, context):
                         else:
                             title_str = ""
 
-                        col2.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True)
+                        if static_data.attribute_data_types[dt].large_capacity_vector:
+                            matrixcol = col2.column(align=True)
+                            matrix_w = static_data.attribute_data_types[dt].large_capacity_vector_size_width
+                            matrix_h = static_data.attribute_data_types[dt].large_capacity_vector_size_height
+                            for i in range(0, matrix_w):
+                                matrix_vals_col = matrixcol.column(align=True)
+                                matrix_vals_row = matrix_vals_col.row(align=True)
+                                for j in range(0, matrix_h):
+                                    matrix_vals_row.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True, index=i*matrix_w+j)
+                        else:
+                            col2.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True)
+
                         if dt == 'STRING':
                             col2.prop(prop_group, f"val_select_casesensitive", text="", toggle=True, icon='SYNTAX_OFF')
                         col2.operator('mesh.attribute_gui_value_randomize', text="", icon='FILE_REFRESH')
@@ -70,14 +120,14 @@ def attribute_assign_panel(self, context):
  
                         col2 = col.row(align=True)
                         #col2.ui_units_x = 4
-                        if ob.data.attributes.active.domain == "CORNER":
+                        if ob_data.attributes.active.domain == "CORNER":
                             col2.prop(prop_group, "face_corner_spill", text=f"Spill", toggle=True)
                         else:
                             col2.operator("mesh.always_disabled_face_corner_spill_operator", text=f"Spill")
                         sub = col2.row(align=True)
-                        sub.enabled = not (len(context.active_object.data.vertices) > etc.LARGE_MESH_VERTICES_COUNT 
+                        sub.enabled = not (len(ob_data.vertices) > etc.LARGE_MESH_VERTICES_COUNT 
                                            and not prop_group.face_corner_spill 
-                                           and ob.data.attributes.active.domain == "CORNER") or prop_group.val_enable_slow_ops
+                                           and ob_data.attributes.active.domain == "CORNER") or prop_group.val_enable_slow_ops
                         sub.operator("mesh.attribute_read_value_from_selected_domains", text="Read")
 
                         col = layout.row()
@@ -93,7 +143,7 @@ def attribute_assign_panel(self, context):
 
                         #Selection buttons
                         sub = col.row(align=True)
-                        sub.enabled = len(context.active_object.data.vertices) < etc.LARGE_MESH_VERTICES_COUNT or prop_group.val_enable_slow_ops
+                        sub.enabled = len(ob_data.vertices) < etc.LARGE_MESH_VERTICES_COUNT or prop_group.val_enable_slow_ops
                         sub.operator_context = 'EXEC_DEFAULT'
                         sub.operator("mesh.attribute_select_button", text=f"Select")
                         sub.operator("mesh.attribute_deselect_button", text=f"Deselect")
@@ -104,7 +154,7 @@ def attribute_assign_panel(self, context):
                         sub.prop(prop_group, "val_select_non_zero_toggle", text=f"NZ" if prop_group.val_select_non_zero_toggle else 'V', toggle=True)
 
                         
-                        if len(ob.data.vertices) > etc.LARGE_MESH_VERTICES_COUNT:
+                        if len(ob_data.vertices) > etc.LARGE_MESH_VERTICES_COUNT:
                             
                             box = layout.box()
                             col2 = box.column(align=True)
@@ -115,13 +165,29 @@ def attribute_assign_panel(self, context):
                             r2 = col2.row()
                             r2.label(text='Allow slow operators')
                             r2.prop(prop_group, 'val_enable_slow_ops', toggle=True, text="Enable")
-                    
-        else:
-            if etc.get_preferences_attrib('debug_operators'):
-                # Extra tools
-                # sub = row.row(align=True)
-                row.operator("mame.tester", text="run tests")
-                row.operator("mame.create_all_attribs", text="attrib test")
+
+        # Pin exception info                
+        if pin_ref is None and mesh_data_pinned:
+                box = layout.box()
+                box.alert = True
+                col2 = box.column(align=True)
+                r= col2.row()
+                r.label(icon='INFO', text="Note")
+                col2.label(text="Please toggle pin again, data needs to be refreshed")
+        if etc.get_preferences_attrib('debug_operators'):
+            # Extra tools
+            # sub = row.row(align=True)
+            dbgrow = layout.row()
+            dbgrow.operator("mame.tester", text="run tests")
+            dbgrow.operator("mame.create_all_attribs", text="attrib test")
+            
+            dbgrow = layout.row()
+            dbgrow.label(text=f"Pinned: {context.space_data.use_pin_id}")
+            dbgrow.label(text=f"RefsCount: {len(gui_prop_group.last_object_refs)}")
+
+            dbgrow = layout.row()
+            dbgrow.label(text=f"Reference: {pin_ref is not None}")
+            
 
 
         # Quick Attribute Node Menu
@@ -130,10 +196,9 @@ def attribute_assign_panel(self, context):
             row = box.row()
             row.label(text="Quick Attribute Node")
             
-            obj = context.active_object
-            if obj and obj.data.attributes.active:
+            if active_obj and ob_data.attributes.active:
 
-                areas = func.get_supported_areas_for_attribute(obj.data.attributes.active, ids=True)
+                areas = func.get_supported_areas_for_attribute(ob_data.attributes.active, ids=True)
 
                 if len(areas):
                     col = box.grid_flow(columns=2, align=False, even_columns=True, even_rows=True)
@@ -419,7 +484,7 @@ class MasksManagerPanel(bpy.types.Panel):
 
     def draw(self, context):
 
-        obj_prop_group = context.active_object.MAME_PropValues
+        obj_prop_group = context.active_object.data.MAME_PropValues
         gui_prop_group = context.window_manager.MAME_GUIPropValues
         
         col = self.layout.column(align=True)

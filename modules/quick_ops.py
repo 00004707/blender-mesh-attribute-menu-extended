@@ -1091,7 +1091,7 @@ class SelectDomainButton(bpy.types.Operator):
     def execute(self, context):
         if func.is_verbose_mode_enabled():
             print(f"select? {not self.deselect} attrib: {context.active_object.data.attributes.active}")
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.object.data.MAME_PropValues
         select_nonzero = prop_group.val_select_non_zero_toggle
 
         dt = context.active_object.data.attributes.active.data_type
@@ -1164,7 +1164,7 @@ class RandomizeGUIInputFieldValue(bpy.types.Operator):
         obj = context.active_object
         attrib = obj.data.attributes.active
         dt=attrib.data_type
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.object.data.MAME_PropValues
         args = {}
         args['range_min'] = static_data.attribute_data_types[dt].default_randomize_value_min
         args['range_max'] = static_data.attribute_data_types[dt].default_randomize_value_max

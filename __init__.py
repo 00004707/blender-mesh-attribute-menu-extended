@@ -65,6 +65,7 @@ classes = [
     etc.AddonPreferences,
     etc.AttributeListItem,
     etc.GenericBoolPropertyGroup,
+    etc.PropPanelPinMeshLastObject,
     gui.GenericMessageBox,
     gui.ATTRIBUTE_UL_attribute_multiselect_list,
     variable_data.MAME_PropValues,
@@ -152,7 +153,7 @@ def register():
             raise exc
         
         # Per-object Property Values
-        bpy.types.Object.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
+        bpy.types.Mesh.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
         bpy.types.WindowManager.MAME_GUIPropValues = bpy.props.PointerProperty(type=variable_data.MAME_GUIPropValues)
         bpy.types.WindowManager.mame_image_ref = bpy.props.PointerProperty(name='Image', type=bpy.types.Image)
 
@@ -204,7 +205,7 @@ def unregister():
             for c in classes:
                 bpy.utils.unregister_class(c)
 
-            del bpy.types.Object.MAME_PropValues
+            del bpy.types.Mesh.MAME_PropValues
             del bpy.types.WindowManager.MAME_GUIPropValues
             del bpy.types.WindowManager.mame_image_ref
         except Exception:

@@ -61,14 +61,16 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
         elif not func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)  :
             self.poll_message_set("Attribute is read-only or unsupported")
             return False
-        
+        elif not func.pinned_mesh_poll(self, context, True):
+            return False
+            
         return True
 
     def execute(self, context):
         etc.pseudo_profiler_init()
         obj = context.active_object
         active_attrib_name = obj.data.attributes.active.name 
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.object.data.MAME_PropValues
         mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
         dt = obj.data.attributes[active_attrib_name].data_type
 
@@ -364,6 +366,8 @@ class CreateAttribFromData(bpy.types.Operator):
             return False
         elif not context.active_object.type == 'MESH' :
             self.poll_message_set("Object is not a mesh")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
     
@@ -729,6 +733,8 @@ class DuplicateAttribute(bpy.types.Operator):
         elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -808,6 +814,8 @@ class InvertAttribute(bpy.types.Operator):
             return False
         elif context.active_object.data.attributes.active is None:
             self.poll_message_set("No active attribute")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
     
@@ -974,6 +982,8 @@ class RemoveAllAttribute(bpy.types.Operator):
             return False
         elif not context.active_object.type == 'MESH' :
             self.poll_message_set("Object is not a mesh")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
 
         # Check if there is any attibute that can be removed
@@ -1281,6 +1291,8 @@ class ConvertToMeshData(bpy.types.Operator):
             return False
         elif not func.get_attribute_compatibility_check(context.active_object.data.attributes.active):
             self.poll_message_set("Addon update required for this attribute type") 
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         
         return True
@@ -1748,6 +1760,8 @@ class CopyAttributeToSelected(bpy.types.Operator):
         # Check if the attribute can be copied
         elif any([atype == static_data.EAttributeType.READONLY for atype in func.get_attribute_types(active_attrib)]):
             self.poll_message_set("This attribute is read-only")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
 
@@ -2270,6 +2284,8 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
         elif not len(context.active_object.data.attributes):
             self.poll_message_set("No attributes")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
 
         return True
 
@@ -2350,6 +2366,8 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         elif bool(len([atype for atype in func.get_attribute_types(context.active_object.data.attributes.active) if atype in [static_data.EAttributeType.NOTPROCEDURAL]])) :
             self.poll_message_set("This attribute is unsupported (Non-procedural)")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         
         return True
     
@@ -2366,7 +2384,7 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         attribute = obj.data.attributes[active_attribute_name]
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.object.data.MAME_PropValues
         domain = obj.data.attributes[active_attribute_name].domain
         dt = attribute.data_type
 
@@ -2524,6 +2542,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
         elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
             self.poll_message_set("Data type is not yet supported!")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         
         # elif bool(len([atype for atype in func.get_attribute_types(context.active_object.data.attributes.active) if atype in [data.EAttributeType.NOTPROCEDURAL]])) :
         #     self.poll_message_set("This attribute is unsupported (Non-procedural)")
@@ -2578,7 +2598,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         attribute = obj.data.attributes[active_attribute_name]
-        prop_group = context.object.MAME_PropValues
+        prop_group = context.object.data.MAME_PropValues
         domain = obj.data.attributes[active_attribute_name].domain
         dt = attribute.data_type
         
@@ -2846,6 +2866,8 @@ class AttributesToCSV(bpy.types.Operator):
             return False
         elif not context.active_object.data.attributes.active.data_type in static_data.attribute_data_types :
             self.poll_message_set("Data type is not yet supported!")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
     
@@ -3206,6 +3228,8 @@ class AttributesToImage(bpy.types.Operator):
             return False
         elif not func.get_cycles_available():
             self.poll_message_set("Cycles render engine is disabled - required for this function to work")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
 
         return True
@@ -4008,6 +4032,12 @@ class AttributesFromCSV(bpy.types.Operator):
     b_remove_domain_str_from_name: bpy.props.BoolProperty(name="Remove domain string from name", description="Removes parts like \"(POINT)\" from name", default=True)
     b_remove_data_type_str_from_name: bpy.props.BoolProperty(name="Remove data type string from name", description="Removes parts like \"(FLOAT)\" from name", default=True)
 
+    @classmethod
+    def poll(self, context):
+        if not func.pinned_mesh_poll(self, context, False):
+            return False
+        return True
+    
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
 

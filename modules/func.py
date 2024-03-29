@@ -2536,7 +2536,7 @@ def get_image_channel_datasource_vector_element_enum(self, context, index, alpha
 # Multi-use operator poll functions
 # --------------------------------
 
-def conditional_selection_poll(self, context):
+def conditional_selection_poll(self, context, pinned_mesh_support = False):
     """Used in multiple ops that are used for selecting attributes by condition on their values
 
     Args:
@@ -2568,7 +2568,29 @@ def conditional_selection_poll(self, context):
     elif not get_attribute_compatibility_check(context.active_object.data.attributes.active):
         self.poll_message_set("Attribute is unsupported in this addon version")
         return False
+    elif not pinned_mesh_poll(self, context, pinned_mesh_support):
+        return False
     
+    return True
+
+def pinned_mesh_poll(self, context, supported=True):
+    """Used to check for vailidity of pinned mesh data, or block operator from using on pinned mesh
+
+    Args:
+        self (Ref): self from poll()
+        context (Reference): Blender context reference
+
+    Returns:
+        boolean
+    """
+    if hasattr(context, "space_data") and hasattr(context.space_data, "use_pin_id"):
+        if context.space_data.use_pin_id:
+            if not supported:
+                self.poll_message_set("Unsuppported in pinned mesh mode")
+                return False
+            if context.space_data.pin_id.name not in [el.id for el in context.window_manager.MAME_GUIPropValues.last_object_refs]:
+                self.poll_message_set("Please toggle pin, data needs to be refreshed")
+                return False
     return True
 
 
@@ -2633,6 +2655,20 @@ def get_attribute_compatibility_check(attribute):
         return False
     return True
 
+def get_pinned_mesh_datablock_from_context(context):
+    """Gets Mesh Datablock if pin is enabled in properties panel and context contains the reference to it.
+
+    Args:
+        context (ref): context reference
+
+    Returns:
+        bool: True if the support for this attribute type was implemented
+    """
+    if hasattr(context, "space_data") and hasattr(context.space_data, "use_pin_id"):
+        if context.space_data.use_pin_id:
+            return context.space_data.pin_id
+    return None
+    
 
 # Node Editors 
 # ----------------------------------------------
@@ -2709,8 +2745,25 @@ def get_supported_areas_for_attribute(attribute, ids = False):
             else:
                 supported_areas.append(area if ids else arearef)
 
-    
     return supported_areas
+
+def get_all_open_properties_panel_pinned_mesh_names():
+    """Gets names of all Mesh datablock names in all open properties panels
+
+    Returns:
+        list: List of strings to mesh datablock names
+    """
+
+    meshes = []
+    for w, window in enumerate(bpy.context.window_manager.windows):
+        for a, area in enumerate(window.screen.areas):
+            if area.type == 'PROPERTIES':
+                for space in area.spaces:
+                    if space.use_pin_id:
+                        meshes.append(space.pin_id.name)
+
+    return meshes
+
 
 def get_node_tree_parent(node_tree, tree_type = None):
     """
