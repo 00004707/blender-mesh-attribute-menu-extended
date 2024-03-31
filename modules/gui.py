@@ -44,36 +44,9 @@ def attribute_assign_panel(self, context):
     
     prop_group = ob_data.MAME_PropValues
     gui_prop_group = context.window_manager.MAME_GUIPropValues
-
     # Store reference to last active object before pin
-    # Find reference
-    pin_ref = None
-    valid_other_ref_ids = func.get_all_open_properties_panel_pinned_mesh_names() # Remove all other unused pins
     
-    if func.is_verbose_mode_enabled():
-        print(f"[Pinned Mesh Refs] Valid Ref IDs: {valid_other_ref_ids}")
-
-    for i, el in enumerate(gui_prop_group.last_object_refs):
-        # Garbage collection. Length check avoids losing data if switching tabs.
-        if len(valid_other_ref_ids) and (el.id not in valid_other_ref_ids or (pin_ref and el.id == pin_ref.id)):
-            gui_prop_group.last_object_refs.remove(i)
-
-        if el.id == ob_data.name:
-            pin_ref = el
-
-    # Make or refresh reference if not pinned yet
-    if context.object:
-        if not pin_ref:
-            pin_ref = gui_prop_group.last_object_refs.add() 
-
-        pin_ref.mesh_ref = ob_data.name
-        pin_ref.obj_ref = context.object.name
-        pin_ref.id = ob_data.name
-    
-    else:
-        if not pin_ref and func.is_verbose_mode_enabled():
-            print(f"[Pinned Mesh Refs] No reference yet for {ob_data.name}")
-
+    pin_ref, ob_data = func.update_last_object_reference_for_pinned_datablock(context, ob_data)
     if ((context.object and context.object.type == 'MESH') or (mesh_data_pinned and context.mesh)):
 
         # Edit mode menu
@@ -173,9 +146,11 @@ def attribute_assign_panel(self, context):
                 col2 = box.column(align=True)
                 r= col2.row()
                 r.label(icon='INFO', text="Note")
-                col2.label(text="Please toggle pin again, data needs to be refreshed")
+                col2.label(text="Please select object with the mesh data again, data needs to be refreshed")
+        
+        # Extra tools
         if etc.get_preferences_attrib('debug_operators'):
-            # Extra tools
+           
             # sub = row.row(align=True)
             dbgrow = layout.row()
             dbgrow.operator("mame.tester", text="run tests")
@@ -183,13 +158,12 @@ def attribute_assign_panel(self, context):
             
             dbgrow = layout.row()
             dbgrow.label(text=f"Pinned: {context.space_data.use_pin_id}")
-            dbgrow.label(text=f"RefsCount: {len(gui_prop_group.last_object_refs)}")
+            dbgrow.label(text=f"RefsCount: {len(gui_prop_group.last_object_refs)}/{etc.get_preferences_attrib('pinned_mesh_refcount_max')}")
 
             dbgrow = layout.row()
             dbgrow.label(text=f"Reference: {pin_ref is not None}")
+            dbgrow.label(text=f"LastObjRef: {pin_ref.obj_ref_name if pin_ref is not None else 'None'}")
             
-
-
         # Quick Attribute Node Menu
         if etc.get_preferences_attrib("quick_attribute_node_enable"):
             box = layout.box()

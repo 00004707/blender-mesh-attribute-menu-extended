@@ -251,6 +251,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
     bakematerial_donotdelete: bpy.props.BoolProperty(name="bakematerial_donotdelete", description="", default=False)
+    pinned_mesh_refcount_max: bpy.props.IntProperty(name="Max Pinned Mesh References", description="Scary", default=8, min=2)
     console_loglevel: bpy.props.IntProperty(name="Console Log Level", default=3, min=0, max=4, description="0=SUPER_VERBOSE\n1=VERBOSE\n2=INFO\n3=WARNING\n4=ERROR")
     en_slow_logging_ops: bpy.props.BoolProperty(name="Full Data Logging (Slow)", description="Collects more information about processed object", default=False)
 
@@ -454,6 +455,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'disable_bpy_set_attribute')
                 box.prop(self, 'disable_version_checks')
                 box.prop(self, 'set_algo_tweak')
+                box.prop(self, 'pinned_mesh_refcount_max', slider=False)
         
 
         # Toggle this to enable tabs layout
@@ -587,4 +589,4 @@ class PropPanelPinMeshLastObject(bpy.types.PropertyGroup):
     "Stores a (named) reference to last object by mesh datablock"
     mesh_ref_name: bpy.props.StringProperty(name="Mesh Datablock Name")
     obj_ref_name: bpy.props.StringProperty(name="Object Datablock Name")
-    id: bpy.props.StringProperty(name="Identification String", default="")
+    workspace_name: bpy.props.StringProperty(name="Workspace in which the properties panel was seen")

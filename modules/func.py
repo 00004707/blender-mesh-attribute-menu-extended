@@ -2561,6 +2561,13 @@ def conditional_selection_poll(self, context, pinned_mesh_support = False):
     
     return True
 
+
+def get_pinned_mesh_ref_from_context(context):
+    for ref in context.window_manager.MAME_GUIPropValues.last_object_refs:
+            if ref.mesh_ref_name == context.space_data.pin_id.name and ref.workspace_name == context.window.workspace.name:
+                return ref
+    return None
+
 def pinned_mesh_poll(self, context, supported=True):
     """Used to check for vailidity of pinned mesh data, or block operator from using on pinned mesh
 
@@ -2576,9 +2583,8 @@ def pinned_mesh_poll(self, context, supported=True):
             if not supported:
                 self.poll_message_set("Unsuppported in pinned mesh mode")
                 return False
-            if context.space_data.pin_id.name not in [el.id for el in context.window_manager.MAME_GUIPropValues.last_object_refs]:
-                self.poll_message_set("Please toggle pin, data needs to be refreshed")
-                return False
+            self.poll_message_set("Please toggle pin, data needs to be refreshed")
+            return bool(get_pinned_mesh_ref_from_context(context))
     return True
 
 
@@ -2643,6 +2649,23 @@ def get_attribute_compatibility_check(attribute):
         return False
     return True
 
+# Properties Panel Pinned Mesh
+# --------------------------------
+
+def is_pinned_mesh_used(context):
+    """Simply checks if properties panel has pinned mesh enabled.
+
+    Args:
+        context (ref): context reference
+
+    Returns:
+        bool: pinned or not
+    """
+
+    if hasattr(context, "space_data") and hasattr(context.space_data, "use_pin_id"):
+        return context.space_data.use_pin_id
+    return False
+
 def get_pinned_mesh_datablock_from_context(context):
     """Gets Mesh Datablock if pin is enabled in properties panel and context contains the reference to it.
 
@@ -2650,13 +2673,134 @@ def get_pinned_mesh_datablock_from_context(context):
         context (ref): context reference
 
     Returns:
-        bool: True if the support for this attribute type was implemented
+        object: Mesh Datablock reference
     """
     if hasattr(context, "space_data") and hasattr(context.space_data, "use_pin_id"):
-        if context.space_data.use_pin_id:
-            return context.space_data.pin_id
+        return context.space_data.pin_id
     return None
+
+def get_pinned_mesh_datablocks():
+    """Gets all Mesh Datablocks if pin is enabled in properties panel in current viewport and context contains the reference to it.
+
+    Args:
+        context (ref): context reference
+
+    Returns:
+        list: of mesh datablocks
+    """
+    pinned_meshes_in_current_viewport = []
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            for space in area.spaces:
+                if hasattr(space, "use_pin_id") and space.use_pin_id:
+                    pinned_meshes_in_current_viewport.append(space.pin_id)
+                    break
+    return pinned_meshes_in_current_viewport
     
+def update_last_object_reference_for_pinned_datablock(context, ob_data):
+    """ Updates reference to last active object with specified data
+    
+    Since it's impossible to get "Object" datablock by Mesh datablock, this will update and store last selected object.
+
+    Args:
+        context (ref): context reference
+
+    Returns:
+        pin_ref (ref): PropPanelPinMeshLastObject object
+        ob_data (ref): object.data, may be updated
+    """
+
+    pin_ref = None
+    gui_prop_group = context.window_manager.MAME_GUIPropValues
+    
+    # Find reference
+    valid_other_mesh_ids_in_current_vp = get_all_open_properties_panel_pinned_mesh_names()
+    # Garbage collect other old references
+    i = 0
+    while len(gui_prop_group.last_object_refs) > etc.get_preferences_attrib("pinned_mesh_refcount_max"):
+        if i >= len(gui_prop_group.last_object_refs):
+            #print(f"Can't remove, user has too many properties tabs open.")
+            break
+        
+        # If it's in the workspace that reference was created and there is no pin for that, remove it
+        if (
+            (gui_prop_group.last_object_refs[i].mesh_ref_name not in valid_other_mesh_ids_in_current_vp and
+            gui_prop_group.last_object_refs[i].workspace_name == context.window.workspace.name)
+            or 
+            # If the Mesh datablock does not exist anymore, remove it
+            (gui_prop_group.last_object_refs[i].mesh_ref_name not in bpy.data.meshes)
+            or
+            # If the Object datablock does not exist anymore, remove it
+            (gui_prop_group.last_object_refs[i].obj_ref_name not in bpy.data.objects)
+            ):
+
+            # print(f"Removed {i} {gui_prop_group.last_object_refs[i].mesh_ref_name}")
+            gui_prop_group.last_object_refs.remove(i)
+
+        else:
+            i += 1
+    
+    # Hold a list of ids to garbage collect
+    gc_refs_ids = []
+
+    # Find the reference, if exists
+    for i, el in enumerate(gui_prop_group.last_object_refs):
+        
+        # It could be pinned in another workspace as well yknow
+        if el.mesh_ref_name == ob_data.name and el.workspace_name == context.window.workspace.name:
+            pin_ref = el
+            etc.log(update_last_object_reference_for_pinned_datablock, f"Object Reference Present for {ob_data.name if ob_data else None}", etc.ELogLevel.SUPER_VERBOSE)
+
+        #If workspace does not exist, or duplicate is present GC
+        elif ((el.workspace_name not in [w.name for w in bpy.data.workspaces]) 
+            or (pin_ref and el.mesh_ref_name == pin_ref.mesh_ref_name and el.workspace_name == pin_ref.workspace_name)):
+            gc_refs_ids.append(i)
+
+    # Garbage collect references to dead workspaces
+    for i in gc_refs_ids:
+        gui_prop_group.last_object_refs.remove(i)
+
+    # Make or refresh reference if not pinned yet
+    if context.object:
+        if not pin_ref:
+            pin_ref = gui_prop_group.last_object_refs.add() 
+            # print("Created pin")
+
+        pin_ref.mesh_ref_name = ob_data.name
+        pin_ref.obj_ref_name = context.object.name
+        pin_ref.workspace_name = context.window.workspace.name
+    
+    else:
+        # Update data if active object has the same datablock
+        if pin_ref and bpy.context.active_object and bpy.context.active_object.data.name == pin_ref.mesh_ref_name:
+            ob_data = bpy.context.active_object.data
+            pin_ref.mesh_ref_name = bpy.context.active_object.data.name
+            pin_ref.obj_ref_name = bpy.context.active_object.name
+            pin_ref.workspace_name = context.window.workspace.name
+        elif not pin_ref:
+            etc.log(update_last_object_reference_for_pinned_datablock, f"No reference yet for {ob_data.name if ob_data else None}", etc.ELogLevel.SUPER_VERBOSE)
+    
+    return pin_ref, ob_data
+
+def get_pinned_mesh_object_and_mesh_reference(context):
+    """ Gets the pinned mesh datablock and last object reference that used it.
+
+    Args:
+        context (ref): context reference
+
+    Returns:
+        ref: Object reference
+        ref: Mesh Datablock Reference
+    """
+    gui_prop_group = context.window_manager.MAME_GUIPropValues
+
+    for el in gui_prop_group.last_object_refs:
+        if el.workspace_name == context.window.workspace.name and el.mesh_ref_name == context.space_data.pin_id.name:
+            mesh_datablock = context.space_data.pin_id
+            object_datablock = bpy.data.objects[el.obj_ref_name]
+            return object_datablock, mesh_datablock
+    return None, None
+
 
 # Node Editors 
 # ----------------------------------------------
