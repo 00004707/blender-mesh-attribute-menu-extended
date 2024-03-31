@@ -248,9 +248,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
     pseudo_profiler: bpy.props.BoolProperty(name="Pseudo-profiler - disable only", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
-    set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
+    set_algo_tweak: bpy.props.FloatProperty(name="Tweak Optimal Set Attribute Alghoritm Detection", description="set_attribute_values()", default=0.15)
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
-    bakematerial_donotdelete: bpy.props.BoolProperty(name="bakematerial_donotdelete", description="", default=False)
+    bakematerial_donotdelete: bpy.props.BoolProperty(name="Do not delete temporary bake material", description="Scary", default=False)
     pinned_mesh_refcount_max: bpy.props.IntProperty(name="Max Pinned Mesh References", description="Scary", default=8, min=2)
     console_loglevel: bpy.props.IntProperty(name="Console Log Level", default=3, min=0, max=4, description="0=SUPER_VERBOSE\n1=VERBOSE\n2=INFO\n3=WARNING\n4=ERROR")
     en_slow_logging_ops: bpy.props.BoolProperty(name="Full Data Logging (Slow)", description="Collects more information about processed object", default=False)
@@ -297,8 +297,6 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
             row.label(text='Select face corner edges', icon='INFO')
        
-            
-
         def draw_specials(layout):
             titlebox = layout.box()
             titlebox.label(text="Specials menus - extensions to the chevron menus next to selection lists")
@@ -426,7 +424,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow.label(text='Create Attribute Nodes Quickly', icon='INFO')
 
         def draw_debug(layout):
-                        # Debug Zone
+            # Debug Zone
             titlebox = layout.box()
             titlebox.label(text="Troubleshooting")
             col = layout.column(align=False)
