@@ -574,6 +574,123 @@ def log(who, message:str, level:ELogLevel):
     
     # TODO: Log to variable to be able to export logs
 
+# Catastrophic Error Handling
+# -----------------------------
+# Crash gracefully and tell the user what went wrong instead of cryptic python stuff
+        
+def call_catastrophic_crash_handler(who, what_happened:str, details:str, exception:Exception):
+    """
+    If something went wrong
+    In front of your screen
+    Who you gonna call?
+    CRASH HANDLER
+    """
+    
+    # there is probably more sophiscated way to do this, but guess what, it's the simplest one and working
+    global MAME_CRASH_HANDLER_WHO
+    MAME_CRASH_HANDLER_WHO = who
+    global MAME_CRASH_HANDLER_WHAT_HAPPENED
+    MAME_CRASH_HANDLER_WHAT_HAPPENED = what_happened
+    global MAME_CRASH_HANDLER_DETAILS
+    MAME_CRASH_HANDLER_DETAILS = details
+    global MAME_CRASH_HANDLER_EXCEPTION
+    MAME_CRASH_HANDLER_EXCEPTION = exception
+    global MAME_CRASH_HANDLER_EXCEPTION_STR
+    MAME_CRASH_HANDLER_EXCEPTION_STR = format_exc()
+
+    print(MAME_CRASH_HANDLER_EXCEPTION_STR)
+    bpy.ops.window_manager.mame_crash_handler()
+    # TODO: Get a copy of a log file here as well.
+    return
+
+MAME_CRASH_HANDLER_WHO = None
+MAME_CRASH_HANDLER_WHAT_HAPPENED:str = ""
+MAME_CRASH_HANDLER_DETAILS:str = ""
+MAME_CRASH_HANDLER_EXCEPTION:Exception = None
+MAME_CRASH_HANDLER_EXCEPTION_STR:str = ''
+
+
+class CrashMessageBox(bpy.types.Operator):
+    """
+    Shows a crash message box + save log to file
+    """
+    bl_idname = "window_manager.mame_crash_handler"
+    bl_label = "Mesh Attributes Menu Extended - Crash!"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    # trick to make the dialog box open once and not again after pressing ok
+    times = 0
+
+    b_show_details: bpy.props.BoolProperty(name="Show details", description="Shows details of an exception", default = False)
+
+    def execute(self, context):
+        self.times += 1
+        if self.times < 2:
+            return context.window_manager.invoke_props_dialog(self, width=800)
+        return {'FINISHED'}
+    
+    def draw(self, context):
+        layout = self.layout
+
+        # Grab info
+        suspect_name = MAME_CRASH_HANDLER_WHO.__name__ if hasattr(MAME_CRASH_HANDLER_WHO, '__name__') else "Can't determine"
+        try:
+            cause = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
+        except Exception:
+            cause = "Unknown"
+        try:
+            details = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
+        except Exception:
+            details = "None"
+        if  issubclass(type(MAME_CRASH_HANDLER_EXCEPTION), Exception):
+            exc = MAME_CRASH_HANDLER_EXCEPTION
+        else:
+            exc = None
+        
+        # Show info
+            
+        box = layout.box()
+        r = box.column()
+        r.alert = True
+        r.label(text="Oops! Addon has crashed", icon="ERROR")
+        
+        # r = layout.row()
+        # r.alert = True
+        # r.label(text="If you want to report a bug, please include the log file")
+        # r.operator("mame.log_save", text="Save log to a text file")
+        # r = layout.row()
+        # r.alert = True
+        # r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
+        
+        r = layout.row()
+        r.enabled = get_preferences_attrib("console_loglevel") > 1
+        r.prop(self, 'b_show_details', toggle=True)
+        if self.b_show_details or get_preferences_attrib("console_loglevel") < 2:
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Caused by", icon="CANCEL")
+            r.label(text=f"{suspect_name}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Cause", icon="INFO")
+            r.label(text=f"{cause}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Exception Type", icon="QUESTION")
+            try:
+                r.label(text=f"{repr(exc) if exc else 'Not available'}")
+            except Exception:
+                r.label(text=f"{'Unknown'}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Details", icon="FILE_TEXT")
+            r.label(text=f"{details}")
+            r.label(text=f"Traceback", icon="FILE_TEXT")
+            for line in MAME_CRASH_HANDLER_EXCEPTION_STR.splitlines():
+                r.label(text=line)
+        
+
+
 # Generic data types
 # ------------------------------------------
 

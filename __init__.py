@@ -62,6 +62,7 @@ unsupported_ver_classes = [
 
 # Main
 classes = [
+    etc.CrashMessageBox, 
     etc.AddonPreferences,
     etc.AttributeListItem,
     etc.GenericBoolPropertyGroup,
