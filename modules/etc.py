@@ -17,6 +17,7 @@ The file must not create a circular import with anything
 
 import bpy
 import time
+from enum import Enum
 
 # Constants
 # ------------------------------------------
@@ -256,6 +257,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     quick_shelf_randomize: bpy.props.BoolProperty(name="Randomize Value", description="Adds a button to randomize value", default=False)
     quick_shelf_convert_to_mesh_data_repeat: bpy.props.BoolProperty(name="To Mesh Data Repeat", description="Adds a button to redo last \"To mesh Data\"", default=False)
     quick_attribute_node_enable: bpy.props.BoolProperty(name="Enable Quick Node", description="Buttons for to create attribute nodes in node editors", default=True)
+    
     # Debug
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
@@ -265,6 +267,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
     set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
     bakematerial_donotdelete: bpy.props.BoolProperty(name="bakematerial_donotdelete", description="", default=False)
+    console_loglevel: bpy.props.IntProperty(name="Console Log Level", default=3, min=0, max=4, description="0=SUPER_VERBOSE\n1=VERBOSE\n2=INFO\n3=WARNING\n4=ERROR")
+    en_slow_logging_ops: bpy.props.BoolProperty(name="Full Data Logging (Slow)", description="Collects more information about processed object", default=False)
 
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
@@ -445,7 +449,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row = col.row()
             row.operator('mame.report_issue', text="Report Issue")
             row.label(text='Report issue or request feature')
-            
+
+
+            row = col.row()
+            row.prop(self, 'en_slow_logging_ops', toggle=True, text="Enable Full Logging")
+            row.label(text='Slower. Enable only if required')
 
             row = col.row()
             row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
@@ -454,6 +462,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
             if self.debug_zone_en:
                 box = layout.box()
                 box.prop(self, 'verbose_mode')
+                box.prop(self, 'console_loglevel')
                 box.prop(self, 'debug_operators')
                 box.prop(self, 'pseudo_profiler')
                 box.prop(self, 'bakematerial_donotdelete')
@@ -550,6 +559,35 @@ def draw_multi_attribute_select_uilist(layout):
     col.template_list("ATTRIBUTE_UL_attribute_multiselect_list", "Mesh Attributes", gui_prop_group,
                     "to_mesh_data_attributes_list", gui_prop_group, "to_mesh_data_attributes_list_active_id", rows=10)
 
+
+# Logging
+# -----------------------------
+# Might be useful for debugging
+    
+class ELogLevel(Enum):
+    SUPER_VERBOSE = 0
+    VERBOSE = 1
+    INFO = 2
+    WARNING = 3
+    ERROR = 4
+
+def is_full_logging_enabled():
+    """
+    Some logging operations can slow down things drastically, can be enabled if needed
+    """
+    return get_preferences_attrib('en_slow_logging_ops') or get_preferences_attrib('console_loglevel') == 0
+
+def log(who, message:str, level:ELogLevel):
+    if hasattr(who, '__name__'):
+        who = who.__name__
+    else:
+        who = "Unknown"
+    
+    message = f"[{str(time.time()).ljust(20)[-16:]}][{str(level.name)[:4]}][{who.ljust(16)[:16]}]: {message}"
+    if level.value >= get_preferences_attrib("console_loglevel"):
+        print("[MAME]" + message)
+    
+    # TODO: Log to variable to be able to export logs
 
 # Generic data types
 # ------------------------------------------
