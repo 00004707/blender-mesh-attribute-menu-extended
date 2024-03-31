@@ -445,7 +445,6 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
     domain = attribute.domain if bugbypass_domain == '' else bugbypass_domain
 
     if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and dt != 'STRING' :
-        etc.pseudo_profiler("FOR_EACH_START")
         prop_name = get_attribute_value_propname(data_type=dt)
         if is_verbose_mode_enabled():
             print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
@@ -460,16 +459,13 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
             # convert to single dimension list if of vector type
             if dt in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
                 storage = np.array(value).flatten()
-                etc.pseudo_profiler("1D LIST CREATED")
             else:
                 storage = value
             
         else:
             storage = np.tile(value, len(attribute.data))
-        etc.pseudo_profiler("STORAGE_CREATED")
         
         attribute.data.foreach_set(prop_name, storage)
-        etc.pseudo_profiler("FOREACH SET DONE")
     # on selected indexes mode
     else:
         if is_verbose_mode_enabled():
@@ -480,7 +476,6 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
         # FOREACH_GET_FOREACH_SET for > 25%
         foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
         if len(on_indexes) > len(attribute.data)*foreach_get_from and dt != 'STRING':
-            etc.pseudo_profiler("FOREACH_GET_FOREACH_SET")
             if is_verbose_mode_enabled():
                 print(f"Using foreach set (on selected indexes)")
             prop_name = get_attribute_value_propname(data_type=dt)
@@ -503,7 +498,6 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
 
         # For loop for < 25% mesh selected
         else:
-            etc.pseudo_profiler("SET_VAL_ON_SELECTION_START")
             if is_verbose_mode_enabled():
                 print(f"Using assign by value")
             if prop == "vector":
@@ -515,8 +509,6 @@ BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
             else: # "value"
                 for i, id in enumerate(on_indexes):
                     attribute.data[id].value = value[i] if is_list else value
-
-            etc.pseudo_profiler("SET_VAL_ON_SELECTION_END")
                           
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
     """Assigns a single value to all selected domain in edit mode.
@@ -540,9 +532,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         print( f"Working on {active_attrib_name} attribute" )
 
     # Get selection in edit mode, on attribute domain
-    etc.pseudo_profiler("EXEC_START_SET_VAL_ON_SEL")
     selected_el = get_mesh_selected_domain_indexes(obj, active_attrib.domain, face_corner_spill)
-    etc.pseudo_profiler("GET_SEL_BY_DOMAIN_DONE")
 
     if not len(selected_el):
         self.report({'ERROR'}, "Invalid selection or no selection")
@@ -560,9 +550,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     # Write the new values
     #selected_el = [i for i, el in enumerate(selected_el) if el]
     #selected_el = [i.index for i in selected_el]
-    etc.pseudo_profiler("GET_SEL_EL_INDEX")
     set_attribute_values(active_attrib, value, selected_el)
-    etc.pseudo_profiler("SET_VALUES_END")
     if is_verbose_mode_enabled():
         a_vals = get_attribute_values(attribute, obj)
         print(f"Post-set values: {str(a_vals)}")

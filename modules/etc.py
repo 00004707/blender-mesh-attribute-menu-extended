@@ -175,22 +175,6 @@ class MAMEReportIssue(bpy.types.Operator):
     def poll(self, context):
         return True
 
-
-# Profiler
-# ------------------------------
-# aka printer with timestamps
-
-profiler_timestamp_start = 0
-
-def pseudo_profiler_init():
-    global profiler_timestamp_start
-    profiler_timestamp_start = time.time()
-
-def pseudo_profiler(info_string:str):
-    if get_preferences_attrib("pseudo_profiler"):
-        print(f"[PROFILER][{time.time()-profiler_timestamp_start}] {info_string}")
-
-
 # ------------------------------------------
 # Preferences
 
@@ -262,7 +246,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
-    pseudo_profiler: bpy.props.BoolProperty(name="Enable pseudo-profiler", description="Scary", default=False)
+    pseudo_profiler: bpy.props.BoolProperty(name="Pseudo-profiler - disable only", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
     set_algo_tweak: bpy.props.FloatProperty(name="set_algo_tweak", description="set_attribute_values()", default=0.15)
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
@@ -464,7 +448,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'verbose_mode')
                 box.prop(self, 'console_loglevel')
                 box.prop(self, 'debug_operators')
-                box.prop(self, 'pseudo_profiler')
+                if self.pseudo_profiler:
+                    box.prop(self, 'pseudo_profiler')
                 box.prop(self, 'bakematerial_donotdelete')
                 box.prop(self, 'disable_bpy_set_attribute')
                 box.prop(self, 'disable_version_checks')
