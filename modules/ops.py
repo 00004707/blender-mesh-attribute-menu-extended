@@ -2354,6 +2354,9 @@ class ReadValueFromSelectedDomains(bpy.types.Operator):
         if not context.active_object:
             self.poll_message_set("No active object")
             return False
+        elif not context.active_object.type == 'MESH' :
+            self.poll_message_set("Object is not a mesh")
+            return False
         elif not context.active_object.mode == 'EDIT' :
             self.poll_message_set("Not in edit mode")
             return False
