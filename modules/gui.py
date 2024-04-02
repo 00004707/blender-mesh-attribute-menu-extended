@@ -126,9 +126,8 @@ def attribute_assign_panel(self, context):
                         sub.ui_units_x = 1
                         sub.prop(prop_group, "val_select_non_zero_toggle", text=f"NZ" if prop_group.val_select_non_zero_toggle else 'V', toggle=True)
 
-                        
+                        # Slow operation warning with a toggle
                         if len(ob_data.vertices) > etc.LARGE_MESH_VERTICES_COUNT:
-                            
                             box = layout.box()
                             col2 = box.column(align=True)
                             r= col2.row()
@@ -138,6 +137,18 @@ def attribute_assign_panel(self, context):
                             r2 = col2.row()
                             r2.label(text='Allow slow operators')
                             r2.prop(prop_group, 'val_enable_slow_ops', toggle=True, text="Enable")
+
+                        # Reminder about a not selected pinned mesh
+                        try:
+                            if mesh_data_pinned and pin_ref is not None and not bpy.data.objects[pin_ref.obj_ref_name].select_get():
+                                box = layout.box()
+                                col2 = box.column(align=True)
+                                r= col2.row()
+                                r.label(icon='INFO', text="The pinned mesh is not selected")
+                                r2 = col2.row()
+                                r2.label(text="You can edit but won't see selected elements")
+                        except Exception:
+                            pass
 
         # Pin exception info                
         if pin_ref is None and mesh_data_pinned:
@@ -198,20 +209,12 @@ def attribute_assign_panel(self, context):
             else:
                 box.label(text="No active attribute", icon='ERROR')
 
+            # List of node editors open (debug)
             if etc.get_preferences_attrib('debug_operators'):
                 areas = func.get_node_editor_areas()
                 col = box.column(align=True)
                 for i, area in enumerate(areas):
                     col.label(text=f"{i+1}: {func.get_node_editor_type(area)}")
-
-# class DATA_PT_mesh_pinned_attributes(bpy.types.Panel):
-#     bl_label = "Pinned Attributes"
-#     bl_options = {'DEFAULT_CLOSED'}
-#     bl_space_type = 'PROPERTIES'
-#     bl_region_type = 'WINDOW'
-#     bl_context = "data"
-        
-#     mesh.attributes,
                     
 def attribute_context_menu_extension(self, context):
     """
