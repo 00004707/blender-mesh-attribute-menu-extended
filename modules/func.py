@@ -2739,7 +2739,6 @@ def update_last_object_reference_for_pinned_datablock(context, ob_data):
 
         else:
             i += 1
-    
     # Hold a list of ids to garbage collect
     gc_refs_ids = []
 
@@ -2780,6 +2779,10 @@ def update_last_object_reference_for_pinned_datablock(context, ob_data):
         elif not pin_ref:
             etc.log(update_last_object_reference_for_pinned_datablock, f"No reference yet for {ob_data.name if ob_data else None}", etc.ELogLevel.SUPER_VERBOSE)
     
+    # Memory leak protection (better be safe than sorry)
+    if len(gui_prop_group.last_object_refs) > etc.get_preferences_attrib("pinned_mesh_refcount_critical"):
+        gui_prop_group.last_object_refs.clear()
+
     return pin_ref, ob_data
 
 def get_pinned_mesh_object_and_mesh_reference(context):

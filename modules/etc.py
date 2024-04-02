@@ -253,6 +253,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     disable_bpy_set_attribute: bpy.props.BoolProperty(name="Force Disable bpy.ops.mesh.attribute_set", description="Uses add-on alghortitm only to set the values in edit mode", default=False)
     bakematerial_donotdelete: bpy.props.BoolProperty(name="Do not delete temporary bake material", description="Scary", default=False)
     pinned_mesh_refcount_max: bpy.props.IntProperty(name="Max Pinned Mesh References", description="Scary", default=8, min=2)
+    pinned_mesh_refcount_critical: bpy.props.IntProperty(name="Absolute Max Pinned Mesh References", description="Scary", default=64, min=4)
     console_loglevel: bpy.props.IntProperty(name="Console Log Level", default=3, min=0, max=4, description="0=SUPER_VERBOSE\n1=VERBOSE\n2=INFO\n3=WARNING\n4=ERROR")
     en_slow_logging_ops: bpy.props.BoolProperty(name="Full Data Logging (Slow)", description="Collects more information about processed object", default=False)
 
@@ -455,6 +456,13 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'disable_version_checks')
                 box.prop(self, 'set_algo_tweak')
                 box.prop(self, 'pinned_mesh_refcount_max', slider=False)
+
+                # nothing critical will happen if this is invalid, but still it should be above the max
+                if self.pinned_mesh_refcount_critical < self.pinned_mesh_refcount_max:
+                    self.pinned_mesh_refcount_critical = self.pinned_mesh_refcount_max
+                    
+                box.prop(self, 'pinned_mesh_refcount_critical', slider=False)
+
         
 
         # Toggle this to enable tabs layout
