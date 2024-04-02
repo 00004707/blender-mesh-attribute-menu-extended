@@ -1207,7 +1207,11 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "animnodes_attribute_node_datatype",        # The name of the data type used in Get Custom Attribute node in Animation nodes. ('INT', 'FLOAT', 'FLOAT2', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'BOOLEAN')
     "default_randomize_value_min",              # The suggested minimum random value for this datatype
     "default_randomize_value_max",              # The suggested maximum random value for this datatype 
-    "cast_type"                                 # The type to cast the value to to ensure it is valid
+    "cast_type",                                # The type to cast the value to to ensure it is valid
+    "large_capacity_vector",                    # Toggle to use custom UI for matrices and other values that can be stored in long vectors (Currently (4.2) no native suppport for UI elemens for matrices)
+    "large_capacity_vector_size",               # Number of elements in the vector. It may not be columnx*rows from values below
+    "large_capacity_vector_size_height",        # Number of columns, for a 4x3 matrix it would be 4
+    "large_capacity_vector_size_width",         # Number of rows, for a 4x3 matrix it would be 3
 ])
 
 # Defines all supported mesh data types
@@ -1227,7 +1231,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="FLOAT",
         default_randomize_value_min=0.0,
         default_randomize_value_max=1.0,
-        cast_type=float
+        cast_type=float,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "INT": AttributeDataType(
         friendly_name="Integer",
@@ -1244,7 +1252,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="INT",
         default_randomize_value_min=0,
         default_randomize_value_max=100,
-        cast_type=int
+        cast_type=int,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "INT8": AttributeDataType(
         friendly_name="8-bit Integer",
@@ -1261,7 +1273,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="INT",
         default_randomize_value_min=-127,
         default_randomize_value_max=128,
-        cast_type=int
+        cast_type=int,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "FLOAT_VECTOR": AttributeDataType(
         friendly_name="Vector",
@@ -1278,7 +1294,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="FLOAT_VECTOR",
         default_randomize_value_min=(0,0,0),
         default_randomize_value_max=(1,1,1),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "FLOAT_COLOR": AttributeDataType(
         friendly_name="Color",
@@ -1295,7 +1315,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="FLOAT_COLOR",
         default_randomize_value_min=(0.0,0.0,0.0,1.0),
         default_randomize_value_max=(1.0,1.0,1.0,1.0),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "BYTE_COLOR": AttributeDataType(
         friendly_name="Byte Color",
@@ -1312,7 +1336,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="BYTE_COLOR",
         default_randomize_value_min=(0.0,0.0,0.0,1.0),
         default_randomize_value_max=(1.0,1.0,1.0,1.0),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "STRING": AttributeDataType(
         friendly_name="String",
@@ -1329,7 +1357,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="",
         default_randomize_value_min=5, # used as length
         default_randomize_value_max=10,
-        cast_type=str
+        cast_type=str,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "BOOLEAN": AttributeDataType(
         friendly_name="Boolean",
@@ -1346,7 +1378,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="BOOLEAN",
         default_randomize_value_min=False,
         default_randomize_value_max=True,
-        cast_type=bool
+        cast_type=bool,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "FLOAT2": AttributeDataType(
         friendly_name="Vector 2D",
@@ -1363,7 +1399,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="FLOAT2",
         default_randomize_value_min=(0.0,0.0),
         default_randomize_value_max=(1.0,1.0),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "INT32_2D": AttributeDataType(
         friendly_name='2D Integer Vector',
@@ -1380,7 +1420,11 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="FLOAT2",
         default_randomize_value_min=(0,0),
         default_randomize_value_max=(100,100),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
     "QUATERNION": AttributeDataType(
         friendly_name='Quaternion',
@@ -1397,8 +1441,33 @@ attribute_data_types = {
         animnodes_attribute_node_datatype="",
         default_randomize_value_min=(-1.0,-1.0,-1.0,-1.0),
         default_randomize_value_max=(1.0,1.0,1.0,1.0),
-        cast_type=tuple
+        cast_type=tuple,
+        large_capacity_vector=False,
+        large_capacity_vector_size=0,
+        large_capacity_vector_size_height=0,
+        large_capacity_vector_size_width=0,
     ),
+    # "FLOAT4X4": AttributeDataType(
+    #     friendly_name='4x4 Matrix',
+    #     min_blender_ver=(4,2,0),
+    #     unsupported_from_blender_ver=None,
+    #     supported_attribute_invert_modes=["INVERSE_OF_A_MATRIX"], # needs implementation
+    #     supported_comparison_modes=['EQ','NEQ','EQORGR','EQORLS','GR','LS'],
+    #     vector_subelements_names=['X1','Y1','Z1','W1','X2','Y2','Z2','W2','X3','Y3','Z3','W3','X4','Y4','Z4','W4'],
+    #     gui_prop_subtype=None, #EDataTypeGuiPropType.VECTOR,
+    #     bpy_ops_set_attribute_param_name="value_quat",
+    #     default_value=(1.0, 0.0, 0.0, 0.0),
+    #     compatible_node_editors=[ENodeEditor.GEOMETRY_NODES, ENodeEditor.SHADER],
+    #     geonodes_attribute_node_datatype="FLOAT4X4",
+    #     animnodes_attribute_node_datatype="",
+    #     default_randomize_value_min=(-1.0,-1.0,-1.0,-1.0, -1.0,-1.0,-1.0,-1.0, -1.0,-1.0,-1.0,-1.0, -1.0,-1.0,-1.0,-1.0),
+    #     default_randomize_value_max=(1.0,1.0,1.0,1.0, 1.0,1.0,1.0,1.0, 1.0,1.0,1.0,1.0, 1.0,1.0,1.0,1.0),
+    #     cast_type=tuple,
+    #     large_capacity_vector=True,
+    #     large_capacity_vector_size=16,
+    #     large_capacity_vector_size_height=4,
+    #     large_capacity_vector_size_width=4,
+    # ),
 }
 
 # Defines mesh domain entries
@@ -1438,6 +1507,13 @@ attribute_domains = {
         friendly_name_short="Corner",
         friendly_name_veryshort="C",
         min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+    ),
+    "SPLINE": AttributeDomain(
+        friendly_name="Spline",
+        friendly_name_short="Spline",
+        friendly_name_veryshort="S",
+        min_blender_ver=(3,3),
         unsupported_from_blender_ver=None,
     ),
 }
@@ -1483,6 +1559,8 @@ AttributeType = namedtuple("AttriubteType", [
     "object_types",                     # Found on object types, eg MESH
     "min_blender_ver",                  # Minimum blender version that this attribute appeared
     "unsupported_from_blender_ver",     # First blender version that removed this attribute
+    # domains
+    # data type
 ])  
 
 # Stores all explicitly defined attributes that are generated by blender.
@@ -1497,6 +1575,7 @@ defined_attributes = {
     #     min_blender_ver = None,                  
     #     unsupported_from_blender_ver = None,
     #),
+
     "position": AttributeType(
         
         friendly_name = "Vertex Position",                    
@@ -1506,6 +1585,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "radius": AttributeType(
         
         friendly_name = "Curve or Point Cloud Radius",                    
@@ -1516,6 +1596,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "id": AttributeType(
         
         friendly_name = "ID",                    
@@ -1526,6 +1607,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "material_index": AttributeType(
         
         friendly_name = "Material Index",                    
@@ -1536,6 +1618,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "crease": AttributeType(
         
         friendly_name = "Edge Crease",                    
@@ -1546,6 +1629,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "sharp_face": AttributeType(
         
         friendly_name = "Face Sharp",                    
@@ -1556,6 +1640,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "resolution": AttributeType(
         
         friendly_name = "Bézier Spline/NURBs Resolution",                    
@@ -1566,16 +1651,18 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "cyclic": AttributeType(
         
         friendly_name = "Spline Cyclic",                    
         description = "\"Is the spline cyclic\" boolean",                      
         types = [EAttributeType.AUTOGENERATED, EAttributeType.DONOTREMOVE],                            
         object_types = ['CURVE'],                     
-         
+        # Boolean, spline
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "handle_left": AttributeType(
         
         friendly_name = "Bézier Curve Handle Left",                    
@@ -1586,6 +1673,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+
     "handle_right": AttributeType(
         
         friendly_name = "Bézier Curve Handle Right",                    
@@ -1596,6 +1684,7 @@ defined_attributes = {
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
+    
     "velocity": AttributeType(
         
         friendly_name = "Velocity",                    
@@ -1612,8 +1701,8 @@ defined_attributes = {
         friendly_name = "Mesh Rest Position",                    
         description = "The position of vertices without shape keys and modifiers",                      
         types = [EAttributeType.AUTOGENERATED],                            
-        object_types = ['MESH'],                     
-         
+        object_types = ['MESH', 'CURVES'],                     
+        # spline or mesh point
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
@@ -1624,19 +1713,94 @@ defined_attributes = {
         description = "Curves attachment location to a mesh",                      
         types = [EAttributeType.AUTOGENERATED],                            
         object_types = ['CURVES'],                     
-         
+        # 2D Vector spline
         min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
     
     ".sculpt_mask": AttributeType(
-        
+
         friendly_name = "Sculpt Mask",                    
         description = "The value of mask in sculpt mode",                      
         types = [EAttributeType.AUTOGENERATED, EAttributeType.NOTPROCEDURAL],                            
-        object_types = ['MESH'],                     
+        object_types = ['MESH'],  
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "surface_normal": AttributeType(
+        friendly_name = "Curves Surface Mesh Normal Vector",                    
+        description = "Normal vector of the surface mesh at curve root",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # spline, vector
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "normal_mode": AttributeType(
         
-        min_blender_ver = (4,1),                  
+        friendly_name = "Unknown",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # spline, 8bit
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "knots_mode": AttributeType(
+        
+        friendly_name = "Unknown",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # spline, 8bit
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "nurbs_order": AttributeType(
+        
+        friendly_name = "Unknown",                    
+        description = "",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # spline, 8bit
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "curve_type": AttributeType(
+        
+        friendly_name = "Curve Type",                    
+        description = "Type of the curve: Poly, Bezier or NURBS",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # spline, 8bit
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "nurbs_weight": AttributeType(
+
+        friendly_name = "NURBS Curve Weight",                    
+        description = "Weight value of a point in NURBS Curve",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # float point on curves
+        min_blender_ver = None,                  
+        unsupported_from_blender_ver = None,
+    ),
+
+    "tilt": AttributeType(
+
+        friendly_name = "Spline Tilt",                    
+        description = "Tilt value of a spline",                      
+        types = [EAttributeType.AUTOGENERATED],                            
+        object_types = ['CURVES'],                     
+        # point float
+        min_blender_ver = None,                  
         unsupported_from_blender_ver = None,
     ),
 
