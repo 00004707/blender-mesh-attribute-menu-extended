@@ -37,6 +37,8 @@ def quickshapekeypoll(self, context):
     elif obj.active_shape_key_index is None:
         self.poll_message_set("No active shape key")
         return False
+    elif not func.pinned_mesh_poll(self, context, False):
+        return False
     return True
 
 def dirtyquickshapekeypoll():
@@ -168,6 +170,8 @@ def vertexgrouppoll(self, context):
     elif obj.vertex_groups.active_index  is None:
         self.poll_message_set("No active vertex group")
         return False
+    elif not func.pinned_mesh_poll(self, context, False):
+        return False
     return True
 
 class QuickVertexGroupToAttribute(bpy.types.Operator):
@@ -279,6 +283,8 @@ def materialpoll(self, context):
     elif obj.active_material is None:
         self.poll_message_set("No active Material")
         return False
+    elif not func.pinned_mesh_poll(self, context, False):
+        return False
     return True
 
 def materialslotpoll(self, context):
@@ -292,6 +298,8 @@ def materialslotpoll(self, context):
         return False
     elif not len(obj.material_slots):
         self.poll_message_set("No Material Slots")
+        return False
+    elif not func.pinned_mesh_poll(self, context, False):
         return False
     return True
 
@@ -414,6 +422,8 @@ class QuickUVMapToAttribute(bpy.types.Operator):
         elif obj.data.uv_layers.active is None:
             self.poll_message_set("No active UVMap")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -445,6 +455,8 @@ def facemappoll(self, context):
         return False
     elif obj.face_maps.active_index is None:
         self.poll_message_set("No active shape key")
+        return False
+    elif not func.pinned_mesh_poll(self, context, False):
         return False
     return True
 
@@ -507,6 +519,8 @@ def sculpt_facemap_poll(self, context):
         return False
     elif obj.type != 'MESH':
         self.poll_message_set("Object is not a mesh")
+        return False
+    elif not func.pinned_mesh_poll(self, context, False):
         return False
     return True
 
@@ -679,6 +693,8 @@ class QuickBakeColorAttribute(bpy.types.Operator):
         elif obj.data.uv_layers.active_index is None:
             self.poll_message_set("No active UVMap")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -766,7 +782,8 @@ class QuickSculptModeApplyAttribute(bpy.types.Operator):
                      or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
             self.poll_message_set("Invalid attribute selected in menu")
             return False
-
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -807,7 +824,8 @@ class QuickSculptModeExtendAttribute(bpy.types.Operator):
         elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
             self.poll_message_set("Only supported for masks")
             return False
-    
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
 
         return True
 
@@ -842,6 +860,8 @@ class QuickSculptModeSubtractAttribute(bpy.types.Operator):
         elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
             self.poll_message_set("Only supported for masks")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -870,6 +890,8 @@ class QuickSculptModeRemoveAttribute(bpy.types.Operator):
             return False
         elif prop_group.enum_sculpt_mode_attribute_selector not in context.active_object.data.attributes:
             self.poll_message_set("This attribute does not exist on this mesh")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
 
@@ -909,6 +931,8 @@ class QuickSculptModeNewAttribute(bpy.types.Operator):
         elif not context.active_object.mode == 'SCULPT' :
             self.poll_message_set("Not in sculpt mode")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
     
     def execute(self, context):
@@ -945,7 +969,8 @@ class QuickSculptModeOverwriteAttribute(bpy.types.Operator):
                      or prop_group.enum_sculpt_mode_attribute_selector == 'NULL'):
             self.poll_message_set("Invalid attribute selected in menu")
             return False
-
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
 
     def execute(self, context):
@@ -997,6 +1022,8 @@ class QuickSculptModeApplyInvertedAttribute(bpy.types.Operator):
         elif prop_group.enum_sculpt_mode_attribute_mode_toggle != 'MASK':
             self.poll_message_set("Only supported for masks")
             return False
+        elif not func.pinned_mesh_poll(self, context, False):
+            return False
         return True
     
 
@@ -1031,6 +1058,8 @@ class QuickAttributeNode(bpy.types.Operator):
             return False
         elif obj.data.attributes.active is None:
             self.poll_message_set("No active attribute")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
 
         return True
@@ -1199,5 +1228,7 @@ class RandomizeGUIInputFieldValue(bpy.types.Operator):
             return False
         elif not func.get_attribute_compatibility_check(context.active_object.data.attributes.active):
             self.poll_message_set("Attribute is unsupported in this addon version")
+            return False
+        elif not func.pinned_mesh_poll(self, context, False):
             return False
         return True
