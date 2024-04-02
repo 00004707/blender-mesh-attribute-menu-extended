@@ -18,6 +18,7 @@ The file must not create a circular import with anything
 import bpy
 import time
 from enum import Enum
+from traceback import format_exc
 
 # Constants
 # ------------------------------------------
