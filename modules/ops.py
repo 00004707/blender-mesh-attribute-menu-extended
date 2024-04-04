@@ -4096,4 +4096,36 @@ class AttributesFromCSV(bpy.types.Operator):
         toggles_col.label(text="Attribute Name")
         toggles_col.prop(self,'b_remove_data_type_str_from_name')
         toggles_col.prop(self, 'b_remove_domain_str_from_name')
+
+# Register
+# ------------------------------------------
     
+classes = [
+    CreateAttribFromData,
+    AssignActiveAttribValueToSelection,
+    ConditionalSelection,
+    DuplicateAttribute,
+    InvertAttribute,
+    RemoveAllAttribute,
+    ConvertToMeshData,
+    CopyAttributeToSelected,
+    AttributeResolveNameCollisions,
+    ReadValueFromSelectedDomains,
+    RandomizeAttributeValue,
+    AttributesFromCSV,
+    AttributesToCSV
+]
+
+# blender 3.3+
+if bpy.app.version >= (3,3,0):
+    classes += [AttributesToImage]
+
+def register():
+    "Register classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.register_class(c)
+
+def unregister():
+    "Unregister classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.unregister_class(c)

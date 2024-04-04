@@ -105,4 +105,18 @@ class MAME_GUIPropValues(bpy.types.PropertyGroup):
 
     # UI Pinning support
     # -------------------------------------------------
-    last_object_refs: bpy.props.CollectionProperty(name="Collection of references to Object Datablock by Mesh Datatblock", type = etc.PropPanelPinMeshLastObject)
+    last_object_refs: bpy.props.CollectionProperty(name="Collection of references to Object Datablock by Mesh Datatblock", type = etc.PropPanelPinMeshLastObject) 
+classes = [
+    MAME_PropValues,
+    MAME_GUIPropValues,
+]
+
+def register():
+    "Register classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.register_class(c)
+
+def unregister():
+    "Unregister classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.unregister_class(c)

@@ -714,3 +714,26 @@ class PropPanelPinMeshLastObject(bpy.types.PropertyGroup):
     mesh_ref_name: bpy.props.StringProperty(name="Mesh Datablock Name")
     obj_ref_name: bpy.props.StringProperty(name="Object Datablock Name")
     workspace_name: bpy.props.StringProperty(name="Workspace in which the properties panel was seen")
+
+
+# Register
+# ------------------------------------------
+    
+classes = [
+    CrashMessageBox, 
+    AddonPreferences,
+    AttributeListItem,
+    GenericBoolPropertyGroup,
+    PropPanelPinMeshLastObject,
+    FakeFaceCornerSpillDisabledOperator,
+    MAMEReportIssue,
+
+def register():
+    "Register classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.register_class(c)
+
+def unregister():
+    "Unregister classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.unregister_class(c)

@@ -768,3 +768,26 @@ MESSAGE_BOX_DRAW_FUNCTION = None
 
 # Used in GenericMessageBox to use as extra data in draw function
 MESSAGE_BOX_EXTRA_DATA = None
+
+# Register
+# ------------------------------------------
+    
+classes = [
+    GenericMessageBox,
+    ATTRIBUTE_UL_attribute_multiselect_list,
+    MasksManagerPanel,
+    SculptMode3DViewHeaderSettings,
+    VIEW3D_MT_edit_mesh_vertices_attribute_from_data,
+    VIEW3D_MT_edit_mesh_edges_attribute_from_data,
+    VIEW3D_MT_edit_mesh_faces_attribute_from_data
+]
+
+def register():
+    "Register classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.register_class(c)
+
+def unregister():
+    "Unregister classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.unregister_class(c)

@@ -39,7 +39,10 @@ else:
     from .modules import ops
     from .modules import debug
     from .modules import quick_ops
-    
+
+# This is also the correct order of registering
+reg_modules = [etc, variable_data, gui, ops, quick_ops]
+
 """
 [!] Important notes
 
@@ -60,86 +63,6 @@ unsupported_ver_classes = [
     etc.MAMEDisable
 ]
 
-# Main
-classes = [
-    etc.CrashMessageBox, 
-    etc.AddonPreferences,
-    etc.AttributeListItem,
-    etc.GenericBoolPropertyGroup,
-    etc.PropPanelPinMeshLastObject,
-    gui.GenericMessageBox,
-    gui.ATTRIBUTE_UL_attribute_multiselect_list,
-    variable_data.MAME_PropValues,
-    variable_data.MAME_GUIPropValues,
-    ops.CreateAttribFromData,
-    ops.AssignActiveAttribValueToSelection,
-    ops.ConditionalSelection,
-    ops.DuplicateAttribute,
-    ops.InvertAttribute,
-    ops.RemoveAllAttribute,
-    ops.ConvertToMeshData,
-    ops.CopyAttributeToSelected,
-    quick_ops.DeSelectDomainButton,
-    quick_ops.SelectDomainButton,
-    quick_ops.RandomizeGUIInputFieldValue,
-    ops.AttributeResolveNameCollisions,
-    ops.ReadValueFromSelectedDomains,
-    ops.RandomizeAttributeValue,
-    etc.FakeFaceCornerSpillDisabledOperator,
-    etc.MAMEReportIssue,
-    gui.MasksManagerPanel,
-    ops.AttributesFromCSV,
-    ops.AttributesToCSV
-    
-]
-
-# blender 3.3+
-if bpy.app.version >= (3,3,0):
-    classes += [ops.AttributesToImage]
-
-# Debug
-classes += [
-    debug.MAMETestAll, 
-    debug.MAMECreateAllAttributes
-]
-
-# quick menu extensions
-classes += [
-    gui.SculptMode3DViewHeaderSettings,
-    quick_ops.QuickCurrentSculptMaskToAttribute,
-    quick_ops.QuickActiveAttributeToSculptMask,
-    quick_ops.QuickFaceSetsToAttribute,
-    quick_ops.QuickActiveAttributeToFaceSets,
-    quick_ops.QuickShapeKeyToAttribute,
-    quick_ops.QuickShapeKeyOffsetToAttribute,
-    quick_ops.QuickAllShapeKeyToAttributes,
-    quick_ops.QuickAllShapeKeyOffsetToAttributes,
-    quick_ops.QuickVertexGroupToAttribute,
-    quick_ops.QuickAllVertexGroupToAttributes,
-    quick_ops.QuickVertexGroupAssignmentToAttribute,
-    quick_ops.QuickAllVertexGroupAssignmentToAttributes,
-    quick_ops.QuickMaterialAssignmentToAttribute,
-    quick_ops.QuickAllMaterialAssignmentToAttribute,
-    quick_ops.QuickAllMaterialSlotAssignmentToAttribute,
-    quick_ops.QuickMaterialSlotAssignmentToAttribute,
-    quick_ops.QuickSculptModeApplyAttribute,
-    quick_ops.QuickSculptModeExtendAttribute,
-    quick_ops.QuickSculptModeSubtractAttribute,
-    quick_ops.QuickSculptModeRemoveAttribute,
-    quick_ops.QuickSculptModeNewAttribute,
-    quick_ops.QuickSculptModeOverwriteAttribute,
-    quick_ops.QuickSculptModeApplyInvertedAttribute,
-    quick_ops.QuickAttributeNode,
-    quick_ops.QuickUVMapToAttribute,
-    quick_ops.QuickFaceMapAssignmentToAttribute,
-    quick_ops.QuickFaceMapIndexToAttribute,
-    quick_ops.QuickBakeColorAttribute,
-    quick_ops.QuickSelectedInEditModeToSculptMask,
-    gui.VIEW3D_MT_edit_mesh_vertices_attribute_from_data,
-    gui.VIEW3D_MT_edit_mesh_edges_attribute_from_data,
-    gui.VIEW3D_MT_edit_mesh_faces_attribute_from_data
-]
-
 def register():
 
     if bpy.app.version < req_bl_ver:
@@ -147,8 +70,11 @@ def register():
             bpy.utils.register_class(c)
     else:
         try:
-            for c in classes:
-                bpy.utils.register_class(c)
+            etc.register()
+            variable_data.register()
+            ops.register()
+            gui.register()
+            quick_ops.register()
         except Exception as exc:
             unregister()
             raise exc
@@ -178,6 +104,7 @@ def register():
             bpy.types.MESH_MT_color_attribute_context_menu.append(gui.color_attributes_menu_extension)
 
 def unregister():
+    print(f"[MAME] Shutting down")
     if bpy.app.version < req_bl_ver:
         for c in unsupported_ver_classes:
             bpy.utils.unregister_class(c)
@@ -197,24 +124,29 @@ def unregister():
             bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(gui.vertex_context_menu_extension)
             bpy.types.MESH_MT_attribute_context_menu.remove(gui.attribute_context_menu_extension)
             bpy.types.DATA_PT_uv_texture.remove(gui.uvmaps_context_menu_extension)
+            
             if bpy.app.version < (4,0,0):
                 bpy.types.DATA_PT_face_maps.remove(gui.facemaps_context_menu_extension)
             
             if bpy.app.version >= (3,3,0):
                 bpy.types.MESH_MT_color_attribute_context_menu.remove(gui.color_attributes_menu_extension)
 
-            for c in classes:
-                bpy.utils.unregister_class(c)
+            for el in reg_modules:
+                name = el.__name__ if hasattr(el, '__name__') else str(el)
+                try:
+                    print(f"[MAME] Unregistering {name}")
+                    el.unregister()
+                except Exception:
+                    print(f"[MAME] Failed to unregister {name}")
+                    continue
 
             del bpy.types.Mesh.MAME_PropValues
             del bpy.types.WindowManager.MAME_GUIPropValues
             del bpy.types.WindowManager.mame_image_ref
         except Exception:
             pass
-
-        
-
-
+            
+        print(f"[MAME] bye")
 
 if __name__ == "__main__":
     register()

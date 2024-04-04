@@ -1231,4 +1231,54 @@ class RandomizeGUIInputFieldValue(bpy.types.Operator):
             return False
         elif not func.pinned_mesh_poll(self, context, False):
             return False
-        return True
+        return True        return True
+    
+    
+
+# Register
+# ------------------------------------------
+    
+classes = [
+    DeSelectDomainButton,
+    SelectDomainButton,
+    RandomizeGUIInputFieldValue,
+    QuickCurrentSculptMaskToAttribute,
+    QuickActiveAttributeToSculptMask,
+    QuickFaceSetsToAttribute,
+    QuickActiveAttributeToFaceSets,
+    QuickShapeKeyToAttribute,
+    QuickShapeKeyOffsetToAttribute,
+    QuickAllShapeKeyToAttributes,
+    QuickAllShapeKeyOffsetToAttributes,
+    QuickVertexGroupToAttribute,
+    QuickAllVertexGroupToAttributes,
+    QuickVertexGroupAssignmentToAttribute,
+    QuickAllVertexGroupAssignmentToAttributes,
+    QuickMaterialAssignmentToAttribute,
+    QuickAllMaterialAssignmentToAttribute,
+    QuickAllMaterialSlotAssignmentToAttribute,
+    QuickMaterialSlotAssignmentToAttribute,
+    QuickSculptModeApplyAttribute,
+    QuickSculptModeExtendAttribute,
+    QuickSculptModeSubtractAttribute,
+    QuickSculptModeRemoveAttribute,
+    QuickSculptModeNewAttribute,
+    QuickSculptModeOverwriteAttribute,
+    QuickSculptModeApplyInvertedAttribute,
+    QuickAttributeNode,
+    QuickUVMapToAttribute,
+    QuickFaceMapAssignmentToAttribute,
+    QuickFaceMapIndexToAttribute,
+    QuickBakeColorAttribute,
+    QuickSelectedInEditModeToSculptMask,
+    ]
+
+def register():
+    "Register classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.register_class(c)
+
+def unregister():
+    "Unregister classes. Exception handing in init"
+    for c in classes:
+        bpy.utils.unregister_class(c)
