@@ -10,7 +10,7 @@ If not, see <https://www.gnu.org/licenses/>.
 bl_info = {
     "name": "Mesh Attributes Menu eXtended",
     "author": "00004707",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (3, 1, 0),
     "location": "Properties Panel > Data Properties > Attributes",
     "description": "Extra tools to modify mesh attributes",
