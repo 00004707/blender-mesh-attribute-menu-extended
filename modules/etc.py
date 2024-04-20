@@ -298,7 +298,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row = col.row()
             row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
             row.label(text='Select face corner edges', icon='INFO')
-       
+
+            row = col.row()
+            row.prop(self, 'show_docs_button', toggle=True)
+            row.label(text='In operator menus', icon='INFO')
+
         def draw_specials(layout):
             titlebox = layout.box()
             titlebox.label(text="Specials menus - extensions to the chevron menus next to selection lists")
@@ -351,6 +355,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Color Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
+
+            row = col.row()
+            row.prop(self, 'mame_documentation_op', toggle=True)
+            row.label(text='In Attributes context menu', icon='INFO')
 
         def draw_3dview(layout):
             titlebox = layout.box()
@@ -430,6 +438,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
             titlebox = layout.box()
             titlebox.label(text="Troubleshooting")
             col = layout.column(align=False)
+
+            row = col.row()
+            row.operator('window_manager.mame_open_wiki', text="Open wiki")
+            row.label(text='See Documentation')
 
             row = col.row()
             row.operator('mame.report_issue', text="Report Issue")
@@ -700,6 +712,34 @@ class CrashMessageBox(bpy.types.Operator):
         
 
 
+# Wiki Link
+# ------------------------------------------
+
+class OpenWiki(bpy.types.Operator):
+    """Opens wiki page in default browser"""
+
+    bl_idname = "window_manager.mame_open_wiki"
+    bl_label = "Open Documentation"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    wiki_url: bpy.props.StringProperty(name="Wiki Page", default='')
+
+    def execute(self, context):
+        url = "https://github.com/00004707/blender-mesh-attribute-menu-extended/wiki" + '/' + str(self.wiki_url)
+        bpy.ops.wm.url_open(url=url)
+        return {'FINISHED'}
+    
+
+def append_wiki_operator(self, context):
+    """
+    Adds wiki button to draw function of an operator. Operator needs to have wiki_url variable
+    """
+    if get_preferences_attrib("show_docs_button"):
+        r = self.layout.column()
+        r.separator()
+        op = r.operator('window_manager.mame_open_wiki', icon='HELP')
+        op.wiki_url = self.wiki_url
+
 # Generic data types
 # ------------------------------------------
 
@@ -727,6 +767,7 @@ classes = [
     PropPanelPinMeshLastObject,
     FakeFaceCornerSpillDisabledOperator,
     MAMEReportIssue,
+    OpenWiki]
 
 def register():
     "Register classes. Exception handing in init"

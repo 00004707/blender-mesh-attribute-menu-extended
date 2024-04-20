@@ -237,6 +237,9 @@ def attribute_context_menu_extension(self, context):
         self.layout.operator('mesh.attribute_to_image', icon="TEXTURE")
     self.layout.operator('mesh.attribute_to_csv', icon='FILE_NEW')
     self.layout.operator('mesh.attribute_from_file', icon='FILEBROWSER')
+    if etc.get_preferences_attrib("mame_documentation_op"):
+        op = self.layout.operator('window_manager.mame_open_wiki', icon='HELP', text="Open MAME Wiki")
+        op.wiki_url = ''
 
 def vertex_groups_context_menu_extension(self,context):
     """
