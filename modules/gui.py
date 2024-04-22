@@ -785,12 +785,63 @@ classes = [
     VIEW3D_MT_edit_mesh_faces_attribute_from_data
 ]
 
+def ui_register():
+    # GUI Extensions
+    bpy.types.DATA_PT_mesh_attributes.append(attribute_assign_panel)
+    bpy.types.MESH_MT_attribute_context_menu.append(attribute_context_menu_extension)
+    bpy.types.VIEW3D_MT_mask.append(sculpt_mode_mask_menu_extension)
+    bpy.types.VIEW3D_MT_face_sets.append(sculpt_mode_face_sets_menu_extension)
+    bpy.types.MESH_MT_vertex_group_context_menu.append(vertex_groups_context_menu_extension)
+    bpy.types.MESH_MT_shape_key_context_menu.append(shape_keys_context_menu_extension)
+    bpy.types.MATERIAL_MT_context_menu.append(material_context_menu_extension)
+    bpy.types.VIEW3D_MT_object.append(object_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_faces.append(face_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_edges.append(edge_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_vertices.append(vertex_context_menu_extension)
+    bpy.types.DATA_PT_uv_texture.append(uvmaps_context_menu_extension)
+    
+    
+    if bpy.app.version < (4,0,0):
+        bpy.types.DATA_PT_face_maps.append(facemaps_context_menu_extension)
+    
+    if bpy.app.version >= (3,3,0):
+        bpy.types.MESH_MT_color_attribute_context_menu.append(color_attributes_menu_extension)
+
+def ui_unregister():
+    # GUI Extensions
+    bpy.types.DATA_PT_mesh_attributes.remove(attribute_assign_panel)
+    bpy.types.MESH_MT_attribute_context_menu.remove(attribute_context_menu_extension)
+    bpy.types.VIEW3D_MT_mask.remove(sculpt_mode_mask_menu_extension)
+    bpy.types.VIEW3D_MT_face_sets.remove(sculpt_mode_face_sets_menu_extension)
+    bpy.types.MESH_MT_vertex_group_context_menu.remove(vertex_groups_context_menu_extension)
+    bpy.types.MESH_MT_shape_key_context_menu.remove(shape_keys_context_menu_extension)
+    bpy.types.MATERIAL_MT_context_menu.remove(material_context_menu_extension)
+    bpy.types.VIEW3D_MT_object.remove(object_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_faces.remove(face_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_edges.remove(edge_context_menu_extension)
+    bpy.types.VIEW3D_MT_edit_mesh_vertices.remove(vertex_context_menu_extension)
+    bpy.types.MESH_MT_attribute_context_menu.remove(attribute_context_menu_extension)
+    bpy.types.DATA_PT_uv_texture.remove(uvmaps_context_menu_extension)
+    
+    
+    if bpy.app.version < (4,0,0):
+        bpy.types.DATA_PT_face_maps.remove(facemaps_context_menu_extension)
+    
+    if bpy.app.version >= (3,3,0):
+        bpy.types.MESH_MT_color_attribute_context_menu.remove(color_attributes_menu_extension)
+
+
 def register():
     "Register classes. Exception handing in init"
     for c in classes:
         bpy.utils.register_class(c)
+    
+    ui_register()
 
 def unregister():
     "Unregister classes. Exception handing in init"
+
+    ui_unregister()
+
     for c in classes:
         bpy.utils.unregister_class(c)
