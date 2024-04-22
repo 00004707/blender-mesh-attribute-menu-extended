@@ -192,13 +192,14 @@ def attribute_assign_panel(self, context):
                         nt = func.get_area_node_tree(area, useid=True)
                         parent = func.get_node_tree_parent(nt)
                         if nt is None:
-                            continue
+                            parentname = "No node tree"
                         elif parent is None:
                             parentname = nt.name
                         else:
                             parentname = parent.name
                         subrow = col.row(align=False)
-                        op = subrow.operator("mesh.attribute_create_attribute_node", text=f"{i+1}: {parentname}", icon=node_editor_icon)
+                        subrow.enabled = nt is not None
+                        op = subrow.operator("mesh.attribute_create_attribute_node", text=f"W{i+1}: {parentname}", icon=node_editor_icon)
                         op.windowid = area[0]
                         op.areaid = area[1]
                 elif not func.get_node_editor_areas():
