@@ -2868,7 +2868,10 @@ def get_supported_areas_for_attribute(attribute, ids = False):
 
     areas = get_node_editor_areas(True) # returns tuple window id area id
     
-    attribute_suppported_area_types = static_data.attribute_data_types[attribute.data_type].compatible_node_editors
+    try:
+        attribute_suppported_area_types = static_data.attribute_data_types[attribute.data_type].compatible_node_editors
+    except KeyError:
+        return []
     supported_areas = []
     for area in areas:
         arearef = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
