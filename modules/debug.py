@@ -132,15 +132,61 @@ class MAMECreateAllAttributes(bpy.types.Operator):
                   print(dt)
                   dts.append(dt)
              
-        for domain in ['POINT', 'EDGE','FACE','CORNER']:
+        for domain in static_data.attribute_domains:
             for data_type in dts:
-                bpy.context.active_object.data.attributes.new(f"{domain} {data_type}", data_type, domain)
+                try:
+                    bpy.context.active_object.data.attributes.new(f"{domain} {data_type}", data_type, domain)
+                except Exception:
+                    continue
         return {'FINISHED'}
 
     @classmethod
     def poll(self, context):
         return True
-    
+
+class MAMECreatePointCloudObject(bpy.types.Operator):
+    """
+    Creates point cloud object
+    """
+    bl_idname = "mame.create_point_cloud"
+    bl_label = "Create pointcloud"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        pcdata = bpy.data.pointclouds.new("ptcloud")
+        obj = bpy.data.objects.new('PointCloud', pcdata)
+        bpy.context.scene.collection.objects.link(obj)
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        return True
+
 # Utility
 # ----------------------------
 
+classes = [MAMECreateAllAttributes,
+           MAMECreatePointCloudObject,
+           MAMETestAll]
+
+def force_register():
+    for c in classes:
+        try:
+            bpy.utils.register_class(c)
+        except Exception:
+            etc.log(force_register, f"Cannot register debug operator", etc.ELogLevel.ERROR)
+            continue
+
+
+def register():
+    if etc.get_preferences_attrib('register_debug_ops_on_start'):
+        force_register()
+
+
+def unregister():
+    for c in classes:
+        try:
+            bpy.utils.unregister_class(c)
+        except Exception:
+            continue

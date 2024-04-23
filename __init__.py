@@ -41,7 +41,7 @@ else:
     from .modules import quick_ops
 
 # This is also the correct order of registering
-reg_modules = [etc, variable_data, gui, ops, quick_ops]
+reg_modules = [etc, variable_data, gui, ops, quick_ops, debug]
 
 """
 [!] Important notes
@@ -75,6 +75,7 @@ def register():
             ops.register()
             gui.register()
             quick_ops.register()
+            debug.register()
         except Exception as exc:
             unregister()
             raise exc
