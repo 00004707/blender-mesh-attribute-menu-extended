@@ -82,6 +82,15 @@ def register():
         
         # Per-object Property Values
         bpy.types.Mesh.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
+        
+        # This barely has any features, if it fails, at least rest of the addon will work
+        try:
+            bpy.types.PointCloud.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
+        except Exception:
+            pass
+        
+        if bpy.app.version >= (3,5,0):
+            bpy.types.Curves.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
         bpy.types.WindowManager.MAME_GUIPropValues = bpy.props.PointerProperty(type=variable_data.MAME_GUIPropValues)
         bpy.types.WindowManager.mame_image_ref = bpy.props.PointerProperty(name='Image', type=bpy.types.Image)
 
@@ -104,6 +113,15 @@ def unregister():
                     continue
 
             del bpy.types.Mesh.MAME_PropValues
+            
+            # This barely has any features, if it fails, at least rest of the addon will work
+            try:
+                del bpy.types.PointCloud.MAME_PropValues
+            except Exception:
+                pass
+
+            if bpy.app.version >= (3,5,0):
+                del bpy.types.Curves.MAME_PropValues
             del bpy.types.WindowManager.MAME_GUIPropValues
             del bpy.types.WindowManager.mame_image_ref
         except Exception:
