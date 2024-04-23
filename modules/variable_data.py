@@ -41,8 +41,8 @@ class MAME_PropValues(bpy.types.PropertyGroup):
         val_int32_2d: bpy.props.IntVectorProperty(name="2D Integer Vector Value", size=2, default=(0,0))
     if etc.get_blender_support(static_data.attribute_data_types['QUATERNION'].min_blender_ver, static_data.attribute_data_types['QUATERNION'].unsupported_from_blender_ver):
         val_quaternion: bpy.props.FloatVectorProperty(name="Quaternion Value", size=4, default=(1.0,0.0,0.0,0.0))
-    # if etc.get_blender_support(static_data.attribute_data_types['FLOAT4X4'].min_blender_ver, static_data.attribute_data_types['FLOAT4X4'].unsupported_from_blender_ver):
-    #     val_float4x4: bpy.props.FloatVectorProperty(name="4x4 Matrix Value", size=16, default=(1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0))
+    if etc.get_blender_support(static_data.attribute_data_types['FLOAT4X4'].min_blender_ver, static_data.attribute_data_types['FLOAT4X4'].unsupported_from_blender_ver):
+        val_float4x4: bpy.props.FloatVectorProperty(name="4x4 Matrix Value", size=16, default=(1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0))
 
     # Assign/select options
     # -------------------------------------------------
@@ -106,6 +106,7 @@ class MAME_GUIPropValues(bpy.types.PropertyGroup):
     # UI Pinning support
     # -------------------------------------------------
     last_object_refs: bpy.props.CollectionProperty(name="Collection of references to Object Datablock by Mesh Datatblock", type = etc.PropPanelPinMeshLastObject) 
+    
 classes = [
     MAME_PropValues,
     MAME_GUIPropValues,
