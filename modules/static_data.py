@@ -20,7 +20,7 @@ from . import etc
 from enum import Enum
 import string
 
-# Defines object data sourc,e
+# Defines object data source
 ObjectDataSource = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",                                   # Friendly name shown in UI
     "enum_gui_friendly_name_no_special_characters",             # Friendly name shown in UI without non-standard character set
@@ -1200,7 +1200,7 @@ AttributeDataType = namedtuple("AttributeDataType", [
     "supported_comparison_modes",               # Supported comparison modes, from attribute_comparison_modes
     "gui_prop_subtype",                         # Type of the gui to display for this attribute data type (EDataTypeGuiPropType)
     "vector_subelements_names",                 # Names of subelements in a vector value, eg X Y Z or None    
-    "bpy_ops_set_attribute_param_name",         # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type
+    "bpy_ops_set_attribute_param_name",         # Name of the parameter passed to bpy.ops.mesh.attribute_set to assign the value to this data type. None means it is not supported.
     "default_value",                            # The default or zero value
     "compatible_node_editors",                  # The supported node editors, ENodeEditor enum
     "geonodes_attribute_node_datatype",         # The name of the data type used in Named Attribute node in Geometry nodes. 'FLOAT', 'INT', 'FLOAT_VECTOR', 'FLOAT_COLOR', 'BOOLEAN', 'QUATERNION'
