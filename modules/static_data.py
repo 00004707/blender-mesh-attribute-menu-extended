@@ -1509,7 +1509,7 @@ attribute_domains = {
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
     ),
-    "SPLINE": AttributeDomain(
+    "CURVE": AttributeDomain(
         friendly_name="Spline",
         friendly_name_short="Spline",
         friendly_name_veryshort="S",
