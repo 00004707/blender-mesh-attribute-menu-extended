@@ -636,6 +636,59 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
     else:
         raise etc.MeshDataWriteException('convert_attribute', f"{attrib_name} attribute is None?")
 
+# Object related
+# ------------------------------------------
+
+def get_object_in_context(context = None, b_force_active_object = False):
+
+    """Gets object reference and object data refenence for object in context. eg. Active object or pinned object
+    
+    Args:
+        context (Optional): Blender Context  
+        b_force_active_object (bool): Always get active object in the viewport
+
+    Returns:
+        obj: Object reference
+        obj_data: Object data reference
+    """
+
+    if context is None:
+        context = bpy.context
+
+    # If it's pinned mesh, we need to get data and reference from somewhere else.
+    b_pinned_mesh_in_use = is_pinned_mesh_used(context)
+    
+    if b_pinned_mesh_in_use and not b_force_active_object:
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+        etc.log(get_object_in_context, f"Using pinned mesh {obj_data.name} + {obj.name}", etc.ELogLevel.VERBOSE)
+    else:
+        obj_data = context.active_object.data
+        obj = context.active_object
+
+    return obj, obj_data
+
+def set_object_in_context_as_active(self, context):
+    """Sets the object in context, active or pinned, as active (usually to change object mode and act like it's selected and active)
+
+    Args:
+        context (ref): Context
+    """
+
+    obj, obj_data = get_object_in_context(context)
+    self._current_active_object = bpy.context.active_object
+    self._current_selection_state_of_obj = bpy.context.active_object.select_get()
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+
+def set_object_by_user_as_active_back(self, context):
+    """Restores the selected and active state of object before set_object_in_context_as_active
+
+    Args:
+        context (ref): Context
+    """
+
+    bpy.context.view_layer.objects.active = self._current_active_object
+    bpy.context.view_layer.objects.active.select_set(self._current_selection_state_of_obj)
 
 # Mesh related
 # ------------------------------------------
@@ -1936,7 +1989,10 @@ def get_face_maps_enum(self, context):
     """
 
     items = []
-    obj = bpy.context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = bpy.context.active_object
 
     # case: no data
     if not hasattr(obj, 'face_maps') or not len(obj.face_maps):
@@ -1962,7 +2018,10 @@ def get_material_slots_enum(self, context):
         list: List of tuples to be used as enum values
     """
     items = []
-    obj = bpy.context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = bpy.context.active_object
 
     # case: no data
     if not len(obj.material_slots):
@@ -2017,7 +2076,10 @@ def get_vertex_groups_enum(self, context):
     """
 
     items = []
-    obj = bpy.context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = bpy.context.active_object
 
     # case: no data
     if not len(obj.vertex_groups):
@@ -2043,7 +2105,10 @@ def get_shape_keys_enum(self, context):
     """
 
     items = []
-    obj = bpy.context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = bpy.context.active_object
 
     # case: no data
     if obj.data.shape_keys is None:
@@ -2069,7 +2134,10 @@ def get_uvmaps_enum(self, context):
     """
 
     items = []
-    obj = context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = bpy.context.active_object
 
     # case: no data
     if not len(obj.data.uv_layers):
@@ -2186,7 +2254,10 @@ def get_target_data_enum(self, context, include_separators=True):
         list: List of tuples to be used as enum entries
     """
     items = []
-    obj = context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = context.active_object
     active_attrib = obj.data.attributes.active
     inv_data_entry = ("NULL", "[!] No Convertable Data", "")
 
@@ -2399,7 +2470,10 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
     Returns:
         list: List of tuples to be used in enum
     """
-    obj = context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = context.active_object
 
     enum_entries = []
     inv_data_entry = ("NULL", "[!] No valid attribues", "This list should contain all compatible attributes")
@@ -2430,7 +2504,10 @@ def get_attribute_comparison_conditions_enum_for_property(self,context):
     Returns:
         list: List of tuples to be used in enum
     """
-    obj = context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = context.active_object
     a = get_active_attribute(obj)
     
     return get_attribute_comparison_conditions_enum(a.data_type)
@@ -2445,7 +2522,10 @@ def get_attribute_comparison_conditions_enum(data_type):
     return l
 
 def get_image_channel_datasource_enum(self, context, index):
-    obj = context.active_object
+    if is_pinned_mesh_used(context):
+        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+    else:
+        obj = context.active_object
     
     sourcetype = getattr(self, f'source_attribute_{index}_datasource_enum')
     
@@ -3194,8 +3274,12 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
 # UILIsts
 # ----------------------------------------------
 
-def refresh_attribute_UIList_elements():
-        obj = bpy.context.active_object
+def refresh_attribute_UIList_elements(context):
+
+        if is_pinned_mesh_used(context):
+            obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
+        else:
+            obj = bpy.context.active_object
         gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
         list_elements = gui_prop_group.to_mesh_data_attributes_list
 
@@ -3216,7 +3300,6 @@ def set_attribute_uilist_compatible_attribute_type(domain, data_type):
         domain (str): domain
         data_type (str): data type
     """
-    obj = bpy.context.active_object
     gui_prop_group = bpy.context.window_manager.MAME_GUIPropValues
 
     for el in gui_prop_group.to_mesh_data_attributes_list:
