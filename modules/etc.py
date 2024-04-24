@@ -212,7 +212,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
     
     # General
     enhanced_enum_titles: bpy.props.BoolProperty(name="Enhanced dropdown menu titles", description="If the following text -> ᶠᵃᶜᵉ, does not display correctly you can toggle it off", default=True)
-    attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu", description="Assign and clear buttons", default=True)
+    attribute_assign_menu: bpy.props.BoolProperty(name="Attribute Assign Menu (Mesh)", description="Assign and clear buttons", default=True)
+    attribute_assign_menu_curves: bpy.props.BoolProperty(name="Attribute Assign Menu (Curves)", description="Assign and clear buttons", default=True)
+    attribute_assign_menu_pointcloud: bpy.props.BoolProperty(name="Attribute Assign Menu (Point Cloud)", description="Assign and clear buttons", default=True)
     set_attribute_raw_quaterion: bpy.props.BoolProperty(name="Set Raw Quaternions Value", description="If you want to use quaternion attributes as 4D vectors instead of quaternions, enable this", default=True)
     select_attribute_precise_facecorners: bpy.props.BoolProperty(name="Precise Face Corner Select (Slow)", description="If you want to select individual edges that identify a face corner, this has to be enabled. Not requried for face painting", default=False)
 
@@ -256,6 +258,11 @@ class AddonPreferences(bpy.types.AddonPreferences):
     pinned_mesh_refcount_critical: bpy.props.IntProperty(name="Absolute Max Pinned Mesh References", description="Scary", default=64, min=4)
     console_loglevel: bpy.props.IntProperty(name="Console Log Level", default=3, min=0, max=4, description="0=SUPER_VERBOSE\n1=VERBOSE\n2=INFO\n3=WARNING\n4=ERROR")
     en_slow_logging_ops: bpy.props.BoolProperty(name="Full Data Logging (Slow)", description="Collects more information about processed object", default=False)
+    show_hidden_blown_fuses: bpy.props.BoolProperty(name="Show hidden UI elements with blown fuses", description="Scary", default=False)
+    max_log_lines: bpy.props.IntProperty(name="Max Log Lines", description="Scary", min = 8, default=64, max = 128)
+    force_assign_on_selected_by_value: bpy.props.BoolProperty(name="Force Assign On Selected By Value", description="Scary", default=False)
+    force_assign_on_selected_by_foreach_get_foreach_set: bpy.props.BoolProperty(name="Force Assign On Selected By foreach", description="Scary", default=False)
+    register_debug_ops_on_start: bpy.props.BoolProperty(name="Register Debug Operators On Startup (Needs Restart)", description="Scary", default=False)
 
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
@@ -280,6 +287,28 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.label(text='Assign and clear buttons', icon='INFO')
             op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
             op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Mesh'
+
+            row = col.row()
+            ver_support = get_blender_support((3,5,0))
+            row.enabled = ver_support
+            row.prop(self, 'attribute_assign_menu_curves', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Assign and clear buttons' if ver_support else "Not supported in current blender version", icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Curves'
+            
+
+            row = col.row()
+            ver_support = False #get_blender_support((3,5,0))
+            row.enabled = ver_support
+            row.prop(self, 'attribute_assign_menu_pointcloud', toggle=True)
+            subrow = row.row()
+            subrow.alert = not ver_support
+            subrow.label(text='Assign and clear buttons' if ver_support else "Not supported in current blender version", icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Point-Cloud'
+            
 
             row = col.row()
             ver_support = get_blender_support((3,3,0))
@@ -380,9 +409,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
             op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
             op.wiki_url = 'Preferences-Page#Color-Attributes-Context-Menu'
 
-            row = col.row()
-            row.prop(self, 'mame_documentation_op', toggle=True)
-            row.label(text='In Attributes context menu', icon='INFO')
+            # row = col.row()
+            # row.prop(self, 'mame_documentation_op', toggle=True)
+            # row.label(text='In Attributes context menu', icon='INFO')
 
         def draw_3dview(layout):
             titlebox = layout.box()
@@ -493,6 +522,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
             op.wiki_url = 'Preferences-Page#Enable-Full-Logging'
 
             row = col.row()
+            row.operator('window_manager.mame_show_log', text="Show Log")
+            row.label(text='Preview log')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Show-Log'
+            
+            row = col.row()
             row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
             row.label(text='Scary Spooky Skeletons', icon='ERROR')
             op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
@@ -504,7 +539,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
                     box.prop(self, 'verbose_mode')
                 box.prop(self, 'console_loglevel')
                 box.prop(self, 'debug_operators')
-                if self.pseudo_profiler:
+                box.prop(self, 'register_debug_ops_on_start')
+                if self.pseudo_profiler or self.show_hidden_blown_fuses:
                     box.prop(self, 'pseudo_profiler')
                 box.prop(self, 'bakematerial_donotdelete')
                 box.prop(self, 'disable_bpy_set_attribute')
@@ -517,6 +553,12 @@ class AddonPreferences(bpy.types.AddonPreferences):
                     self.pinned_mesh_refcount_critical = self.pinned_mesh_refcount_max
                     
                 box.prop(self, 'pinned_mesh_refcount_critical', slider=False)
+
+                box.prop(self, 'show_hidden_blown_fuses')
+                box.prop(self, 'max_log_lines')
+                box.prop(self, 'force_assign_on_selected_by_value')
+                box.prop(self, 'force_assign_on_selected_by_foreach_get_foreach_set')
+                
 
         
 
