@@ -814,12 +814,12 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
                         if fc.index in f.loop_indices:
                             face = f
                             break
-
-                    if is_verbose_mode_enabled():
-                        print(f"Face {face.index} has fc {fc.index}")
-                        print(f"Face {face.index} has vts {[v for v in face.vertices]}")
-                        print(f"Looking for vert {fc.vertex_index}")
-                        print(f"Looking in face {face.index}: {list(obj.data.polygons[face.index].loop_indices)}")
+                    
+                    if etc.is_full_logging_enabled():
+                        etc.log(get_mesh_selected_domain_indexes, f"Face {face.index} has fc {fc.index}"\
+                       f"Face {face.index} has vts {[v for v in face.vertices]}"\
+                       f"Looking for vert {fc.vertex_index}"\
+                       f"Looking in face {face.index}: {list(obj.data.polygons[face.index].loop_indices)}", etc.ELogLevel.SUPER_VERBOSE)
 
                     valid_edges = []
                     for i in obj.data.polygons[face.index].loop_indices:
@@ -1574,7 +1574,6 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
         a_vals = kwargs['raw_data']
     else:
         a_vals = get_attribute_values(src_attrib, obj)
-    if is_verbose_mode_enabled():
 
     etc.log(set_mesh_data, f"Setting mesh data {data_target} from {src_attrib}, \nvalues: {a_vals}, \nkwargs: {kwargs}, \ncustom name: {new_data_name}", etc.ELogLevel.VERBOSE)
 
