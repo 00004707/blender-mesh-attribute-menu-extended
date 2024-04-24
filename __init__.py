@@ -83,6 +83,9 @@ def register():
         # Logging
         etc.init_logging()
 
+        # Global bl_info
+        etc.set_global_bl_info(bl_info)
+
         # Per-object Property Values
         bpy.types.Mesh.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
         

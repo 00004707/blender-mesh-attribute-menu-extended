@@ -26,6 +26,9 @@ LARGE_MESH_VERTICES_COUNT = 500000
 LOGGER = None
 LOG = []
 
+# Copy of BL_INFO from __init__
+BL_INFO = {}
+
 # Exceptions
 # ------------------------------------------
 
@@ -98,6 +101,38 @@ def get_enhanced_enum_titles_enabled():
     else:
         return False
 
+def set_global_bl_info(bl_info: set):
+    """Sets the bl_info from __init__ to use in other functions
+
+    Args:
+        bl_info (set): bl_info
+    """
+    global BL_INFO
+    BL_INFO = bl_info
+
+def get_bl_info_key_value(key:str):
+    """Returns bl_info key value or none if invalid
+
+    Returns:
+        str: bl_info set value at key
+    """
+
+    if key in BL_INFO:
+        return BL_INFO[key]
+    return None
+
+def bl_version_tuple_to_friendly_string(ver_tuple:tuple):
+    """Returns nicely formatted blender style version tuple as a string
+
+    Args:
+        ver_tuple (tuple): eg. (1,0,0)
+
+    Returns:
+        str: friendly string
+    """
+    if type(ver_tuple) != tuple:
+        return "Unknown"
+    return str(f"{ver_tuple[0]}.{ver_tuple[1]}.{ver_tuple[2]}")
 
 # Fake operators
 # ------------------------------
