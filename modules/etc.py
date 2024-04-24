@@ -245,7 +245,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     
     # Debug
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
-    verbose_mode: bpy.props.BoolProperty(name="Verbose Logging", description="Scary", default=False)
+    verbose_mode: bpy.props.BoolProperty(name="Verbose Logging - disable only", description="Scary", default=False)
     debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
     pseudo_profiler: bpy.props.BoolProperty(name="Pseudo-profiler - disable only", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
@@ -458,7 +458,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
 
             if self.debug_zone_en:
                 box = layout.box()
-                box.prop(self, 'verbose_mode')
+                if self.verbose_mode or self.show_hidden_blown_fuses:
+                    box.prop(self, 'verbose_mode')
                 box.prop(self, 'console_loglevel')
                 box.prop(self, 'debug_operators')
                 if self.pseudo_profiler:
