@@ -15,16 +15,29 @@ The file must not create a circular import with anything
 
 """
 
-import bpy, time, _bpy#, logging
+import bpy, time, _bpy, os#, logging
+from datetime import datetime
+from bpy_extras.io_utils import ExportHelper
 from enum import Enum
 from traceback import format_exc
 
 # Constants
 # ------------------------------------------
+
+# Package name, eg. to disable the addon
 __addon_package_name__ = __package__.replace('.modules','')
+
+# Amount of vertices or points to warn user about slow operation
 LARGE_MESH_VERTICES_COUNT = 500000
-LOGGER = None
+
+# Logger object
+# LOGGER = None
+
+# Addon log, elements format: {'level': level.name, 'message': message, 'timestamp': time.time(), 'who': obj reference})
 LOG = []
+
+# Snapshot of a log at given moment, used by crash hander UI to not overwrite log with new values
+LOG_SNAPSHOT = []
 
 # Copy of BL_INFO from __init__
 BL_INFO = {}
@@ -134,6 +147,16 @@ def bl_version_tuple_to_friendly_string(ver_tuple:tuple):
         return "Unknown"
     return str(f"{ver_tuple[0]}.{ver_tuple[1]}.{ver_tuple[2]}")
 
+def make_log_snapshot():
+    """Copies current log into a new container so it does not get overwritten
+
+    Returns:
+        None
+    """
+
+    global LOG, LOG_SNAPSHOT
+    LOG_SNAPSHOT = LOG.copy()
+
 # Fake operators
 # ------------------------------
 
@@ -193,12 +216,12 @@ class MAMEBlenderUpdate(bpy.types.Operator):
     def poll(self, context):
         return True
 
-class MAMEReportIssue(bpy.types.Operator):
+class WINDOW_MANAGER_OT_mame_report_issue(bpy.types.Operator):
     """
     Reports issue with the addon
     """
 
-    bl_idname = "mame.report_issue"
+    bl_idname = "window_manager.mame_report_issue"
     bl_label = "Report Issue"
     bl_description = "Open github page to report the issue"
     bl_options = {'REGISTER', 'INTERNAL'}
@@ -545,11 +568,16 @@ class AddonPreferences(bpy.types.AddonPreferences):
             op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
 
             row = col.row()
-            row.operator('mame.report_issue', text="Report Issue")
+            row.operator('window_manager.mame_report_issue', text="Report Issue")
             row.label(text='Report issue or request feature')
-            op = row.operator('mame.report_issue', icon='QUESTION', text="")
+            op = row.operator('window_manager.mame_report_issue', icon='QUESTION', text="")
 
-
+            row = col.row()
+            row.operator('window_manager.mame_save_log_file', text="Save Log File")
+            row.label(text='Save log file to a text file')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Save-Log'
+            
             row = col.row()
             row.prop(self, 'en_slow_logging_ops', toggle=True, text="Enable Full Logging")
             row.label(text='Slower. Enable only if required')
@@ -582,11 +610,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'disable_version_checks')
                 box.prop(self, 'set_algo_tweak')
                 box.prop(self, 'pinned_mesh_refcount_max', slider=False)
-
+        
                 # nothing critical will happen if this is invalid, but still it should be above the max
                 if self.pinned_mesh_refcount_critical < self.pinned_mesh_refcount_max:
                     self.pinned_mesh_refcount_critical = self.pinned_mesh_refcount_max
-                    
                 box.prop(self, 'pinned_mesh_refcount_critical', slider=False)
 
                 box.prop(self, 'show_hidden_blown_fuses')
@@ -739,52 +766,185 @@ def log(who, message:str, level:ELogLevel):
 
     global LOG
 
-    LOG.append({'level': level.name, 'message': message, 'timestamp': time.time()})
+    LOG.append({'level': level.name, 'message': message, 'timestamp': time.time(), 'who': who})
     while len(LOG) > get_preferences_attrib("max_log_lines"):
         LOG.pop()
 
-class SaveLogFile(bpy.types.Operator):
+class WINDOW_MANAGER_OT_mame_save_log_file(bpy.types.Operator, ExportHelper):
     """
     Saves log to a text file
     """
 
-    bl_idname = "mame.log_save"
+    bl_idname = "window_manager.mame_save_log_file"
     bl_label = "Save log file"
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
+    # Filename
+    filename_ext = ".txt"
+
+    # File filter, i guess just to show less stuff in filepath selector
+    filter_glob: bpy.props.StringProperty(
+        default="*.txt",
+        options={'HIDDEN'},
+        maxlen=255,  
+    )
+    
+    # File path
+    filepath: bpy.props.StringProperty(
+        name="File Path",
+        description="Filepath used for exporting the file",
+        maxlen=1024,
+        subtype='FILE_PATH',
+        default= "mame_log"
+    )
+
+    # Overwrite protection
+    check_existing: bpy.props.BoolProperty(
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
+
+    # Included info list
+    included_info = [
+        "Blender Version",
+        "Addon version",
+        "Time and date",
+        "Last addon operations",
+        "Last addon handled exceptions",
+        "This addon preferences",
+        "May contain user name"
+    ]
+
+    #Uses last captured log snapshot instead of live capture
+    b_use_log_snapshot: bpy.props.BoolProperty(
+        name="Use Log Snapshot",
+        description="Uses last captured log snapshot instead of live capture",
+        default=False,
+    )
+
+    # Generic error message
+    err_msg_troubleshoot = "Check:\n"\
+        "* if your user account has permissions to write to this file in specified location\n"\
+        "* or if other program is using the specified file"
+
     @classmethod
     def poll(self, context):
+        
         return True
     
     def execute(self, context):
+        global LOG
+        global BL_INFO
+        
+        # Try to open file for writing
+        file = None
+        try:
+            file = open(self.filepath, "w")
+        except Exception as exc:
+            if file is not None:
+                try:
+                    file.close()
+                except Exception:
+                    pass
+            bpy.ops.window_manager.mame_message_box(message="Failed to create log file.\n" + self.err_msg_troubleshoot
+                                                    + f"\n More info:\n{str(exc)}", width=500)
+            return {'CANCELLED'}
+            
+        # Prepare text file
+        try:
+            log_text = ""
+
+            log_text += "Mesh Attributes Extended Addon Log File\n"
+            log_text += f"Version { bl_version_tuple_to_friendly_string(get_bl_info_key_value('version')) }\n"
+            log_text += f"Blender version: {bpy.app.version_string}\n"
+            date_time = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+            log_text += f"Creation Time: {date_time}\n"
+
+            log_text += f"-----------------------\n"
+            log_text += f"Log Entries\n"
+            log_text += f"-----------------------\n"
+            
+            for i, log_el in enumerate(LOG):
+                try:
+                    
+                    logline_temp = f"[{str(i).ljust(3)[:3]}]"\
+                        f"[{str(log_el['timestamp']).ljust(16)[:16]}]"\
+                        f"[{str(log_el['level'])[:4]}]"\
+                        f"[{log_el['who'].ljust(16)[:16]}]:"\
+                            f" {str(log_el['message'])}\n"
+                    
+                    # Anonymize paths
+                    try:
+                        username = os.getenv('username')
+                        if username is not None:
+                            logline_temp = logline_temp.replace(f"\\{username}\\", "\\ANONYMOUS_MAME_USER\\")
+                    except Exception:
+                        pass
+                    log_text += logline_temp
+                except Exception as exc:
+                    log_text += f"Failed to write {str(i)} log element - {str(exc)}\n"
+                
+            log_text += f"-----------------------\n"
+            log_text += f"Preferences\n"
+            log_text += f"-----------------------\n"
+            try:
+                # Get preferences panel values
+                prefs = bpy.context.preferences.addons[__addon_package_name__].preferences
+                excluded_pref_attrs = ['bl_rna', 'bl_idname', 'rna_type']
+                pref_attr = [attr for attr in dir(prefs) if (attr not in excluded_pref_attrs
+                                                            and not callable(getattr(prefs, attr)) 
+                                                            and not attr.startswith("__"))]
+                
+                for i, a in enumerate(pref_attr):
+                    try:
+                        log_text += f"[{str(i)}] {a}: {get_preferences_attrib(a)}\n"
+                    except Exception as exc:
+                        log_text += f"Failed to write {str(i)} log element - {str(exc)}\n"
+                    
+            except Exception as exc:
+                log_text += f"Failed to get preferences - {str(exc)}\n"
+        
+        except Exception as exc:
+            if file is not None:
+                file.close()
+            call_catastrophic_crash_handler(WINDOW_MANAGER_OT_mame_save_log_file, exc)
+
+        try:
+            file.write(log_text)
+        except Exception as exc:
+            try:
+                file.close()
+            except Exception:
+                pass
+            bpy.ops.window_manager.mame_message_box(message="Failed to write log to log file.\n" 
+                                                    + self.err_msg_troubleshoot + f"\n More info:\n{str(exc)}", width=500)
+            return {'CANCELLED'}
+        
+        # Close file
+        try:
+            file.close()
+        except Exception:
+            pass
+
         return {'FINISHED'}
     
-    def invoke(self, context, event):
-        self.filename = "mame_log.txt"
-        self.filepath = ""
+    def invoke(self, context, _event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-class SaveLogFileAndReportIssue(bpy.types.Operator):
-    """
-    Saves log to a text file and reports issue on GitHub or blenderartists.com
-    """
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        header_box = col.box()
+        header_box.label(text="Included information in a log file", icon='INFO')
 
-    bl_idname = "mame.log_save_report_issue"
-    bl_label = "Save log file"
-    bl_description = ""
-    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-
-    @classmethod
-    def poll(self, context):
-        return True
-    
-    def execute(self, context):
-        return {'FINISHED'}
-    
-    def invoke(self, context, event):
-        return {'RUNNING_MODAL'}
+        for el in self.included_info:
+            row = col.row(align=True)
+            row.label(text='', icon='DOT')
+            row.label(text=el)
 
 class CrashMessageBox(bpy.types.Operator):
     """
@@ -829,16 +989,12 @@ class CrashMessageBox(bpy.types.Operator):
         r = box.column()
         r.alert = True
         r.label(text="Oops! Addon has crashed", icon="ERROR")
-        
+
         r = layout.row()
-        # #r.label(text="If you want to report a bug, please include the log file")
-        # #r = layout.row()
-        # r.operator("mame.log_save_report_issue", text="Save Log File and Report Issue")
-        # # r.operator("mame.report_issue", text="Only Report Issue") Do not complicate this more than it is needed
-        # # r.operator("mame.log_save", text="Only save log to a text file")
-        # #r = layout.row()
-        # #r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
-        
+        r.operator_context = "INVOKE_DEFAULT"
+        r.operator("window_manager.mame_save_log_file", text="Save Log File")
+        r.operator("window_manager.mame_report_issue", text="Report Issue")
+
         r = layout.row()
         r.enabled = get_preferences_attrib("console_loglevel") > 1
         r.prop(self, 'b_show_details', toggle=True)
@@ -848,10 +1004,7 @@ class CrashMessageBox(bpy.types.Operator):
             r.label(text=f"Caused by", icon="CANCEL")
             r.label(text=f"{suspect_name}")
             box = layout.box()
-            r = box.column()
-            r.label(text=f"Cause", icon="INFO")
-            r.label(text=f"{cause}")
-            box = layout.box()
+
             r = box.column()
             r.label(text=f"Exception Type", icon="QUESTION")
             try:
@@ -860,8 +1013,6 @@ class CrashMessageBox(bpy.types.Operator):
                 r.label(text=f"{'Unknown'}")
             box = layout.box()
             r = box.column()
-            r.label(text=f"Details", icon="FILE_TEXT")
-            r.label(text=f"{details}")
             r.label(text=f"Traceback", icon="FILE_TEXT")
             for line in MAME_CRASH_HANDLER_EXCEPTION_STR.splitlines():
                 r.label(text=line)
@@ -941,23 +1092,24 @@ def call_catastrophic_crash_handler(who, exception:Exception):
     # there is probably more sophiscated way to do this, but guess what, it's the simplest one and working
     global MAME_CRASH_HANDLER_WHO
     MAME_CRASH_HANDLER_WHO = who
-    global MAME_CRASH_HANDLER_WHAT_HAPPENED
-    MAME_CRASH_HANDLER_WHAT_HAPPENED = "Unknown" # replace with log value instead
-    global MAME_CRASH_HANDLER_DETAILS
-    MAME_CRASH_HANDLER_DETAILS = None
     global MAME_CRASH_HANDLER_EXCEPTION
     MAME_CRASH_HANDLER_EXCEPTION = exception
     global MAME_CRASH_HANDLER_EXCEPTION_STR
     MAME_CRASH_HANDLER_EXCEPTION_STR = format_exc()
 
+    
+    log(str(who), MAME_CRASH_HANDLER_EXCEPTION_STR, ELogLevel.ERROR)
+    
+    # Create log snapshot so it won't get overwritten by new entries
+    make_log_snapshot()
+
+    # Show stuff to console
     print(MAME_CRASH_HANDLER_EXCEPTION_STR)
+
+    # Show UI
     bpy.ops.window_manager.mame_crash_handler()
-    # TODO: Get a copy of a log file here as well.
-    return
 
 MAME_CRASH_HANDLER_WHO = None
-MAME_CRASH_HANDLER_WHAT_HAPPENED:str = ""
-MAME_CRASH_HANDLER_DETAILS:str = ""
 MAME_CRASH_HANDLER_EXCEPTION:Exception = None
 MAME_CRASH_HANDLER_EXCEPTION_STR:str = ''
 
@@ -986,14 +1138,6 @@ class CrashMessageBox(bpy.types.Operator):
 
         # Grab info
         suspect_name = MAME_CRASH_HANDLER_WHO.__name__ if hasattr(MAME_CRASH_HANDLER_WHO, '__name__') else "Can't determine"
-        try:
-            cause = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
-        except Exception:
-            cause = "Unknown"
-        try:
-            details = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
-        except Exception:
-            details = "None"
         if  issubclass(type(MAME_CRASH_HANDLER_EXCEPTION), Exception):
             exc = MAME_CRASH_HANDLER_EXCEPTION
         else:
@@ -1007,14 +1151,11 @@ class CrashMessageBox(bpy.types.Operator):
         r.label(text="Oops! Addon has crashed", icon="ERROR")
         
         r = layout.row()
-        #r.label(text="If you want to report a bug, please include the log file")
-        #r = layout.row()
-        r.operator("mame.log_save_report_issue", text="Save Log File and Report Issue")
-        # r.operator("mame.report_issue", text="Only Report Issue") Do not complicate this more than it is needed
-        # r.operator("mame.log_save", text="Only save log to a text file")
-        #r = layout.row()
-        #r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
-        
+        r.alert = True
+        op = r.operator("window_manager.mame_save_log_file", text="Save Log")
+        op.b_use_log_snapshot = True
+        r.operator("window_manager.mame_report_issue", text="Report Issue")
+
         r = layout.row()
         r.enabled = get_preferences_attrib("console_loglevel") > 1
         r.prop(self, 'b_show_details', toggle=True)
@@ -1025,10 +1166,6 @@ class CrashMessageBox(bpy.types.Operator):
             r.label(text=f"{suspect_name}")
             box = layout.box()
             r = box.column()
-            r.label(text=f"Cause", icon="INFO")
-            r.label(text=f"{cause}")
-            box = layout.box()
-            r = box.column()
             r.label(text=f"Exception Type", icon="QUESTION")
             try:
                 r.label(text=f"{repr(exc) if exc else 'Not available'}")
@@ -1036,12 +1173,9 @@ class CrashMessageBox(bpy.types.Operator):
                 r.label(text=f"{'Unknown'}")
             box = layout.box()
             r = box.column()
-            r.label(text=f"Details", icon="FILE_TEXT")
-            r.label(text=f"{details}")
             r.label(text=f"Traceback", icon="FILE_TEXT")
             for line in MAME_CRASH_HANDLER_EXCEPTION_STR.splitlines():
                 r.label(text=line)
-        
 
 
 # Wiki Link
@@ -1239,17 +1373,19 @@ class WM_OT_mame_queue_macro_set_finished(bpy.types.Operator):
     
 classes = [
     CrashMessageBox, 
+    WINDOW_MANAGER_OT_mame_save_log_file,
     AddonPreferences,
     AttributeListItem,
     GenericBoolPropertyGroup,
     PropPanelPinMeshLastObject,
     FakeFaceCornerSpillDisabledOperator,
-    MAMEReportIssue,
+    WINDOW_MANAGER_OT_mame_report_issue,
     ShowLog,
     ClearLog,
     WM_OT_mame_queue_macro_report,
     WM_OT_mame_queue_macro_set_finished,
     OpenWiki]
+    WINDOW_MANAGER_OT_mame_log_save_report_issue]
 
 def register():
     "Register classes. Exception handing in init"

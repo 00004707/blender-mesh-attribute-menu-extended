@@ -109,7 +109,7 @@ def attribute_assign_panel(self, context):
                         sublayout = layout.column()
                         sublayout.alert = True
                         sublayout.label(text="This attribute type is not supported by MAME addon.", icon='ERROR')
-                        sublayout.operator('mame.report_issue')
+                        sublayout.operator('window_manager.mame_report_issue')
                     else:
                         # Create new UI Container
                         assign_buttons = layout.column()
