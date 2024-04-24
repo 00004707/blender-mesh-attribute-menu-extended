@@ -711,10 +711,22 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
     """
 
     if domain == 'POINT': 
-        storage = np.zeros(len(obj.data.vertices), dtype=bool)
-        obj.data.vertices.foreach_get('select', storage)
-        return np.arange(0, len(obj.data.vertices))[storage]
-    
+        if obj.type == 'MESH':
+            storage = np.zeros(len(obj.data.vertices), dtype=bool)
+            obj.data.vertices.foreach_get('select', storage)
+            return np.arange(0, len(obj.data.vertices))[storage]
+        
+        elif obj.type == 'CURVES':
+            storage = np.zeros(len(obj.data.points), dtype=bool)
+            if '.selection' in obj.data.attributes:
+                obj.data.attributes['.selection'].data.foreach_get('value', storage)
+            if etc.is_full_logging_enabled():
+                etc.log(get_mesh_selected_domain_indexes, f"Selected curve point IDs: {np.arange(0, len(obj.data.points))[storage]}", etc.ELogLevel.SUPER_VERBOSE)
+            return np.arange(0, len(obj.data.points))[storage]
+        
+        else:
+            raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {obj.type} object type is not supported')
+        
     elif domain == 'EDGE': 
         storage = np.zeros(len(obj.data.edges), dtype=bool)
         obj.data.edges.foreach_get('select', storage)
@@ -724,6 +736,19 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
         storage = np.zeros(len(obj.data.polygons), dtype=bool)
         obj.data.polygons.foreach_get('select', storage)
         return np.arange(0, len(obj.data.polygons))[storage]
+    
+    elif domain == 'CURVE': 
+        # As of 4.2 alpha it's only possible to get selection of curve points
+        selected_points = get_mesh_selected_domain_indexes(obj, 'POINT')
+        selected_curve_ids = []
+        for curve in obj.data.curves:
+            for point in curve.points:
+                if point.index in selected_points:
+                    selected_curve_ids.append(curve.index)
+                    break
+        if etc.is_full_logging_enabled():
+            etc.log(get_mesh_selected_domain_indexes, f"Selected curve IDs: {selected_curve_ids}", etc.ELogLevel.SUPER_VERBOSE)
+        return selected_curve_ids
 
     elif domain == 'CORNER': 
         # boneless chicken 
