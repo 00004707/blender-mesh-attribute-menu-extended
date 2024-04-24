@@ -2658,6 +2658,28 @@ def get_image_channel_datasource_vector_element_enum(self, context, index, alpha
         
     return get_image_channel_datasource_vector_subelement_enum(attr_or_img, is_texture, only_subelements, alpha_allowed)
 
+def get_built_in_attributes_enum(self, context):
+    """Gets an enum list of built-in attributes for use with selection menu
+
+    Shows persistent attributes (eg. position) if self has b_show_persistent and is true
+    Show real attribute names (eg .sculpt_mask) if self has b_show_persistent and is true
+
+    Returns:
+        enum list
+    """
+
+    l = []
+
+    b_show_persistent = hasattr(self, 'b_show_persistent') and self.b_show_persistent
+    b_show_attribute_names = hasattr(self, 'b_show_attribute_names') and self.b_show_attribute_names
+
+    for i, item in enumerate(static_data.defined_attributes):
+        if etc.get_blender_support(static_data.defined_attributes[item].min_blender_ver, 
+                                   static_data.defined_attributes[item].unsupported_from_blender_ver):
+            if not static_data.defined_attributes[item].cannot_create or b_show_persistent:
+                name = item if b_show_attribute_names else static_data.defined_attributes[item].friendly_name 
+                l.append((item, name, static_data.defined_attributes[item].description, static_data.defined_attributes[item].icon, i))
+    return l
 
 # Multi-use operator poll functions
 # --------------------------------
