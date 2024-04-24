@@ -1011,6 +1011,152 @@ class PropPanelPinMeshLastObject(bpy.types.PropertyGroup):
     workspace_name: bpy.props.StringProperty(name="Workspace in which the properties panel was seen")
 
 
+# Macro utilities
+# ---------------------------------
+# This API is designed to fire multiple modal operators like texture bake at once, that do not inform about it's completion
+# As of commit 74e4f9c used only to fire a single operator, so it's an overkill
+#
+# To create a macro, use create_macro_queue(), add operators using macro_queue_add_element() and activate with 
+# macro_queue_execute(). Wait for True result of macro_queue_finished() in modal function of an operator 
+#
+
+# Defines whether the queue macro has finished executing all actions
+QUEUE_FINISH_STATUS = True
+
+# Defines macro queue operations count (without UI report operatiors)
+QUEUE_SIZE = 0
+
+
+def set_queue_macro_finish_status(value:bool):
+    """Sets the finished state of queue macro
+
+    Args:
+        value (bool): Set it to true to notify parent modal operator to stop it's execution, if macro has finished executing
+    """
+    global QUEUE_FINISH_STATUS
+    QUEUE_FINISH_STATUS = value
+    return
+
+def get_queue_macro_finish_status():
+    """Gets the finished state of queue macro
+
+    Returns:
+        bool: If macro has finished executing all actions, it's set to True, parent modal operator can stop executing
+    """
+    global QUEUE_FINISH_STATUS
+    return QUEUE_FINISH_STATUS
+
+def create_macro_queue():
+    """Creates macro queue class to execute blender modal operators that do not notify about execution completion
+
+    Returns:
+        bpy.types.Macro object: The macro
+    """
+
+    # Define macro class
+    class OBJECT_OT_mame_queue_macro(bpy.types.Macro):
+            bl_idname = "object.mame_queue_macro"
+            bl_label = "Bake Macro"
+            bl_options = {'INTERNAL'}
+
+    # unregister any previous macro
+    if hasattr(bpy.types, "OBJECT_OT_mame_queue_macro"):
+        bpy.utils.unregister_class(bpy.types.OBJECT_OT_mame_queue_macro)
+
+
+    # Reset queue size
+    global QUEUE_SIZE
+    QUEUE_SIZE = 0
+
+    bpy.utils.register_class(OBJECT_OT_mame_queue_macro)
+    return OBJECT_OT_mame_queue_macro
+
+def macro_queue_add_element(macro, operator_class:str, operation_name:str = "Processing"):
+    """Adds operator to exisitng macro queue, and automatically adds progress operator as well
+
+    Args:
+        macro (bpy.types.Macro): Macro to add operator to
+        operator_class (str): Operator class, eg. OBJECT_OT_bake
+        operation_name (str, optional): Description of what is happening, eg. Baking. Defaults to "Processing".
+
+    Returns:
+        ref: Reference to opeator to modify it's properties
+    """
+    # Add a progress report operator
+    global QUEUE_SIZE
+    report = _bpy.ops.macro_define(macro, 'WM_OT_mame_queue_macro_report')
+    report.properties.queue_position = QUEUE_SIZE
+    report.properties.operation_name = operation_name
+    QUEUE_SIZE +=1
+
+    # Add requested operator
+    return _bpy.ops.macro_define(macro, operator_class)
+
+def macro_queue_execute(macro):
+    """Starts executing macro queue, adds operator that sets the finished flag as well
+
+    Args:
+        macro (bpy.types.Macro): Macro to trigger
+    """
+    # Reset to default
+    set_queue_macro_finish_status(False)
+
+    # Add opeator to notify about finished execution
+    _bpy.ops.macro_define(macro, 'WM_OT_mame_queue_macro_set_finished')
+    
+    # Go!
+    bpy.ops.object.mame_queue_macro('INVOKE_DEFAULT')
+    return
+
+def macro_queue_finished():
+    """Returns True if macro queue has finished processing all operations
+
+    Returns:
+        bool: True if macro queue has finished executing all operators
+    """
+    if get_queue_macro_finish_status():
+        set_queue_macro_finish_status(False)
+        return True
+    return False
+
+
+# ---------------------------------
+
+class WM_OT_mame_queue_macro_report(bpy.types.Operator):
+    """
+    Shows progress status of queue macro in progress bar
+    """
+    
+    bl_idname = "wm.mame_queue_macro_report"
+    bl_label = "Macro Queue Report"
+    bl_options = {'INTERNAL'}
+
+    # Currently executed opeartion index
+    queue_position: bpy.props.IntProperty()
+
+    # Operation name to show in UI
+    operation_name: bpy.props.StringProperty(default = "Processing")
+
+    def execute(self, context):
+        global QUEUE_SIZE
+        self.report({'INFO'}, f"[{self.queue_position+1}/{QUEUE_SIZE}] {self.operation_name}")
+        return {'FINISHED'}
+
+class WM_OT_mame_queue_macro_set_finished(bpy.types.Operator):
+    """
+    Notifies the operator that called to execute the macro queue, that all of the requested operators have been executed 
+    Auto added and executed as last opeator in macro
+    """
+
+    bl_idname = "wm.mame_queue_macro_set_finished"
+    bl_label = "Bake Set Finished"
+    bl_options = {'INTERNAL'}
+
+    def execute(self, context):
+        set_queue_macro_finish_status(True)
+        return {'FINISHED'}
+
+
 # Register
 # ------------------------------------------
     
@@ -1022,6 +1168,8 @@ classes = [
     PropPanelPinMeshLastObject,
     FakeFaceCornerSpillDisabledOperator,
     MAMEReportIssue,
+    WM_OT_mame_queue_macro_report,
+    WM_OT_mame_queue_macro_set_finished,
     OpenWiki]
 
 def register():
