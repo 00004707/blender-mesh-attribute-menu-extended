@@ -837,7 +837,9 @@ class GenericMessageBox(bpy.types.Operator):
             MESSAGE_BOX_DRAW_FUNCTION(self, context, message=self.message)
         else:
             layout = self.layout
-            layout.label(text=self.message)
+            messages = self.message.splitlines()
+            for msg in messages:
+                layout.label(text=msg)
 
 
 def draw_error_list(self, context, message=''):
@@ -852,7 +854,6 @@ def draw_error_list(self, context, message=''):
         col.label(icon='DOT', text=errors[error])
     if len(errors) > max_errors:
         col.label(text=f"{len(errors)-max_errors} more...")
-
 
 def set_message_box_function(function):
     """Assigns a custom draw function when using GenericMessageBox
