@@ -275,10 +275,10 @@ class AddonPreferences(bpy.types.AddonPreferences):
     attribute_assign_menu_pointcloud: bpy.props.BoolProperty(name="Attribute Assign Menu (Point Cloud)", description="Assign and clear buttons", default=True)
     set_attribute_raw_quaterion: bpy.props.BoolProperty(name="Set Raw Quaternions Value", description="If you want to use quaternion attributes as 4D vectors instead of quaternions, enable this", default=True)
     select_attribute_precise_facecorners: bpy.props.BoolProperty(name="Precise Face Corner Select (Slow)", description="If you want to select individual edges that identify a face corner, this has to be enabled. Not requried for face painting", default=False)
+    show_docs_button: bpy.props.BoolProperty(name="Show \"Open Documentation\" Button", description="Shows \"Open Documentation\" button in operator menus", default=True)
 
     # Specials
     add_set_attribute: bpy.props.BoolProperty(name="Add \"Set Attribute\" operator", description="Set Attribute operator in dropdown menu", default=True)
-
     extra_context_menu_vg: bpy.props.BoolProperty(name="Vertex Groups Menu", description="Adds extra operators to Vertex Group Menu", default=True)
     extra_context_menu_sk: bpy.props.BoolProperty(name="Shape Keys Menu", description="Adds extra operators to Shape Keys Menu", default=True)
     extra_context_menu_uvmaps: bpy.props.BoolProperty(name="UVMap Menu", description="Adds extra operators to UVMap Menu", default=True)
@@ -1384,7 +1384,7 @@ classes = [
     ClearLog,
     WM_OT_mame_queue_macro_report,
     WM_OT_mame_queue_macro_set_finished,
-    OpenWiki]
+    OpenWiki,
     WINDOW_MANAGER_OT_mame_log_save_report_issue]
 
 def register():
