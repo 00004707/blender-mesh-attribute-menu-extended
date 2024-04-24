@@ -577,6 +577,17 @@ class ELogLevel(Enum):
     WARNING = 3
     ERROR = 4
 
+def init_logging():
+    global LOGGER
+    #LOGGER = logging.getLogger(__addon_package_name__)
+    #LOGGER.setLevel(logging.DEBUG)
+
+def get_logger():
+    global LOGGER
+    if not LOGGER:
+        init_logging()
+    return LOGGER
+
 def is_full_logging_enabled():
     """
     Some logging operations can slow down things drastically, can be enabled if needed
@@ -584,22 +595,222 @@ def is_full_logging_enabled():
     return get_preferences_attrib('en_slow_logging_ops') or get_preferences_attrib('console_loglevel') == 0
 
 def log(who, message:str, level:ELogLevel):
+    """
+    Logs to internal set and optionally to system console
+    """
+
     if hasattr(who, '__name__'):
         who = who.__name__
     else:
         who = "Unknown"
     
-    message = f"[{str(time.time()).ljust(20)[-16:]}][{str(level.name)[:4]}][{who.ljust(16)[:16]}]: {message}"
-    if level.value >= get_preferences_attrib("console_loglevel"):
-        print("[MAME]" + message)
+    console_message = f"[{str(time.time()).ljust(20)[-16:]}][{str(level.name)[:4]}][{who.ljust(16)[:16]}]: {message}"
     
-    # TODO: Log to variable to be able to export logs
+    # if level == ELogLevel.VERBOSE or level == ELogLevel.SUPER_VERBOSE:
+    #     get_logger().debug("[MAME]" + message)
+    # elif level == ELogLevel.INFO:
+    #     get_logger().info("[MAME]" + message)
+    # elif level == ELogLevel.WARNING:
+    #     get_logger().warning("[MAME]" + message)
+    # elif level == ELogLevel.ERROR:
+    #     get_logger().error("[MAME]" + message)
+    if level.value >= get_preferences_attrib("console_loglevel"):
+        print("[MAME]" + console_message)
+
+    global LOG
+
+    LOG.append({'level': level.name, 'message': message, 'timestamp': time.time()})
+    while len(LOG) > get_preferences_attrib("max_log_lines"):
+        LOG.pop()
+
+class SaveLogFile(bpy.types.Operator):
+    """
+    Saves log to a text file
+    """
+
+    bl_idname = "mame.log_save"
+    bl_label = "Save log file"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        return True
+    
+    def execute(self, context):
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        self.filename = "mame_log.txt"
+        self.filepath = ""
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+class SaveLogFileAndReportIssue(bpy.types.Operator):
+    """
+    Saves log to a text file and reports issue on GitHub or blenderartists.com
+    """
+
+    bl_idname = "mame.log_save_report_issue"
+    bl_label = "Save log file"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    @classmethod
+    def poll(self, context):
+        return True
+    
+    def execute(self, context):
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        return {'RUNNING_MODAL'}
+
+class CrashMessageBox(bpy.types.Operator):
+    """
+    Shows a crash message box + save log to file
+    """
+    bl_idname = "window_manager.mame_crash_handler"
+    bl_label = "Mesh Attributes Menu Extended - Crash!"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    # trick to make the dialog box open once and not again after pressing ok
+    times = 0
+
+    b_show_details: bpy.props.BoolProperty(name="Show details", description="Shows details of an exception", default = False)
+
+    def execute(self, context):
+        self.times += 1
+        if self.times < 2:
+            return context.window_manager.invoke_props_dialog(self, width=800)
+        return {'FINISHED'}
+    
+    def draw(self, context):
+        layout = self.layout
+
+        # Grab info
+        suspect_name = MAME_CRASH_HANDLER_WHO.__name__ if hasattr(MAME_CRASH_HANDLER_WHO, '__name__') else "Can't determine"
+        try:
+            cause = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
+        except Exception:
+            cause = "Unknown"
+        try:
+            details = str(MAME_CRASH_HANDLER_WHAT_HAPPENED)
+        except Exception:
+            details = "None"
+        if  issubclass(type(MAME_CRASH_HANDLER_EXCEPTION), Exception):
+            exc = MAME_CRASH_HANDLER_EXCEPTION
+        else:
+            exc = None
+        
+        # Show info
+            
+        box = layout.box()
+        r = box.column()
+        r.alert = True
+        r.label(text="Oops! Addon has crashed", icon="ERROR")
+        
+        r = layout.row()
+        # #r.label(text="If you want to report a bug, please include the log file")
+        # #r = layout.row()
+        # r.operator("mame.log_save_report_issue", text="Save Log File and Report Issue")
+        # # r.operator("mame.report_issue", text="Only Report Issue") Do not complicate this more than it is needed
+        # # r.operator("mame.log_save", text="Only save log to a text file")
+        # #r = layout.row()
+        # #r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
+        
+        r = layout.row()
+        r.enabled = get_preferences_attrib("console_loglevel") > 1
+        r.prop(self, 'b_show_details', toggle=True)
+        if self.b_show_details or get_preferences_attrib("console_loglevel") < 2:
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Caused by", icon="CANCEL")
+            r.label(text=f"{suspect_name}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Cause", icon="INFO")
+            r.label(text=f"{cause}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Exception Type", icon="QUESTION")
+            try:
+                r.label(text=f"{repr(exc) if exc else 'Not available'}")
+            except Exception:
+                r.label(text=f"{'Unknown'}")
+            box = layout.box()
+            r = box.column()
+            r.label(text=f"Details", icon="FILE_TEXT")
+            r.label(text=f"{details}")
+            r.label(text=f"Traceback", icon="FILE_TEXT")
+            for line in MAME_CRASH_HANDLER_EXCEPTION_STR.splitlines():
+                r.label(text=line)
+        
+class ShowLog(bpy.types.Operator):
+    """
+    Shows MAME log
+    """
+    bl_idname = "window_manager.mame_show_log"
+    bl_label = "Mesh Attributes Menu Extended - Log"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    # trick to make the dialog box open once and not again after pressing ok
+    times = 0
+
+    def execute(self, context):
+        self.times += 1
+        if self.times < 2:
+            return context.window_manager.invoke_props_dialog(self, width=800)
+        return {'FINISHED'}
+    
+    def draw(self, context):
+        layout = self.layout
+        global LOG
+        r = layout.row()
+        r.label(text=f"Log elements: {str(len(LOG))}, max count {str(get_preferences_attrib('max_log_lines'))}")
+
+        for i, el in enumerate(LOG):
+            alert = False
+            if el['level'] == 'VERBOSE':
+                icon = 'ALIGN_JUSTIFY'
+            elif el['level'] == 'SUPER_VERBOSE':
+                icon = 'ALIGN_FLUSH'
+            elif el['level'] == 'WARNING':
+                icon = 'ERROR'
+                alert = True
+            elif el['level'] == 'ERROR':
+                icon = 'CANCEL'
+                alert = True
+            else:
+                icon = 'INFO'
+            layout.alert = alert
+            r = layout.row()
+            r.label(text=f"{el['message']}", icon=icon)
+            
+
+        layout.alert = False
+        r = layout.row()
+        r.operator("window_manager.mame_clear_log")
+        
+class ClearLog(bpy.types.Operator):
+    """
+    Clears MAME log
+    """
+    bl_idname = "window_manager.mame_clear_log"
+    bl_label = "Clear Log"
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    def execute(self, context):
+        global LOG
+        LOG.clear()
+        log(ClearLog, "Log cleared", ELogLevel.INFO)
+        return {'FINISHED'}
 
 # Catastrophic Error Handling
 # -----------------------------
 # Crash gracefully and tell the user what went wrong instead of cryptic python stuff
         
-def call_catastrophic_crash_handler(who, what_happened:str, details:str, exception:Exception):
+def call_catastrophic_crash_handler(who, exception:Exception):
     """
     If something went wrong
     In front of your screen
@@ -611,9 +822,9 @@ def call_catastrophic_crash_handler(who, what_happened:str, details:str, excepti
     global MAME_CRASH_HANDLER_WHO
     MAME_CRASH_HANDLER_WHO = who
     global MAME_CRASH_HANDLER_WHAT_HAPPENED
-    MAME_CRASH_HANDLER_WHAT_HAPPENED = what_happened
+    MAME_CRASH_HANDLER_WHAT_HAPPENED = "Unknown" # replace with log value instead
     global MAME_CRASH_HANDLER_DETAILS
-    MAME_CRASH_HANDLER_DETAILS = details
+    MAME_CRASH_HANDLER_DETAILS = None
     global MAME_CRASH_HANDLER_EXCEPTION
     MAME_CRASH_HANDLER_EXCEPTION = exception
     global MAME_CRASH_HANDLER_EXCEPTION_STR
@@ -675,13 +886,14 @@ class CrashMessageBox(bpy.types.Operator):
         r.alert = True
         r.label(text="Oops! Addon has crashed", icon="ERROR")
         
-        # r = layout.row()
-        # r.alert = True
-        # r.label(text="If you want to report a bug, please include the log file")
-        # r.operator("mame.log_save", text="Save log to a text file")
-        # r = layout.row()
-        # r.alert = True
-        # r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
+        r = layout.row()
+        #r.label(text="If you want to report a bug, please include the log file")
+        #r = layout.row()
+        r.operator("mame.log_save_report_issue", text="Save Log File and Report Issue")
+        # r.operator("mame.report_issue", text="Only Report Issue") Do not complicate this more than it is needed
+        # r.operator("mame.log_save", text="Only save log to a text file")
+        #r = layout.row()
+        #r.label(text="Then in Menu Bar > Edit > Preferences > Add-ons, find the addon and press 'Report a Bug'")
         
         r = layout.row()
         r.enabled = get_preferences_attrib("console_loglevel") > 1
