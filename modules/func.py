@@ -391,17 +391,20 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
 
 # set
 
-def set_attribute_values(attribute, value, on_indexes = [], flat_list = False, bugbypass_data_type = "", bugbypass_domain = ""):
+def set_attribute_values(attribute, value, sel_domain_indexes = [], 
+                         b_foreach_compatible_value_list = False, 
+                         bugbypass_data_type = "", bugbypass_domain = ""):
     """Sets attribute values. Accepts both lists and single values.
     WARNING: OBJECT MODE REQUIRED
 
     Args:
         attribute (Reference): Reference to the attribute
-        value (list or value): The value or values to set
-        on_indexes (list, optional): Indexes to set the value on. Defaults to []. Duplicates WILL NOT be checked
+        value (list or value): The single value to set to all domains, or a list of values to set to each domain (Length has to match object domains count). Tuples are considered a single value, for use with vector attributes.
+        on_indexes (list, optional): Indexes to set the value on. Defaults to []. Duplicates WILL NOT be checked, and rewritten, wasting resources
         flat_list (bool, optional): Only for setting ALL values. Used in case when the target accepts vector values (tuples), but the input list is single dimension eg. [3,3,3] instead of [(3,3,3)]. Defaults to False.
         bugbypass_data_type (str, optional): If the console returns "current value '0' matches no enum in 'ByteIntAttribute', '', 'data_type'" specify the string of the data type
         bugbypass_domain (str, optional): If the console returns "current value '0' matches no enum in 'ByteIntAttribute', '', 'data_type'" specify the string of the domain
+    
     Raises:
         etc.MeshDataWriteException: On failure
 
@@ -410,6 +413,8 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False, b
     """
 
     """
+    PERFORMANCE
+
     For a mesh of 30,722 vertices
     Setting all values using foreach set only: ~~ 0.013s to finish (ALL values to single one)
     Setting all values using foreach get, foreach set ~~ 0.21s to finish
@@ -421,101 +426,132 @@ def set_attribute_values(attribute, value, on_indexes = [], flat_list = False, b
     all just foreach set
 
     setattr is noticeably slower
-
-    guess it's a call to finally learn how to program and count for real
     """
 
     if value is None:
         raise etc.MeshDataWriteException("set_attribute_values", f"Input value is NONE")
 
+    # Is it a single value or a list of values to set
+    b_list_of_values_input = type(value) in [list, np.ndarray]
 
-    is_list = type(value) in [list, np.ndarray]
-
-    # Foreach_set
-    # Note: Strings do not support FOREACH_SET
-    if is_verbose_mode_enabled():
-        print(f"""
-SETTING ATTRIBUTE VALUES
-ATTRIBUTE: {attribute.name}
-VALUE: {value}
-ON_INDEXES: {on_indexes}
-FLAT_LIST: {flat_list}              
-ON_INDEX_FROM_LIST: {is_list}
-BUGBYPASS_DATA_TYPE: {bugbypass_data_type != ''}
-BUGBYPASS_DOMAIN: {bugbypass_domain != ''}
-""")
+    etc.log(set_attribute_values, f"Setting attribute values\n"\
+            f"Attribute: {attribute.name}\n"\
+            f"Value field: {value}\n"\
+            f"Selected indexes: {sel_domain_indexes}\n"\
+            f"foreach_set compatible list of values: {b_foreach_compatible_value_list}\n"\
+            f"List of values: {b_list_of_values_input}\n"\
+            f"Data Type Exception Bypass: {bugbypass_data_type != ''}\n"\
+            f"Domain Exception Bypass: {bugbypass_domain != ''}\n"
+            f"Force Setting By foreach On Selected: {etc.get_preferences_attrib('force_assign_on_selected_by_foreach_get_foreach_set')}\n"\
+            f"Force Setting By Value On Selected: {etc.get_preferences_attrib('force_assign_on_selected_by_value')}\n", etc.ELogLevel.VERBOSE)
     
-    dt = attribute.data_type if bugbypass_data_type == '' else bugbypass_data_type
-    domain = attribute.domain if bugbypass_domain == '' else bugbypass_domain
+    attribute_data_type = attribute.data_type if bugbypass_data_type == '' else bugbypass_data_type
+    attribute_domain = attribute.domain if bugbypass_domain == '' else bugbypass_domain
+    
+    # Case 1: overwrite all
+    # Note: Strings do not support FOREACH_SET
+    if (len(sel_domain_indexes) == 0 or len(sel_domain_indexes) == len(attribute.data)) and attribute_data_type != 'STRING' :
+    
+        etc.log(set_attribute_values, f"Using foreach_set (overwrite all)", etc.ELogLevel.VERBOSE)
+        try:
+            log_val_len = len(value)
+        except TypeError:
+            log_val_len = 1
+        etc.log(set_attribute_values, f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {log_val_len}. Input value type {type(value)}", etc.ELogLevel.VERBOSE)
 
-    if (len(on_indexes) == 0 or len(on_indexes) == len(attribute.data)) and dt != 'STRING' :
-        prop_name = get_attribute_value_propname(data_type=dt)
-        if is_verbose_mode_enabled():
-            print(f"Setting {attribute.name} attribute values for each domain. Expected data length {len(attribute.data)}, input data length {len(value)}")
+        # Get property name to use with foreach_set 
+        prop_name = get_attribute_value_propname(data_type=attribute_data_type)
 
-        # create storage
-        if flat_list:
+        # Create storage to use with foreach_set
+        
+        # Set the values directly
+        if b_foreach_compatible_value_list:
             storage = value
+
+        # a: The values are vector values in a list-alike container, flatten it first
         elif type(value) in [list, np.ndarray]:
             if len(value) != len(attribute.data):
                 raise etc.MeshDataWriteException("set_attribute_values", f"Invalid input value data length. Input {len(value)}, expected {len(attribute.data)}")
             
             # convert to single dimension list if of vector type
-            if dt in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION']:
+            if attribute_data_type in ['FLOAT_VECTOR', 'FLOAT2', 'FLOAT_COLOR', 'BYTE_COLOR', 'INT32_2D', 'QUATERNION', 'FLOAT4X4']:
                 storage = np.array(value).flatten()
             else:
                 storage = value
             
+        # b: This is a single value, duplicate it for each domain
         else:
             storage = np.tile(value, len(attribute.data))
         
+        if etc.get_preferences_attrib("en_slow_logging_ops"):
+            etc.log(set_attribute_values, f"Internal array ({len(storage)}): {storage}", etc.ELogLevel.SUPER_VERBOSE)
+
         attribute.data.foreach_set(prop_name, storage)
-    # on selected indexes mode
+    
+    # Case 2: On selected indexes
     else:
-        if is_verbose_mode_enabled():
-            print(f"Setting {attribute.name} attribute values for {len(on_indexes)} domains. ")
-
-        prop = get_attribute_value_propname(data_type=dt)
+        etc.log(set_attribute_values, f"Setting {attribute.name} attribute values for {len(sel_domain_indexes)} domains.", etc.ELogLevel.VERBOSE)
+        prop = get_attribute_value_propname(data_type=attribute_data_type)
         
-        # FOREACH_GET_FOREACH_SET for > 25%
-        foreach_get_from = etc.get_preferences_attrib('set_algo_tweak')
-        if len(on_indexes) > len(attribute.data)*foreach_get_from and dt != 'STRING':
-            if is_verbose_mode_enabled():
-                print(f"Using foreach set (on selected indexes)")
-            prop_name = get_attribute_value_propname(data_type=dt)
-            
-            if is_list and len(value) < len(on_indexes):
-                raise etc.MeshDataWriteException("set_attribute_values", f"Value input list is shorter [{len(value)}] than index list that the values are supposed to be set on [{len(on_indexes)}]")
+        # Method 1: FOREACH_GET_FOREACH_SET (for > 25%)
+        # Slower for smaller selections, faster for larger selections
+        # Note: Strings do not support FOREACH_SET
+        use_foreach_get_threshold = etc.get_preferences_attrib('set_algo_tweak')
+        
+        if (# If the selection length is larger than a threshold in foreach_get_threshold (percent)
+            len(sel_domain_indexes) > len(attribute.data)*use_foreach_get_threshold 
+            # Data type is not string
+            and attribute_data_type != 'STRING' 
+            # Preferences do not force setting by value
+            and not etc.get_preferences_attrib('force_assign_on_selected_by_value')) or(
+            # Or preferences do force usage of this method
+            etc.get_preferences_attrib('force_assign_on_selected_by_foreach_get_foreach_set')
+            ):
 
-            example_attribute_domain_value = value[0] if is_list else value
+            etc.log(set_attribute_values, f"Using foreach_set (on selected indexes)", etc.ELogLevel.VERBOSE)
+            prop_name = get_attribute_value_propname(data_type=attribute_data_type)
+            
+            if b_list_of_values_input and len(value) < len(sel_domain_indexes):
+                raise etc.MeshDataWriteException("set_attribute_values", f"Value input list is shorter [{len(value)}] than index list that the values are supposed to be set on [{len(sel_domain_indexes)}]")
+
+            example_attribute_domain_value = value[0] if b_list_of_values_input else value
             storage = np.repeat(example_attribute_domain_value, len(attribute.data))
             attribute.data.foreach_get(prop_name, storage)
             
             if type(example_attribute_domain_value) in [tuple, list, np.ndarray]:
-                for i, id in enumerate(on_indexes):
+                for i, id in enumerate(sel_domain_indexes):
                     for l in range(0, len(example_attribute_domain_value)):
-                        storage[id*len(example_attribute_domain_value)+l] = value[i][l] if is_list else value[l]
+                        storage[id*len(example_attribute_domain_value)+l] = value[i][l] if b_list_of_values_input else value[l]
             else:
-                for i, id in enumerate(on_indexes):
-                    storage[id] = value[i] if is_list else value
+                for i, id in enumerate(sel_domain_indexes):
+                    storage[id] = value[i] if b_list_of_values_input else value
             attribute.data.foreach_set(prop_name, storage)
 
-        # For loop for < 25% mesh selected
+        # Method 2: For loop for < 25% mesh selected
+        # Slower for larger selections, faster for smaller selections
         else:
-            if is_verbose_mode_enabled():
-                print(f"Using assign by value")
+            etc.log(set_attribute_values, "Using assign by value", etc.ELogLevel.VERBOSE)
+
+            # If the attribute data type is FLOAT4X4, it needs to be adjusted
+            if attribute_data_type == 'FLOAT4X4':
+                fixed_value = []
+                for i in range(0,4):
+                    fixed_value.append((value[i*4], value[i*4+1], value[i*4+2], value[i*4+3]))
+                value = tuple(fixed_value)
+            
+            # Assigning by value
             if prop == "vector":
-                for i, id in enumerate(on_indexes):
-                    attribute.data[id].vector = value[i] if is_list else value
+                for i, id in enumerate(sel_domain_indexes):
+                    attribute.data[id].vector = value[i] if b_list_of_values_input else value
             elif prop == "color":
-                for i, id in enumerate(on_indexes):
-                    attribute.data[id].color = value[i] if is_list else value
+                for i, id in enumerate(sel_domain_indexes):
+                    attribute.data[id].color = value[i] if b_list_of_values_input else value
             else: # "value"
-                for i, id in enumerate(on_indexes):
-                    attribute.data[id].value = value[i] if is_list else value
+                for i, id in enumerate(sel_domain_indexes):
+                    attribute.data[id].value = value[i] if b_list_of_values_input else value
                           
 def set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill = False):
-    """Assigns a single value to all selected domain in edit mode.
+    """Assigns a single value to all selected domains in edit mode.
 
     Args:
         context (Reference): Blender context referene
