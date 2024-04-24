@@ -154,6 +154,16 @@ def get_attribute_values(attribute, obj):
         a_vals = [0.0] * (len(attribute.data) * 4)
         attribute.data.foreach_get(value_attrib_propname, a_vals)
         return [(a_vals[i], a_vals[i+1], a_vals[i+2], a_vals[i+3]) for i in range(0, len(a_vals), 4)]
+    elif dt == "FLOAT4X4":
+        a_vals = [0.0] * (len(attribute.data) * 16)
+        attribute.data.foreach_get(value_attrib_propname, a_vals)
+        a = []
+        for i in range(0, len(a_vals), 16):
+            v = []
+            for j in range(0, 16):
+                v.append(a_vals[i+j])
+            a.append(v)
+        return a
     elif dt == "INT8":
         a_vals = [0] * len(attribute.data)
         attribute.data.foreach_get(value_attrib_propname, a_vals)
