@@ -31,12 +31,41 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
     Operation is limited to edit mode selection
     """
 
+    # BLENDER CLASS PROPERTIES
+    # ---------------------------------
+
     bl_idname = "object.set_active_attribute_to_selected"
     bl_label = "Assign Active Attribute Value To Selection in Edit Mode"
     bl_description = "Assigns active attribute value to selection in edit mode."
     bl_options = {'REGISTER', 'UNDO'}
     
-    # The toggle to clear attribute value - set it's value to the zero value
+    # COMMON
+    # ---------------------------------
+
+    # Operator supports working with pinned mesh in properties panel
+    b_pinned_mesh_support = True
+
+    # Operator required active object to work
+    b_active_object_required = False
+
+    # Operator can edit these types of meshes
+    supported_object_types = ['MESH', 'CURVES']
+
+    # Implemented data type support
+    supported_data_types = ['FLOAT', 'INT', 'INT8', 
+                            'FLOAT_VECTOR', 'FLOAT_COLOR', 'BYTE_COLOR', 'STRING',
+                            'BOOLEAN', 'FLOAT2', 'INT32_2D', 'QUATERNION', 'FLOAT4X4']
+    
+    # Implemented domain support
+    supported_domains = ['POINT', 'EDGE', 'FACE', 'CORNER', 'CURVE']
+
+    # Wiki URL suffix
+    wiki_url = 'Assign-Value-to-Active-Attribute-on-Edit-Mode-Selection'
+
+    # OPTIONS
+    # ---------------------------------
+    
+    # The toggle to clear attribute value - set it's value to the "zero" value
     b_clear: bpy.props.BoolProperty(name="clear", default = False)
 
     # The toggle to enable face corner spilling to nearby face corners of selected vertices/edges/faces
@@ -46,100 +75,119 @@ class AssignActiveAttribValueToSelection(bpy.types.Operator):
 
     @classmethod
     def poll(self, context):
-        if not context.active_object:
-            self.poll_message_set("No active object")
+
+        obj, obj_data = func.get_object_in_context(context)
+
+        if not func.pinned_mesh_poll(self, context, self.b_pinned_mesh_support):
+            self.poll_message_set("Pinned mesh mode unsupported")
             return False
-        elif not context.active_object.type == 'MESH' :
-            self.poll_message_set("Object is not a mesh")
+        elif not obj:
+            self.poll_message_set("No active object or no pinned object")
             return False
-        elif not context.active_object.mode  == 'EDIT' :
+        elif obj.type not in self.supported_object_types:
+            self.poll_message_set("Object type is not supported")
+            return False
+        elif not obj.mode  == 'EDIT' :
             self.poll_message_set("Not in edit mode")
             return False
-        elif context.active_object.data.attributes.active is None:
+        elif obj_data.attributes.active is None:
             self.poll_message_set("No active attribute")
             return False
-        elif not func.get_is_attribute_valid_for_manual_val_assignment(context.active_object.data.attributes.active)  :
+        elif not func.get_is_attribute_valid_for_manual_val_assignment(obj_data.attributes.active):
             self.poll_message_set("Attribute is read-only or unsupported")
             return False
-        elif not func.pinned_mesh_poll(self, context, True):
+        elif obj_data.attributes.active.data_type not in self.supported_data_types:
+            self.poll_message_set("Attribute Data Type is not supported")
             return False
-            
+        elif obj_data.attributes.active.domain not in self.supported_domains:
+            self.poll_message_set("Attribute Domain is not supported")
+            return False
         return True
 
-    def execute(self, context):
-        etc.pseudo_profiler_init()
-        obj = context.active_object
-        active_attrib_name = obj.data.attributes.active.name 
-        prop_group = context.object.data.MAME_PropValues
-        mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
-        dt = obj.data.attributes[active_attrib_name].data_type
-
-        if func.is_verbose_mode_enabled():
-            print( f"Working on {active_attrib_name} attribute" )
-
-        etc.pseudo_profiler("EXEC START")
-
-        # Compatibility Check
-        if not func.get_attribute_compatibility_check(obj.data.attributes[active_attrib_name]):
-            self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
-            return {'CANCELLED'}
-
-        # Use bpy.ops.mesh_attribute_set()
+    def execute(self, context):   
         try:
-            if (etc.get_blender_support((3,5,0))
-                and not (dt == 'QUATERNION' and etc.get_preferences_attrib("set_attribute_raw_quaterion"))      # Operator will make sure the values are a valid quaternion
-                and not (not prop_group.face_corner_spill and mesh_selected_modes[1])                               # Face corner spill feature is not supported by the operator
-                and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None               # Strings are unsupported by this, oh well
-                and not etc.get_preferences_attrib("disable_bpy_set_attribute")):                                   # Preferences toggle
-                
-                etc.pseudo_profiler("OPS_START")
-                
+            obj, obj_data = func.get_object_in_context(context)
+            b_pinned_mesh_in_use = func.is_pinned_mesh_used(context)
+            active_attrib_name = obj_data.attributes.active.name 
+            prop_group = obj_data.MAME_PropValues
+            mesh_selected_modes = bpy.context.scene.tool_settings.mesh_select_mode
+            dt = obj_data.attributes[active_attrib_name].data_type
 
-                params = {}
-                paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
-                params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
-                if func.is_verbose_mode_enabled():
-                    print( f"Using ops.mesh_attribute_set()" )
-                    # print(f"Setting value {prop_group.val_byte_color[:]}")
-                bpy.ops.mesh.attribute_set(**params)
+            etc.log(AssignActiveAttribValueToSelection, f"Working on {active_attrib_name} attribute", etc.ELogLevel.VERBOSE)
+
+            # Compatibility Check
+            if not func.get_attribute_compatibility_check(obj_data.attributes[active_attrib_name]):
+                self.report({'ERROR'}, "Attribute data type or domain unsupported! Addon needs an update.")
+                return {'CANCELLED'}
+
+            # Operators below need to work on object level. If pinned switch to referenced object.
+            func.set_object_in_context_as_active(self, context)
+
+            # Use bpy.ops.mesh_attribute_set()
+            try:
+                if ((obj.type == 'MESH' and etc.get_blender_support((3,5,0)) or (obj.type == 'CURVES' and etc.get_blender_support((4,1,0))))
+                    # Operator will make sure the values are a valid quaternion
+                    and not (dt == 'QUATERNION' and etc.get_preferences_attrib("set_attribute_raw_quaterion"))
+                    # Face corner spill feature is not supported by the operator 
+                    and not (not prop_group.face_corner_spill and mesh_selected_modes[1])    
+                    # Strings are unsupported by this operator                          
+                    and static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name is not None             
+                    # Preferences toggle  
+                    and not etc.get_preferences_attrib("disable_bpy_set_attribute")):                                   
+
+                    etc.log(AssignActiveAttribValueToSelection, f"Using ops.mesh_attribute_set()", etc.ELogLevel.VERBOSE)
+
+                    params = {}
+                    paramname = static_data.attribute_data_types[dt].bpy_ops_set_attribute_param_name
+                    params[paramname] = getattr(prop_group, f'val_{dt.lower()}')
+                    if obj.type == 'MESH':
+                        bpy.ops.mesh.attribute_set(**params)
+                    elif obj.type == 'CURVES':
+                        bpy.ops.curves.attribute_set(**params)
+
+                    # Switch back to the previous object if pinned mesh was used
+                    func.set_object_by_user_as_active_back(self, context)
+                    return {"FINISHED"}
                 
-                etc.pseudo_profiler("OPS_END")
+            except TypeError:
+                if etc.get_blender_support((4,1,0)) and dt in ["INT32_2D", "QUATERNION", "FLOAT4X4"]:
+                    etc.log(AssignActiveAttribValueToSelection, f"Using ops.mesh_attribute_set() failed due to a blender bug, using pre 3.5 method", etc.ELogLevel.WARNING)
+
+            # Use custom method
+            bpy.ops.object.mode_set(mode='OBJECT')
+            attribute = obj_data.attributes[active_attrib_name] #!important
+
+            # Get value from GUI
+            if dt in static_data.attribute_data_types:
+                
+                gui_value = getattr(prop_group, f'val_{dt.lower()}')
+                etc.log(AssignActiveAttribValueToSelection, f"Attribute data read", etc.ELogLevel.SUPER_VERBOSE)
+
+                if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
+                    gui_value = tuple(gui_value)
+                
+                value = func.get_attribute_default_value(attribute) if self.b_clear else gui_value
+                etc.log(AssignActiveAttribValueToSelection, f"Value read - {value}", etc.ELogLevel.SUPER_VERBOSE)
+
+                # Set the value
+                func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.b_face_corner_spill_enable)
+                
+                # Switch back to the previous object if pinned mesh was used
+                func.set_object_by_user_as_active_back(self, context)
+                bpy.ops.object.mode_set(mode='EDIT')
+
                 return {"FINISHED"}
-        except TypeError:
-            if etc.get_blender_support((4,1,0)) and dt in ["INT32_2D", "QUATERNION", "FLOAT4X4"]:
-                if func.is_verbose_mode_enabled():
-                    print( f"Using ops.mesh_attribute_set() failed due to a blender bug, using pre 3.5 method")
-        
+            else:
+                self.report({'ERROR', "Unsupported data type!"})
+                
+                # Switch back to the previous object if pinned mesh was used
+                func.set_object_by_user_as_active_back(self, context)
+                bpy.ops.object.mode_set(mode='EDIT')
 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        etc.pseudo_profiler("OBJ MODE SW")
-    
-        
+                return {"CANCELLED"}
 
-        attribute = obj.data.attributes[active_attrib_name] #!important
-
-        # Get value from GUI
-        if dt in static_data.attribute_data_types:
-            
-            gui_value = getattr(prop_group, f'val_{dt.lower()}')
-            etc.pseudo_profiler("READ_ATTRIB")
-
-            if type(gui_value) in [bpy_types.bpy_prop_array, Vector]:
-                gui_value = tuple(gui_value)
-            
-            value = func.get_attribute_default_value(attribute) if self.b_clear else gui_value
-            etc.pseudo_profiler("GET_DEFAULT_VAL")
-
-            # Set the value
-            func.set_attribute_value_on_selection(self, context, obj, attribute, value, face_corner_spill=self.b_face_corner_spill_enable)
-            
-            bpy.ops.object.mode_set(mode='EDIT')
-        
-            return {"FINISHED"}
-        
-        else:
-            self.report({'ERROR', "Unsupported data type!"})
-            bpy.ops.object.mode_set(mode='EDIT')
+        except Exception as exc:
+            etc.call_catastrophic_crash_handler(AssignActiveAttribValueToSelection, exc)
             return {"CANCELLED"}
           
 class CreateAttribFromData(bpy.types.Operator):
