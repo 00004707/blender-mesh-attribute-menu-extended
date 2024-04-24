@@ -80,6 +80,9 @@ def register():
             unregister()
             raise exc
         
+        # Logging
+        etc.init_logging()
+
         # Per-object Property Values
         bpy.types.Mesh.MAME_PropValues = bpy.props.PointerProperty(type=variable_data.MAME_PropValues)
         

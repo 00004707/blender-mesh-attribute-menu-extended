@@ -15,8 +15,7 @@ The file must not create a circular import with anything
 
 """
 
-import bpy
-import time
+import bpy, time, _bpy#, logging
 from enum import Enum
 from traceback import format_exc
 
@@ -24,7 +23,8 @@ from traceback import format_exc
 # ------------------------------------------
 __addon_package_name__ = __package__.replace('.modules','')
 LARGE_MESH_VERTICES_COUNT = 500000
-
+LOGGER = None
+LOG = []
 
 # Exceptions
 # ------------------------------------------
@@ -1210,6 +1210,8 @@ classes = [
     PropPanelPinMeshLastObject,
     FakeFaceCornerSpillDisabledOperator,
     MAMEReportIssue,
+    ShowLog,
+    ClearLog,
     WM_OT_mame_queue_macro_report,
     WM_OT_mame_queue_macro_set_finished,
     OpenWiki]
