@@ -278,6 +278,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row = col.row()
             row.prop(self, 'attribute_assign_menu', toggle=True)
             row.label(text='Assign and clear buttons', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Mesh'
 
             row = col.row()
             ver_support = get_blender_support((3,3,0))
@@ -286,7 +288,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Add ᵛᵉʳᵗᵉˣ to dropdown list entries' if ver_support else "Not supported in current blender version", icon='INFO')
-            
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Enhanced-Enum-Titles'
+
             row = col.row()
             ver_support = get_blender_support((4,0,0))
             row.enabled = ver_support
@@ -294,14 +298,20 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Treat Quaternions as 4D Vectors' if ver_support else "Not supported in current blender version", icon='INFO')
-     
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Treat-Quaternions-as-4D-Vectors'
+            
             row = col.row()
             row.prop(self, 'select_attribute_precise_facecorners', toggle=True)
             row.label(text='Select face corner edges', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Select-Face-Corner-Edges'
 
             row = col.row()
             row.prop(self, 'show_docs_button', toggle=True)
             row.label(text='In operator menus', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Show-Open-Documentation-Button'
 
         def draw_specials(layout):
             titlebox = layout.box()
@@ -313,16 +323,22 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'extra_context_menu_vg', toggle=True)
             subrow = row.row()
             subrow.label(text='Properties > Data > Vertex Groups', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Vertex-Groups-Context-Menu'
 
             row = col.row()
             row.prop(self, 'extra_context_menu_sk', toggle=True)
             subrow = row.row()
             subrow.label(text='Properties > Data > Shape Keys', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Shape-Keys-Context-Menu'
 
             row = col.row()
             row.prop(self, 'extra_context_menu_materials', toggle=True)
             subrow = row.row()
             subrow.label(text='Properties > Material', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Material-Context-Menu'
 
             row = col.row()
             ver_support = get_blender_support(minver_unsupported=(3,5,0))
@@ -331,6 +347,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > UVMaps' if ver_support else "Not supported in current blender version", icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#UVMap-Context-Menu'
 
             row = col.row()
             ver_support = get_blender_support(minver_unsupported=(3,5,0))
@@ -339,6 +357,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Face Maps' if ver_support else "Not supported in current blender version", icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Face-Maps-Context-menu'
 
             row = col.row()
             ver_support = get_blender_support((3,5,0))
@@ -347,7 +367,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
-
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Add-Set-Attribute-Operator'
+            
             row = col.row()
             ver_support = get_blender_support((3,3,0))
             row.enabled = ver_support
@@ -355,6 +377,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             subrow = row.row()
             subrow.alert = not ver_support
             subrow.label(text='Properties > Data > Color Attributes' if ver_support else "Not supported in current blender version", icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Color-Attributes-Context-Menu'
 
             row = col.row()
             row.prop(self, 'mame_documentation_op', toggle=True)
@@ -369,11 +393,15 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'extra_header_sculpt', toggle=True)
             subrow = row.row()
             subrow.label(text='3D View Menu Bar', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Menu-Bar'
 
             row = col.row()
             row.prop(self, 'extra_context_menu_sculpt', toggle=True)
             subrow = row.row()
             subrow.label(text='3D View Menu Bar > Mask / Face Sets', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Sculpt-Mode-Context-Menu'
 
             # row = col.row()
             # row.prop(self, 'extra_context_menu_npanel_item', toggle=True)
@@ -389,16 +417,22 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'extra_context_menu_vertex_menu', toggle=True)
             subrow = row.row()
             subrow.label(text='3D View Menu Bar > Vertex', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Vertex-Context-Menu'
 
             row = col.row()
             row.prop(self, 'extra_context_menu_edge_menu', toggle=True)
             subrow = row.row()
             subrow.label(text='3D View Menu Bar > Edge', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Edge-Context-Menu'
 
             row = col.row()
             row.prop(self, 'extra_context_menu_face_menu', toggle=True)
             subrow = row.row()
             subrow.label(text='3D View Menu Bar > Face', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Face-Context-Menu'
 
         def draw_quick(layout):
             titlebox = layout.box()
@@ -432,6 +466,8 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row.prop(self, 'quick_attribute_node_enable', toggle=True)
             subrow = row.row()
             subrow.label(text='Create Attribute Nodes Quickly', icon='INFO')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Quick-Attribute-Node'
 
         def draw_debug(layout):
             # Debug Zone
@@ -442,19 +478,25 @@ class AddonPreferences(bpy.types.AddonPreferences):
             row = col.row()
             row.operator('window_manager.mame_open_wiki', text="Open wiki")
             row.label(text='See Documentation')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
 
             row = col.row()
             row.operator('mame.report_issue', text="Report Issue")
             row.label(text='Report issue or request feature')
+            op = row.operator('mame.report_issue', icon='QUESTION', text="")
 
 
             row = col.row()
             row.prop(self, 'en_slow_logging_ops', toggle=True, text="Enable Full Logging")
             row.label(text='Slower. Enable only if required')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Enable-Full-Logging'
 
             row = col.row()
             row.prop(self, 'debug_zone_en', toggle=True, text="Debug Zone")
             row.label(text='Scary Spooky Skeletons', icon='ERROR')
+            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            op.wiki_url = 'Preferences-Page#Debug-Zone'
 
             if self.debug_zone_en:
                 box = layout.box()
