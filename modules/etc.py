@@ -306,7 +306,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     # Debug
     debug_zone_en: bpy.props.BoolProperty(name="Show", description="Scary", default=False)
     verbose_mode: bpy.props.BoolProperty(name="Verbose Logging - disable only", description="Scary", default=False)
-    debug_operators: bpy.props.BoolProperty(name="Enable Debug Operators", description="Scary", default=False)
+    debug_operators: bpy.props.BoolProperty(name="Enable Debug Extras", description="Scary", default=False)
     pseudo_profiler: bpy.props.BoolProperty(name="Pseudo-profiler - disable only", description="Scary", default=False)
     disable_version_checks: bpy.props.BoolProperty(name="Disable Blender Version Checks", description="Scary", default=False)
     set_algo_tweak: bpy.props.FloatProperty(name="Tweak Optimal Set Attribute Alghoritm Detection", description="set_attribute_values()", default=0.15)
@@ -320,7 +320,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
     max_log_lines: bpy.props.IntProperty(name="Max Log Lines", description="Scary", min = 8, default=64, max = 128)
     force_assign_on_selected_by_value: bpy.props.BoolProperty(name="Force Assign On Selected By Value", description="Scary", default=False)
     force_assign_on_selected_by_foreach_get_foreach_set: bpy.props.BoolProperty(name="Force Assign On Selected By foreach", description="Scary", default=False)
-    register_debug_ops_on_start: bpy.props.BoolProperty(name="Register Debug Operators On Startup (Needs Restart)", description="Scary", default=False)
+    register_debug_ops_on_start: bpy.props.BoolProperty(name="Register Debug Operators On Startup", description="Scary", default=False)
 
     addonproperties_tabs: bpy.props.EnumProperty(items=[
         ("GENERAL", "General", "General Settings"),
@@ -357,15 +357,15 @@ class AddonPreferences(bpy.types.AddonPreferences):
             op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Curves'
             
 
-            row = col.row()
-            ver_support = False #get_blender_support((3,5,0))
-            row.enabled = ver_support
-            row.prop(self, 'attribute_assign_menu_pointcloud', toggle=True)
-            subrow = row.row()
-            subrow.alert = not ver_support
-            subrow.label(text='Assign and clear buttons' if ver_support else "Not supported in current blender version", icon='INFO')
-            op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
-            op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Point-Cloud'
+            # row = col.row()
+            # ver_support = False #get_blender_support((3,5,0))
+            # row.enabled = ver_support
+            # row.prop(self, 'attribute_assign_menu_pointcloud', toggle=True)
+            # subrow = row.row()
+            # subrow.alert = not ver_support
+            # subrow.label(text='Assign and clear buttons' if ver_support else "Not supported in current blender version", icon='INFO')
+            # op = row.operator('window_manager.mame_open_wiki', icon='QUESTION', text="")
+            # op.wiki_url = 'Preferences-Page#Attribute-Assign-Menu-Point-Cloud'
             
 
             row = col.row()
@@ -602,7 +602,9 @@ class AddonPreferences(bpy.types.AddonPreferences):
                     box.prop(self, 'verbose_mode')
                 box.prop(self, 'console_loglevel')
                 box.prop(self, 'debug_operators')
-                box.prop(self, 'register_debug_ops_on_start')
+                r = box.row()
+                r.prop(self, 'register_debug_ops_on_start')
+                r.operator('script.reload')
                 if self.pseudo_profiler or self.show_hidden_blown_fuses:
                     box.prop(self, 'pseudo_profiler')
                 box.prop(self, 'bakematerial_donotdelete')
