@@ -116,9 +116,7 @@ def get_attribute_values(attribute, obj):
     value_attrib_propname = get_attribute_value_propname(attribute)
     dt = attribute.data_type
 
-    if is_verbose_mode_enabled():
-        print(f"Getting {attribute.name} values: data type = {dt} ({attribute.data_type}), prop = {value_attrib_propname}, len = {len(attribute.data)}" )
-
+    etc.log(get_attribute_values, f"Getting {attribute.name} values: data type = {dt} ({attribute.data_type}), prop name = {value_attrib_propname}, domain len = {len(attribute.data)}", etc.ELogLevel.VERBOSE)
     
     if dt == "FLOAT":
         a_vals = [0.0] * len(attribute.data)
@@ -204,19 +202,16 @@ def get_safe_attrib_name(obj, attribute_name, suffix = "Attribute", check_attrib
         str: Safe attribute name
     """
     while(attribute_name in obj.vertex_groups.keys()):
-            if is_verbose_mode_enabled():
-                print(f"{attribute_name} exists in vertex groups! Renaming")
+            etc.log(get_safe_attrib_name, f"{attribute_name} exists in vertex groups! Renaming", etc.ELogLevel.VERBOSE)
             attribute_name += " " + suffix
     
     if check_attributes:
         while(attribute_name in obj.data.attributes):
-                if is_verbose_mode_enabled():
-                    print(f"{attribute_name} exists in attributes! Renaming")
+                etc.log(get_safe_attrib_name, f"{attribute_name} exists in attributes! Renaming", etc.ELogLevel.VERBOSE)
                 attribute_name += " " + suffix
             
     if attribute_name.startswith('.'):
-        if is_verbose_mode_enabled():
-                print(f"{attribute_name} starts with a dot, renaming")
+        etc.log(get_safe_attrib_name, f"{attribute_name} starts with a dot, renaming", etc.ELogLevel.VERBOSE)
         attribute_name = attribute_name[1:] 
         
 
@@ -357,8 +352,7 @@ def get_random_attribute_of_data_type(context, data_type:str, count=1, no_list =
             
             random.shuffle(chars)
             value = ''.join(chars[start_id:start_id+len+1])
-            if is_verbose_mode_enabled:
-                print(f"MINLEN: {min}, MAXLEN:{max}, LEN:{len}, Generated string: {value}")
+            etc.log(get_random_attribute_of_data_type, f"MINLEN: {min}, MAXLEN:{max}, LEN:{len}, Generated string: {value}", etc.ELogLevel.VERBOSE)
             return value
         
             
@@ -528,8 +522,7 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
     active_attrib_name = attribute.name 
     active_attrib = obj.data.attributes[active_attrib_name]
     
-    if is_verbose_mode_enabled():
-        print( f"Working on {active_attrib_name} attribute" )
+    etc.log(set_attribute_value_on_selection, f"Working on {active_attrib_name} attribute, {obj.name}", etc.ELogLevel.VERBOSE)
 
     # Get selection in edit mode, on attribute domain
     selected_el = get_mesh_selected_domain_indexes(obj, active_attrib.domain, face_corner_spill)
@@ -539,22 +532,22 @@ def set_attribute_value_on_selection(self, context, obj, attribute, value, face_
         return False
     
     active_attrib = obj.data.attributes[active_attrib_name] # !important get_mesh_selected_by_domain changes the reference
-
-    if is_verbose_mode_enabled():
-        print(f"Attribute data length: {len(active_attrib.data)}")
-        print(f"Selected domains: [{len(selected_el)} total] - {selected_el}")
-        print(f"Setting value: {value}")
-        a_vals = get_attribute_values(attribute, obj)
-        print(f"Pre-set values: {str(a_vals)}")
+    
+    
+    a_vals = get_attribute_values(attribute, obj) if etc.is_full_logging_enabled() else "*skipped*"
+    
+    etc.log(set_attribute_value_on_selection, f"Attribute data length: {len(active_attrib.data)}"\
+            f"Selected domains: [{len(selected_el)} total] - {selected_el}"\
+                f"Setting value: {value}"\
+                f"Pre-set values:\n{str(a_vals)}", etc.ELogLevel.SUPER_VERBOSE)
 
     # Write the new values
     #selected_el = [i for i, el in enumerate(selected_el) if el]
     #selected_el = [i.index for i in selected_el]
     set_attribute_values(active_attrib, value, selected_el)
-    if is_verbose_mode_enabled():
-        a_vals = get_attribute_values(attribute, obj)
-        print(f"Post-set values: {str(a_vals)}")
 
+    a_vals = get_attribute_values(attribute, obj) if etc.is_full_logging_enabled() else "*skipped*"
+    etc.log(set_attribute_value_on_selection, f"Post-set values:\n{str(a_vals)}", etc.ELogLevel.SUPER_VERBOSE)
     return True
 
 def set_active_attribute(obj, attribute_name):
@@ -566,8 +559,7 @@ def set_active_attribute(obj, attribute_name):
     """
     
     atrr_index = obj.data.attributes.keys().index(attribute_name)
-    if is_verbose_mode_enabled():
-        print(f"Setting active attribute to {attribute_name}, index {atrr_index}")
+    etc.log(set_active_attribute, f"Setting active attribute to {attribute_name}, index {atrr_index}", etc.ELogLevel.VERBOSE)
     obj.data.attributes.active_index = atrr_index
 
 def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
@@ -584,8 +576,7 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
         etc.MeshDataWriteException: On failure
     """
 
-    if is_verbose_mode_enabled():
-        print(f"Converting attribute {attrib_name}")
+    etc.log(convert_attribute, f"Converting attribute {attrib_name}", etc.ELogLevel.VERBOSE)
     
     # Auto convert to different data type, if enabled in gui
     attrib = obj.data.attributes[attrib_name]
@@ -593,8 +584,7 @@ def convert_attribute(self, obj, attrib_name, mode, domain, data_type):
     if attrib is not None:
         set_active_attribute(obj, attrib_name)
 
-        if is_verbose_mode_enabled():
-            print(f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}")
+        etc.log(convert_attribute, f"Converting {obj.data.attributes.active.name} with settings {mode}, {domain}, {data_type}. Viewport mode: {obj.mode}", etc.ELogLevel.VERBOSE)
 
         bpy.ops.geometry.attribute_convert(mode=mode, domain=domain, data_type=data_type)
     else:
@@ -690,8 +680,8 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
                 # get loops that are connected to selected edges
                 loop_ids_of_selected_edges = np.arange(0, len(obj.data.loops))[np.isin(loops_edge_index, sel_edges)]
                 
-                if is_verbose_mode_enabled():
-                    print(f"The selection might be one of {loop_ids_of_selected_edges} fcs")
+                if etc.is_full_logging_enabled():
+                    etc.log(get_mesh_selected_domain_indexes, f"The selection might be one of {loop_ids_of_selected_edges} fcs", etc.ELogLevel.SUPER_VERBOSE)
                 
                 for fc in [obj.data.loops[li] for li in loop_ids_of_selected_edges]:
                     
@@ -749,17 +739,18 @@ def get_filtered_indexes_by_condition(source_data: list, condition:str, compare_
         compare_value = linear_to_srgb(compare_value, False)
 
     indexes = []
-    if is_verbose_mode_enabled():
-        
-        print(f"""Get filtered indexes with settings:
+    etc.log(get_filtered_indexes_by_condition, f"""Get filtered indexes with settings:
 {condition} to {compare_value}, 
 case sensitive {case_sensitive_string}
-convert compare value to srgb {vector_convert_to_srgb}""")
+convert compare value to srgb {vector_convert_to_srgb}""", etc.ELogLevel.VERBOSE)
+    if etc.get_preferences_attrib("en_slow_logging_ops"):
         if vector_convert_to_srgb:
             srgbs = [linear_to_srgb(i, return_float=False) for i in source_data]
-            print(f"on dataset (int) (len {len(source_data)}) {srgbs}""")
+            etc.log(get_filtered_indexes_by_condition, "on dataset (int) (len {len(source_data)}) {srgbs}", etc.ELogLevel.SUPER_VERBOSE)
         else:
-            print(f"on dataset (float) (len {len(source_data)}) {source_data}""")
+            etc.log(get_filtered_indexes_by_condition, f"on dataset (float) (len {len(source_data)}) {source_data}", etc.ELogLevel.SUPER_VERBOSE)
+    else:
+        etc.log(get_filtered_indexes_by_condition, f"dataset *skipped*", etc.ELogLevel.SUPER_VERBOSE)
 
     #booleans
     if type(source_data[0]) is bool:
@@ -822,8 +813,7 @@ convert compare value to srgb {vector_convert_to_srgb}""")
     else:
         raise etc.GenericFunctionParameterError("get_filtered_indexes_by_condition", f"Unsupported input data type: {type(source_data[0])}")
 
-    if is_verbose_mode_enabled():
-        print(f"Filtered indexes: {indexes}")
+    etc.log(get_filtered_indexes_by_condition, f"Filtered indexes: {indexes}", etc.ELogLevel.VERBOSE)
     return indexes
 
 def get_domain_attribute_values(obj, domain, attribute_name):
@@ -875,10 +865,8 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     """
 
     
-    
-    if is_verbose_mode_enabled():
-        print(f"get_mesh_data_kwargs: {kwargs}")
-        print(f"Reading {data_type} mesh data on {source_domain}...")
+    etc.log(get_mesh_data, f"get_mesh_data_kwargs: {kwargs}", etc.ELogLevel.VERBOSE)
+    etc.log(get_mesh_data, f"Reading {data_type} mesh data on {source_domain}...", etc.ELogLevel.VERBOSE)
 
     # DOMAIN INDEX
     if data_type == "INDEX":
@@ -1269,8 +1257,7 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
     Raises:
         Exception: On failure, re-raises the exception and clears bmesh
     """
-    if is_verbose_mode_enabled():
-        print(f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}")
+    etc.log(get_mesh_data, f"Setting sel/vis {selection} to state  {state} on {domain}, \ndataset {indexes}", etc.ELogLevel.SUPER_VERBOSE)
 
     bm = bmesh.new()
     bm.from_mesh(obj.data)
@@ -1383,9 +1370,9 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                 
                 # get edges that are connected to vertex assinged to this corner
                 edges = bm.verts[loop.vertex_index].link_edges
-                if is_verbose_mode_enabled():
-                    print(f"loop {cornerindex} has edges {[edge.index for edge in edges]}")
-                    print(f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}")
+                if etc.get_preferences_attrib("en_slow_logging_ops"):
+                    etc.log(set_selection_or_visibility_of_mesh_domain, f"loop {cornerindex} has edges {[edge.index for edge in edges]}", etc.ELogLevel.SUPER_VERBOSE)
+                    etc.log(set_selection_or_visibility_of_mesh_domain, f"loop {cornerindex} has a face {faceindex}, with edges {[edge.index for edge in bm.faces[faceindex].edges]}", etc.ELogLevel.SUPER_VERBOSE)
                 
                 # get edges that are in face index of this corner
                 for edge in edges:
@@ -1393,8 +1380,8 @@ def set_selection_or_visibility_of_mesh_domain(obj, domain, indexes, state = Tru
                         edge_indexes_to_select.append(edge.index)
             
             bm.free()
-            if is_verbose_mode_enabled():
-                print(f"Filtered edges of the corner are {edge_indexes_to_select}")
+            if etc.get_preferences_attrib("en_slow_logging_ops"):
+                etc.log(set_selection_or_visibility_of_mesh_domain, f"Filtered edges of the corner are {edge_indexes_to_select}", etc.ELogLevel.SUPER_VERBOSE)
             set_selection_or_visibility_of_mesh_domain(obj, 'EDGE', edge_indexes_to_select, state, selection)
         
         # The fast method
@@ -1464,8 +1451,9 @@ def set_mesh_data(obj, data_target:str , src_attrib, new_data_name = "", overwri
     else:
         a_vals = get_attribute_values(src_attrib, obj)
     if is_verbose_mode_enabled():
-        print(f"Setting mesh data {data_target} from {src_attrib}, \nvalues: {a_vals}, \nkwargs: {kwargs}, \ncustom name: {new_data_name}")
-    
+
+    etc.log(set_mesh_data, f"Setting mesh data {data_target} from {src_attrib}, \nvalues: {a_vals}, \nkwargs: {kwargs}, \ncustom name: {new_data_name}", etc.ELogLevel.VERBOSE)
+
     if 'raw_data' not in kwargs:
         src_attrib_name = src_attrib.name # for setting active attribute ONLY
 
@@ -2626,14 +2614,6 @@ def linear_to_srgb(color_value: float, return_float=True):
 # Other
 # --------------------------------
 
-def is_verbose_mode_enabled():
-    """Returns a boolean if the verbose logging to console is enabled
-
-    Returns:
-        bool
-    """
-    return etc.get_preferences_attrib('verbose_mode')
-
 def get_attribute_compatibility_check(attribute):
     """Returns true if the attribute is compatible with this addon.
 
@@ -2945,8 +2925,7 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list, add_domain_an
     if not filepath.lower().endswith('.csv'):
         filepath += ".csv"
 
-    if is_verbose_mode_enabled():
-            print(f"Exporting to CSV file located at \"{filepath}\"")
+    etc.log(write_csv_attributes_file, f"Exporting to CSV file located at \"{filepath}\"", etc.ELogLevel.VERBOSE)
 
     with open(filepath, 'w', newline='') as csvfile:
 
@@ -2979,8 +2958,8 @@ def write_csv_attributes_file(filepath:str, obj, attributes: list, add_domain_an
 
             writer.writerow(row)
 
-    if is_verbose_mode_enabled():
-            print(f"Wrote {max_data_len+1} lines.")
+    etc.log(write_csv_attributes_file, f"Wrote {max_data_len+1} lines.", etc.ELogLevel.VERBOSE)
+
 
 def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_domain_from_name: bool = True, remove_datatype_from_name: bool = True,
                       force_domain: str = '', force_data_type: str = ''):
@@ -3001,8 +2980,7 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
         New attribute count (int): the count of attributes imported or created.
     """
 
-    if is_verbose_mode_enabled():
-            print(f"Creating and writing attributes from CSV file located at \"{filepath}\"")
+    etc.log(csv_to_attributes, f"Creating and writing attributes from CSV file located at \"{filepath}\"", etc.ELogLevel.VERBOSE)
     
     errors = []
 
@@ -3093,8 +3071,7 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
                         attribute = obj.data.attributes.new(name=column, type=attrib_dt, domain=attrib_domain)
 
                     if attribute in excluded_attribute_names:
-                        if is_verbose_mode_enabled():
-                            print(f"Attribute on exclude list: {col_id} {column}")
+                        etc.log(csv_to_attributes, f"Attribute on exclude list: {col_id} {column}", etc.ELogLevel.VERBOSE)
                         continue
 
                     # Because this script can create many attributes quickly, blender might not update the data about
@@ -3110,8 +3087,8 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
                     attribute_sets.append(aset)
                     valid_columns.append(col_id)
                     data_columns.append([])
-                    if is_verbose_mode_enabled():
-                        print(f'Identified column {col_id} as {column}, domain {attrib_domain}, data type {attrib_dt}')
+                    
+                    etc.log(csv_to_attributes, f'Identified column {col_id} as {column}, domain {attrib_domain}, data type {attrib_dt}', etc.ELogLevel.VERBOSE)
                 
                 obj.data.update()
             
@@ -3122,8 +3099,8 @@ def csv_to_attributes(filepath:str, obj, excluded_attribute_names: list, remove_
                 
                 for i, col_id in enumerate(valid_columns):
                     attribute_set = attribute_sets[i]
-                    if is_verbose_mode_enabled():
-                        print(f"[COL {col_id}][ROW: {line-1}] Reading data for attribute {attribute_set['name']}, domain {attribute_set['domain']}, data type {attribute_set['data_type']}")
+
+                    etc.log(csv_to_attributes, f"[COL {col_id}][ROW: {line-1}] Reading data for attribute {attribute_set['name']}, domain {attribute_set['domain']}, data type {attribute_set['data_type']}", etc.ELogLevel.VERBOSE)
                     
                     cast_type = static_data.attribute_data_types[attribute_set['data_type']].cast_type
                     

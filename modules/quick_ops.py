@@ -1118,8 +1118,9 @@ class SelectDomainButton(bpy.types.Operator):
     deselect: bpy.props.BoolProperty(name="deselect", default=False)
 
     def execute(self, context):
-        if func.is_verbose_mode_enabled():
-            print(f"select? {not self.deselect} attrib: {context.active_object.data.attributes.active}")
+
+        etc.log(SelectDomainButton, f"select? {not self.deselect} attrib: {context.active_object.data.attributes.active}", etc.ELogLevel.VERBOSE)
+
         prop_group = context.object.data.MAME_PropValues
         select_nonzero = prop_group.val_select_non_zero_toggle
 
@@ -1171,8 +1172,8 @@ class DeSelectDomainButton(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
-        if func.is_verbose_mode_enabled():
-            print(f"deselect {context.active_object.data.attributes.active}")
+        etc.log(DeSelectDomainButton, f"deselect {context.active_object.data.attributes.active}", etc.ELogLevel.VERBOSE)
+
         return  bpy.ops.mesh.attribute_select_button('EXEC_DEFAULT', 
                                                      deselect=True)
 

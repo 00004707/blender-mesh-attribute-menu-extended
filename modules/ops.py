@@ -1258,8 +1258,7 @@ class ConvertToMeshData(bpy.types.Operator):
         """
 
         convert_from = obj.data.attributes[convert_from_name]
-        if func.is_verbose_mode_enabled():
-            print(f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {target_data_type}")
+        etc.log(ConvertToMeshData, f"Conversion required! Source: {convert_from.data_type} in  {convert_from.domain}, len {len(convert_from.data)}. Target: {self.convert_to_domain_enum} in {target_data_type}", etc.ELogLevel.VERBOSE)
         
         # Make sure the new name is not starting with dot, as this will create a non-convertable internal attribute
         new_attrib_name = convert_from.name[1:] if convert_from.name.startswith('.') else convert_from.name 
@@ -1267,14 +1266,14 @@ class ConvertToMeshData(bpy.types.Operator):
         new_attrib = obj.data.attributes.new(name=new_attrib_name, type=convert_from.data_type, domain=convert_from.domain)
         new_attrib_name = new_attrib.name
         
-        if func.is_verbose_mode_enabled():
-            print(f"Created temporary attribute {new_attrib_name}")
+        etc.log(ConvertToMeshData, f"Created temporary attribute {new_attrib_name}", etc.ELogLevel.VERBOSE)
         
         convert_from = obj.data.attributes[convert_from_name] # After the new attribute has been created, reference is invalid
         func.set_attribute_values(new_attrib, func.get_attribute_values(convert_from, obj))
         func.convert_attribute(self, obj, new_attrib.name, 'GENERIC', target_domain, target_data_type)
-        if func.is_verbose_mode_enabled():
-            print(f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}")
+        
+        etc.log(ConvertToMeshData, f"Successfuly converted attribute ({new_attrib_name}), datalen = {len(obj.data.attributes[new_attrib_name].data)}", etc.ELogLevel.VERBOSE)
+
         return new_attrib_name
 
 
@@ -1822,8 +1821,8 @@ class CopyAttributeToSelected(bpy.types.Operator):
             
                 # check if present in target mesh
                 if src_attrib_name in [a.name for a in sel_obj.data.attributes]:
-                    if func.is_verbose_mode_enabled():
-                        print(f"Attribute {src_attrib.name} exists on target")
+                    etc.log(CopyAttributeToSelected, f"Attribute {src_attrib.name} exists on target", etc.ELogLevel.VERBOSE)
+
                     sel_obj_attr = sel_obj.data.attributes[src_attrib_name]
 
                     # overwrite if present?
@@ -1833,8 +1832,9 @@ class CopyAttributeToSelected(bpy.types.Operator):
                     #overwrite different type?
                     not_same_type = sel_obj_attr.domain != src_attrib.domain or sel_obj_attr.data_type != src_attrib.data_type
                     if not_same_type and not self.b_overwrite_different_type:
-                        if func.is_verbose_mode_enabled():
-                            print(f"Attribute {src_attrib.name} is not the same type as {sel_obj_attr.name}, {sel_obj_attr.domain}!={src_attrib.domain} or {sel_obj_attr.data_type}!={src_attrib.data_type}")
+
+                        etc.log(CopyAttributeToSelected, f"Attribute {src_attrib.name} is not the same type as {sel_obj_attr.name}, {sel_obj_attr.domain}!={src_attrib.domain} or {sel_obj_attr.data_type}!={src_attrib.data_type}", etc.ELogLevel.VERBOSE)
+
                         continue
                     
                     # remove current if overwriting
@@ -2053,8 +2053,7 @@ class ConditionalSelection(bpy.types.Operator):
         return func.conditional_selection_poll(self, context)
     
     def execute(self, context):
-        if func.is_verbose_mode_enabled():
-            print(f"conditional selection on attrib: {context.active_object.data.attributes.active}")
+        etc.log(ConditionalSelection, f"conditional selection on attrib: {context.active_object.data.attributes.active}", etc.ELogLevel.VERBOSE)
 
         obj = context.active_object
         current_mode = obj.mode
@@ -2124,8 +2123,8 @@ VecSingleCondition: {self.b_single_condition_vector}""")
             
             if use_hsv:
                 for i, subelement in enumerate(src_data):
-                    if func.is_verbose_mode_enabled():
-                        print("HSV mode enabled, converting all values to HSV")
+                    etc.log(ConditionalSelection, "HSV mode enabled, converting all values to HSV", etc.ELogLevel.VERBOSE)
+
                     src_data[i] = func.color_vector_to_hsv(subelement)
             
             # for each dimension of a vector
@@ -2135,14 +2134,13 @@ VecSingleCondition: {self.b_single_condition_vector}""")
                     comparison_value = getattr(self, f"val_{attrib_data_type.lower()}")[0] if self.b_single_value_vector else getattr(self, f"val_{attrib_data_type.lower()}")[i]
                     
                     srgb_convert = attrib.data_type == 'BYTE_COLOR'
-                    if func.is_verbose_mode_enabled():
-                        print(f"Checking vector[{i}], condition: {condition}, to value {comparison_value}")
+                    etc.log(ConditionalSelection, f"Checking vector[{i}], condition: {condition}, to value {comparison_value}", etc.ELogLevel.VERBOSE)
                     vals_to_cmp.append(func.get_filtered_indexes_by_condition([vec[i] for vec in src_data], condition, comparison_value, vector_convert_to_srgb=srgb_convert))
             
             filtered_indexes = compare_each_vector_dimension_indexes(vals_to_cmp, self.vector_value_cmp_type_enum)
 
-        if func.is_verbose_mode_enabled():
-            debug_print()
+        
+        debug_print()
 
         
         func.set_selection_or_visibility_of_mesh_domain(obj, attrib.domain, filtered_indexes, not self.b_deselect)
@@ -2311,8 +2309,7 @@ class AttributeResolveNameCollisions(bpy.types.Operator):
         failed = 0
         enumerate(obj.data.attributes)
         for i, a in enumerate(obj.data.attributes):
-            if func.is_verbose_mode_enabled():
-                print(f"{a} {i}")
+            etc.log(AttributeResolveNameCollisions, f"{a} {i}", etc.ELogLevel.VERBOSE)
                 
             if obj.data.attributes[i].name in restricted_names:
                 atypes = func.get_attribute_types(obj.data.attributes[i])
@@ -2656,8 +2653,7 @@ class RandomizeAttributeValue(bpy.types.Operator):
         
         # Read current values
         storage = func.get_attribute_values(attribute, obj)
-        if func.is_verbose_mode_enabled():
-            print(f"Current values:{np.array(storage)}")
+        etc.log(RandomizeAttributeValue, f"Current values:{np.array(storage)}", etc.ELogLevel.VERBOSE)
 
         # Get random values list
         rnd_vals = func.get_random_attribute_of_data_type(context, 
@@ -2680,8 +2676,8 @@ class RandomizeAttributeValue(bpy.types.Operator):
                                                               b_vec_3=self.val_vector_3_toggle,
                                                               src_attribute=attribute,
                                                               obj=obj)
-        if func.is_verbose_mode_enabled():
-            print(f"Randomized values:{rnd_vals}")
+
+        etc.log(RandomizeAttributeValue, f"Randomized values:{rnd_vals}", etc.ELogLevel.VERBOSE)
 
         # Set the values
         func.set_attribute_values(attribute, rnd_vals, on_domains)
@@ -3278,8 +3274,8 @@ class AttributesToImage(bpy.types.Operator):
 
         # Create a new material
         mat = bpy.data.materials.new('MAME_ATTRIBUTE_BAKER')
-        if func.is_verbose_mode_enabled():
-            print(f"Created new material {mat.name}")
+        etc.log(AttributesToImage, f"Created new material {mat.name}", etc.ELogLevel.VERBOSE)
+
         mat.use_nodes = True
         mat_nt = mat.node_tree
         mat_nt.nodes.remove(mat_nt.nodes['Principled BSDF'])
@@ -3292,8 +3288,8 @@ class AttributesToImage(bpy.types.Operator):
         sn_texture.interpolation = "Linear"
         sn_texture.extension = "REPEAT"
         sn_texture.projection = "FLAT"
-        if func.is_verbose_mode_enabled():
-            print(f"Baking to {image.name}")
+
+        etc.log(AttributesToImage, f"Baking to {image.name}", etc.ELogLevel.VERBOSE)
         
         # Set up UVMap input 
         sn_texture_uv = mat_nt.nodes.new('ShaderNodeAttribute')
@@ -3321,9 +3317,8 @@ class AttributesToImage(bpy.types.Operator):
         sn_colormix.location = (-140, 120) 
         mat_nt.links.new(sn_colormix.outputs['Color'], sn_emit.inputs['Color'])
 
-        if func.is_verbose_mode_enabled():
-            print(f"Bake mode {self.image_channels_type_enum}")
-            print(f"Alpha {func.get_alpha_channel_enabled_texture_bake_op(self)}")
+        etc.log(AttributesToImage, f"Bake mode {self.image_channels_type_enum}", etc.ELogLevel.VERBOSE)
+        etc.log(AttributesToImage, f"Alpha {func.get_alpha_channel_enabled_texture_bake_op(self)}", etc.ELogLevel.VERBOSE)
 
         
         #mat_nt.links.new(sn_alphacolormix.outputs['Color'], sn_emit.inputs['Color'])
@@ -3389,8 +3384,7 @@ class AttributesToImage(bpy.types.Operator):
         if self.image_channels_type_enum == 'GRAYSCALE':
             source_attribute_name = getattr(self, f'source_attribute_0_enum')
             
-            if func.is_verbose_mode_enabled():
-                print(f"Baking RGB from {source_attribute_name}")
+            etc.log(AttributesToImage, f"Baking RGB from {source_attribute_name}", etc.ELogLevel.VERBOSE)
 
             # Case: Not a vector attribute nor an image
             if not len(self.get_image_channel_datasource_0_vector_element_enum(context)):
@@ -3447,8 +3441,8 @@ class AttributesToImage(bpy.types.Operator):
         else:
             for texture_ch in range(0, 3):
                 source_attribute_name = getattr(self, f'source_attribute_{texture_ch}_enum')
-                if func.is_verbose_mode_enabled():
-                    print(f"Baking channel {texture_ch} from {source_attribute_name}")
+
+                etc.log(AttributesToImage, f"Baking channel {texture_ch} from {source_attribute_name}", etc.ELogLevel.VERBOSE)
 
                 if len(self.get_image_channel_datasource_0_vector_element_enum(context)):
                     
