@@ -717,12 +717,29 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
             return np.arange(0, len(obj.data.vertices))[storage]
         
         elif obj.type == 'CURVES':
-            storage = np.zeros(len(obj.data.points), dtype=bool)
             if '.selection' in obj.data.attributes:
-                obj.data.attributes['.selection'].data.foreach_get('value', storage)
-            if etc.is_full_logging_enabled():
-                etc.log(get_mesh_selected_domain_indexes, f"Selected curve point IDs: {np.arange(0, len(obj.data.points))[storage]}", etc.ELogLevel.SUPER_VERBOSE)
-            return np.arange(0, len(obj.data.points))[storage]
+                
+                # Selection attribute can be in point domain or curve domain, depending on edit mode interaction mode
+                # Point to point
+                if obj.data.attributes['.selection'].domain == 'POINT':
+                    storage = np.zeros(len(obj.data.points), dtype=bool)
+                    obj.data.attributes['.selection'].data.foreach_get('value', storage)
+                    if etc.is_full_logging_enabled():
+                        etc.log(get_mesh_selected_domain_indexes, f"Selected curve point IDs: {np.arange(0, len(obj.data.points))[storage]}", etc.ELogLevel.SUPER_VERBOSE)
+                    return np.arange(0, len(obj.data.points))[storage]
+                
+                # Curve to point
+                else:
+                    selected_splines = get_mesh_selected_domain_indexes(obj, 'CURVE')
+                    point_ids = []
+                    for s_id in selected_splines:
+                        for point in obj.data.curves[s_id].points:
+                            point_ids.append(point.index)
+        
+                    return np.arange(0, len(obj.data.points))[point_ids]
+            
+            else:
+                return []
         
         else:
             raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {obj.type} object type is not supported')
@@ -738,17 +755,32 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
         return np.arange(0, len(obj.data.polygons))[storage]
     
     elif domain == 'CURVE': 
-        # As of 4.2 alpha it's only possible to get selection of curve points
-        selected_points = get_mesh_selected_domain_indexes(obj, 'POINT')
-        selected_curve_ids = []
-        for curve in obj.data.curves:
-            for point in curve.points:
-                if point.index in selected_points:
-                    selected_curve_ids.append(curve.index)
-                    break
-        if etc.is_full_logging_enabled():
-            etc.log(get_mesh_selected_domain_indexes, f"Selected curve IDs: {selected_curve_ids}", etc.ELogLevel.SUPER_VERBOSE)
-        return selected_curve_ids
+
+        # As of 4.2 alpha selection of curves is invisble, but possible
+        if '.selection' in obj.data.attributes:
+
+            # If selection is on points, convert it to curves
+            if obj.data.attributes['.selection'].domain == 'POINT':
+                selected_points = get_mesh_selected_domain_indexes(obj, 'POINT')
+                selected_curve_ids = []
+                for curve in obj.data.curves:
+                    for point in curve.points:
+                        if point.index in selected_points:
+                            selected_curve_ids.append(curve.index)
+                            break
+                if etc.is_full_logging_enabled():
+                    etc.log(get_mesh_selected_domain_indexes, f"Selected curve IDs: {selected_curve_ids}", etc.ELogLevel.SUPER_VERBOSE)
+                return selected_curve_ids
+
+            # If seletion is on curves, just return it
+            else:
+                storage = np.zeros(len(obj.data.curves), dtype=bool)
+                obj.data.attributes['.selection'].data.foreach_get('value', storage)
+                return np.arange(0, len(obj.data.curves))[storage]
+                
+        else:
+            return []
+
 
     elif domain == 'CORNER': 
         # boneless chicken 
