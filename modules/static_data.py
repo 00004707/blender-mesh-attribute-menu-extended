@@ -20,10 +20,24 @@ from . import etc
 from enum import Enum
 import string
 
+# Defines all UI categories for object_data_sources
+class EObjectDataSourceUICategory(Enum):
+    OTHER = 0
+    VISIBILITY = 1
+    SCULPTING = 2
+    COMMON = 3
+    SHADING = 4
+    SUBDIV_MODIFIER = 5
+    VERTEX_GROUPS = 6
+    SHAPE_KEYS = 7
+    UV = 8
+    EFFECTS = 9
+    MISC_DATA = 10
+    SELECTION = 11
+
 # Defines object data source
 ObjectDataSource = namedtuple("MeshDataSource", [
     "enum_gui_friendly_name",                                   # Friendly name shown in UI
-    "enum_gui_friendly_name_no_special_characters",             # Friendly name shown in UI without non-standard character set
     "enum_gui_description",                                     # Friendly item description
     "attribute_auto_name",                                      # Automatic name with formatting elements
     "attribute_domain_on_default",                              # Default domain choice for this data source
@@ -34,44 +48,44 @@ ObjectDataSource = namedtuple("MeshDataSource", [
     "batch_convert_support",                                    # Whether the converting of multiple mesh data is supported, eg. shape keys.
     "valid_data_sources",                                       # futureproofing for other object types (unused, set to 'MESH')
     "icon",                                                     # Icon in UI
-    "quick_ui_exec_type"                                        # Used when operator is called and is meant to be executed instantly (no menu) INVOKE_DEFAULT or EXEC_DEFAULT
+    "quick_ui_exec_type",                                       # Used when operator is called and is meant to be executed instantly (no menu) INVOKE_DEFAULT or EXEC_DEFAULT
+    "ui_category",                                              # Used to place the element in UI categories (EObjectDataSourceUICategory)
 ])
+
+
+
+
 
 # Contains object data sources
 object_data_sources = {
-    # Special entries
-    #   "INSERT_SEPARATOR_": None,         will add a separator in enum menu
-    #   "INSERT_NEWLINE_": None,           will add a new column in enum menu
-    #
     # Formattable string values:
     #   face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from
     
     # ON ALL DOMAINS
     # --------------------------------------
+
     "INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Index ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Index",
+        enum_gui_friendly_name="Index",
         enum_gui_description="Create attribute from domain index",
         attribute_auto_name="{domain} Index",
         attribute_domain_on_default='POINT',
-        domains_supported=['POINT', 'EDGE', 'FACE', 'CORNER'],
+        domains_supported=['POINT', 'EDGE', 'FACE', 'CORNER', 'CURVE'],
         data_type='INT',
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH'],
+        valid_data_sources = ['MESH', 'CURVES', 'POINTCLOUD'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.COMMON,
     ),
 
     # ON VERTEX EDGE FACE
     # --------------------------------------
-    "INSERT_SEPARATOR_VEF": None, 
-    
+
     "VISIBLE": ObjectDataSource(
-        enum_gui_friendly_name="Visible ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Visible",
-        enum_gui_description="Create boolean vertex attribute from domain visiblity",
+        enum_gui_friendly_name="Visible in Edit Mode",
+        enum_gui_description="Create boolean attribute from domain visiblity",
         attribute_auto_name="Visible {domain}",
         attribute_domain_on_default='POINT',
         domains_supported=['POINT', 'EDGE', 'FACE'],
@@ -81,7 +95,8 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "HIDE_OFF",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.VISIBILITY,
     ),
 
     "HIDDEN": ObjectDataSource(
@@ -97,31 +112,30 @@ object_data_sources = {
         valid_data_sources = ['MESH'],
         icon= "HIDE_OFF",
         quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.VISIBILITY,
     ),
 
     "POSITION": ObjectDataSource(
-        enum_gui_friendly_name="Position ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Position",
+        enum_gui_friendly_name="Position",
         enum_gui_description="Create vertex attribute from domain position",
         attribute_auto_name="{domain} Position",
         attribute_domain_on_default='POINT',
-        domains_supported=['POINT', 'EDGE', 'FACE'],
+        domains_supported=['POINT', 'EDGE', 'FACE','SPLINE'],
         data_type='FLOAT_VECTOR',
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH'],
+        valid_data_sources = ['MESH', 'CURVES', 'POINTCLOUD'],
         icon= "GIZMO",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.COMMON,
     ),
     
     # ON VERTEX FACE
     # --------------------------------------
-    "INSERT_SEPARATOR_VF": None,
 
     "NORMAL": ObjectDataSource(
-        enum_gui_friendly_name="Normal ⁻ ᵛᵉʳᵗᵉˣ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Normal",
+        enum_gui_friendly_name="Normal",
         enum_gui_description="Create attribute from domain normals",
         attribute_auto_name="{domain} Normal",
         attribute_domain_on_default='POINT',
@@ -132,52 +146,50 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "NORMALS_FACE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     # QUICK BOOLEANS
     # --------------------------------------
-    "INSERT_SEPARATOR_QBOOL": None,
 
     "SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Boolean From Selected",
+        enum_gui_friendly_name="Selected in Edit Mode",
         enum_gui_description="Create boolean attribute from domain selection",
         attribute_auto_name="Selected {domain}",
         attribute_domain_on_default='POINT',
-        domains_supported=['POINT', 'EDGE', 'FACE'],
+        domains_supported=['POINT', 'EDGE', 'FACE', 'CURVE'],
         data_type='BOOLEAN',
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH'],
+        valid_data_sources = ['MESH', 'CURVES'],
         icon= "RESTRICT_SELECT_OFF",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SELECTION,
     ),
 
     "NOT_SELECTED": ObjectDataSource(
-        enum_gui_friendly_name="Not Selected ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Boolean From Not Selected",
+        enum_gui_friendly_name="Not Selected in Edit Mode",
         enum_gui_description="Create boolean attribute from domain that is not selected",
         attribute_auto_name="Not selected {domain}",
         attribute_domain_on_default='POINT',
-        domains_supported=['POINT', 'EDGE', 'FACE'],
+        domains_supported=['POINT', 'EDGE', 'FACE', 'CURVE'],
         data_type='BOOLEAN',
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
         batch_convert_support=False,
-        valid_data_sources = ['MESH'],
+        valid_data_sources = ['MESH', 'CURVES'],
         icon= "RESTRICT_SELECT_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SELECTION,
     ),
     
     # VERTEX ONLY
     # --------------------------------------
-    "INSERT_NEWLINE_VERTEX": None,
 
     "SCULPT_MODE_MASK": ObjectDataSource(
-        enum_gui_friendly_name="Sculpt mode mask ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Sculpt mode mask",
+        enum_gui_friendly_name="Sculpt mode mask",
         enum_gui_description="Create float vertex attribute from masked vertices in sculpt mode",
         attribute_auto_name="Masked Vertices",
         attribute_domain_on_default='POINT',
@@ -188,12 +200,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MOD_MASK",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SCULPTING,
     ),
 
     "VERT_MEAN_BEVEL": ObjectDataSource(
-        enum_gui_friendly_name="Vertex Mean Bevel Weight ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Vertex Mean Bevel Weight",
+        enum_gui_friendly_name="Vertex Mean Bevel Weight",
         enum_gui_description="Create float vertex attribute from Mean Bevel Weight",
         attribute_auto_name="Vertex Mean Bevel",
         attribute_domain_on_default='POINT',
@@ -204,12 +216,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MOD_BEVEL",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SUBDIV_MODIFIER,
     ),
 
     "VERT_MEAN_CREASE": ObjectDataSource(
-        enum_gui_friendly_name="Mean Vertex Crease ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Mean Vertex Crease",
+        enum_gui_friendly_name="Mean Vertex Crease",
         enum_gui_description="Create float vertex attribute from Mean Vertex Crease",
         attribute_auto_name="Vertex Mean Crease",
         attribute_domain_on_default='POINT',
@@ -220,12 +232,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINCURVE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SUBDIV_MODIFIER,
     ),
 
     "VERT_FROM_VERTEX_GROUP": ObjectDataSource(
-        enum_gui_friendly_name="Vertex Group Weight ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Vertex Group Weight",
+        enum_gui_friendly_name="Vertex Group Weight",
         enum_gui_description="Create float vertex attribute from vertex group values",
         attribute_auto_name="{vertex_group} Vertex Weight",
         attribute_domain_on_default='POINT',
@@ -236,12 +248,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "GROUP_VERTEX",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.VERTEX_GROUPS,
     ),
 
     "VERT_IS_IN_VERTEX_GROUP": ObjectDataSource(
-        enum_gui_friendly_name="Is In Vertex Group ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Is In Vertex Group",
+        enum_gui_friendly_name="Is In Vertex Group",
         enum_gui_description="Create boolean vertex attribute from vertex group assignment",
         attribute_auto_name="Vertex in {vertex_group}",
         attribute_domain_on_default='POINT',
@@ -252,12 +264,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "GROUP_VERTEX",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.VERTEX_GROUPS,
     ),
 
     "VERT_SHAPE_KEY_POSITION": ObjectDataSource(
-        enum_gui_friendly_name="Position from Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Position from Shape Key",
+        enum_gui_friendly_name="Position from Shape Key",
         enum_gui_description="Create float vector attribute from shape key vertex position",
         attribute_auto_name="Position from {shape_key}",
         attribute_domain_on_default='POINT',
@@ -268,12 +280,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "SHAPEKEY_DATA",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHAPE_KEYS,
     ),
 
     "VERT_SHAPE_KEY_POSITION_OFFSET": ObjectDataSource(
-        enum_gui_friendly_name="Position Offset from Shape Key ⁻ ᵛᵉʳᵗᵉˣ",
-        enum_gui_friendly_name_no_special_characters="Position Offset from Shape Key",
+        enum_gui_friendly_name="Position Offset from Shape Key",
         enum_gui_description="Create float vector attribute from shape key vertex position offset from other shape key",
         attribute_auto_name="Position Offset from {shape_key} to {shape_key_to}",
         attribute_domain_on_default='POINT',
@@ -284,16 +296,15 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "SHAPEKEY_DATA",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHAPE_KEYS,
     ),
 
     # EDGE ONLY
     # --------------------------------------
-    "INSERT_NEWLINE_EDGE": None,
 
     "EDGE_SEAM": ObjectDataSource(
-        enum_gui_friendly_name="Edge Seam ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Seam",
+        enum_gui_friendly_name="Edge Seam",
         enum_gui_description="Create boolean edge attribute from seams",
         attribute_auto_name="Edge Seam",
         attribute_domain_on_default='EDGE',
@@ -304,12 +315,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "OUTLINER_DATA_EMPTY",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.UV,
     ),
 
     "EDGE_BEVEL_WEIGHT": ObjectDataSource(
-        enum_gui_friendly_name="Edge Bevel Weight ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Bevel Weight",
+        enum_gui_friendly_name="Edge Bevel Weight",
         enum_gui_description="Create float edge attribute from Bevel Weight",
         attribute_auto_name="Edge Bevel Weight",
         attribute_domain_on_default='EDGE',
@@ -320,12 +331,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MOD_BEVEL",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SUBDIV_MODIFIER,
     ),
 
     "EDGE_CREASE": ObjectDataSource(
-        enum_gui_friendly_name="Edge Crease ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Crease",
+        enum_gui_friendly_name="Edge Crease",
         enum_gui_description="Create float edge attribute from Crease",
         attribute_auto_name="Edge Crease",
         attribute_domain_on_default='EDGE',
@@ -336,12 +347,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINCURVE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SUBDIV_MODIFIER,
     ),
 
     "EDGE_SHARP": ObjectDataSource(
-        enum_gui_friendly_name="Edge Sharp ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Sharp",
+        enum_gui_friendly_name="Edge Sharp",
         enum_gui_description="Create boolean edge attribute from Edge Sharp",
         attribute_auto_name="Edge Sharp",
         attribute_domain_on_default='EDGE',
@@ -352,12 +363,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "SHARPCURVE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SUBDIV_MODIFIER,
     ),
 
     "EDGE_FREESTYLE_MARK": ObjectDataSource(
-        enum_gui_friendly_name="Edge Freestyle Mark ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Freestyle Mark",
+        enum_gui_friendly_name="Edge Freestyle Mark",
         enum_gui_description="Create boolean edge attribute from Freestyle Mark",
         attribute_auto_name="Edge Freestyle Mark",
         attribute_domain_on_default='EDGE',
@@ -368,12 +379,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "OUTLINER_OB_EMPTY",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.EFFECTS,
     ),
 
     "EDGE_IS_LOOSE": ObjectDataSource(
-        enum_gui_friendly_name="Loose Edges ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Loose Edges",
+        enum_gui_friendly_name="Loose Edges",
         enum_gui_description="Create boolean edge attribute on loose edges",
         attribute_auto_name="Loose Edges",
         attribute_domain_on_default='EDGE',
@@ -384,12 +395,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MOD_EDGESPLIT",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "EDGE_VERTICES": ObjectDataSource(
-        enum_gui_friendly_name="Edge Vertices ⁻ ᵉᵈᵍᵉ",
-        enum_gui_friendly_name_no_special_characters="Edge Vertices",
+        enum_gui_friendly_name="Edge Vertices",
         enum_gui_description="Create 2D vector edge attribute with indexes of edge vertices",
         attribute_auto_name="Edge Vertex Indexes",
         attribute_domain_on_default='EDGE',
@@ -400,16 +411,15 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "VERTEXSEL",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     # FACE ONLY
     # --------------------------------------
-    "INSERT_NEWLINE_FACE": None,  
 
     "SCULPT_MODE_FACE_SETS": ObjectDataSource(
-        enum_gui_friendly_name="Sculpt Mode Face Set Index ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Sculpt Mode Face Set Index",
+        enum_gui_friendly_name="Sculpt Mode Face Set Index",
         enum_gui_description="Create float face attribute from face sets in sculpt mode",
         attribute_auto_name="Sculpt Mode Face Set Index",
         attribute_domain_on_default='FACE',
@@ -420,12 +430,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "FACE_MAPS",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SCULPTING,
     ),
 
     "FACE_USE_SMOOTH": ObjectDataSource(
-        enum_gui_friendly_name="Face Use Smooth ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Face Use Smooth",
+        enum_gui_friendly_name="Face Use Smooth",
         enum_gui_description="Create boolean face attribute from smooth shading of a face",
         attribute_auto_name="Is Face Smooth Shaded",
         attribute_domain_on_default='FACE',
@@ -436,12 +446,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "SMOOTHCURVE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "FACE_AREA": ObjectDataSource(
-        enum_gui_friendly_name="Face Area ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Face Area",
+        enum_gui_friendly_name="Face Area",
         enum_gui_description="Create float face attribute from area of each face",
         attribute_auto_name="Face Area",
         attribute_domain_on_default='FACE',
@@ -452,12 +462,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "SNAP_FACE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_MATERIAL_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Material Index ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Material Index",
+        enum_gui_friendly_name="Material Index",
         enum_gui_description="Create integer face attribute from material index",
         attribute_auto_name="Face Material Index",
         attribute_domain_on_default='FACE',
@@ -468,12 +478,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MATERIAL",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     # "FACE_MATERIAL_SLOT_INDEX": ObjectDataSource(
-    #     enum_gui_friendly_name="Material Slot Index ⁻ ᶠᵃᶜᵉ",
-    #     enum_gui_friendly_name_no_special_characters="",
+    #     enum_gui_friendly_name="Material Slot Index",
     #   enum_gui_description="Create integer face attribute from material slot index",
     #     attribute_auto_name="Face Material Slot Index",
     #     attribute_domain_on_default='FACE',
@@ -487,8 +497,7 @@ object_data_sources = {
     # ),
 
     "FACE_VERTS": ObjectDataSource(
-        enum_gui_friendly_name="All Vertex Indexes in a Face ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Vertices Indexes in a Face",
+        enum_gui_friendly_name="All Vertex Indexes in a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of vertices of a face",
         attribute_auto_name="Face Vertex Indexes",
         attribute_domain_on_default='FACE',
@@ -499,12 +508,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_CORNER_INDEXES": ObjectDataSource(
-        enum_gui_friendly_name="All Corner Indexes of a Face ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Corner Indexes of a Face",
+        enum_gui_friendly_name="All Corner Indexes of a Face",
         enum_gui_description="Create color (4D Vector) face attribute from indexes of face corners of a face",
         attribute_auto_name="Corner Indexes of a Face",
         attribute_domain_on_default='FACE',
@@ -515,12 +524,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_CORNER_TOTAL": ObjectDataSource(
-        enum_gui_friendly_name="Corner Count in a Face ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Corner Count in a Face",
+        enum_gui_friendly_name="Corner Count in a Face",
         enum_gui_description="Create integer face attribute from count of face corners in a face",
         attribute_auto_name="Corners Count in a Face",
         attribute_domain_on_default='FACE',
@@ -531,12 +540,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_CORNER_START_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Corner Start Index in a Face ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Corner Start Index in a Face",
+        enum_gui_friendly_name="Corner Start Index in a Face",
         enum_gui_description="Create integer face attribute from lowest index from face corners in a face",
         attribute_auto_name="Corner Start Index in a Face",
         attribute_domain_on_default='FACE',
@@ -547,12 +556,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_FROM_FACE_MAP": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Face Map ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Boolean From Face Map",
+        enum_gui_friendly_name="Boolean From Face Map",
         enum_gui_description="Create boolean face attribute from face map assignment",
         attribute_auto_name="Is face in {face_map}",
         attribute_domain_on_default='FACE',
@@ -563,12 +572,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "FACE_MAPS",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_MAP_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Map Index ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Face Map Index",
+        enum_gui_friendly_name="Face Map Index",
         enum_gui_description="Create boolean face attribute from face map assignment",
         attribute_auto_name="Assigned Face Map Index",
         attribute_domain_on_default='FACE',
@@ -579,12 +588,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "FACE_IS_MATERIAL_ASSIGNED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Material Assignment ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Boolean From Material Assignment",
+        enum_gui_friendly_name="Boolean From Material Assignment",
         enum_gui_description="Create boolean face attribute from material assignment",
         attribute_auto_name="Is {material} assigned",
         attribute_domain_on_default='FACE',
@@ -595,12 +604,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "MATERIAL",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "FACE_IS_MATERIAL_SLOT_ASSIGNED": ObjectDataSource(
-        enum_gui_friendly_name="Boolean From Material Slot Assignment ⁻ ᶠᵃᶜᵉ",
-        enum_gui_friendly_name_no_special_characters="Boolean From Material Slot Assignment",
+        enum_gui_friendly_name="Boolean From Material Slot Assignment",
         enum_gui_description="Create boolean face attribute from material slot assignment",
         attribute_auto_name="Is {material_slot} slot assigned",
         attribute_domain_on_default='FACE',
@@ -611,16 +620,15 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "MATERIAL",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     # FACE CORNER ONLY
     # --------------------------------------
-    "INSERT_NEWLINE_FACE_CORNER": None,
     
     "SPLIT_NORMALS": ObjectDataSource(
-        enum_gui_friendly_name="Split Normals ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Split Normals",
+        enum_gui_friendly_name="Split Normals",
         enum_gui_description="Create vector face corner attribute from split normals",
         attribute_auto_name="Split Normals",
         attribute_domain_on_default='CORNER',
@@ -631,12 +639,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "MOD_NORMALEDIT",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "CORNER_TANGENT": ObjectDataSource(
-        enum_gui_friendly_name="Tangent ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Tangent",
+        enum_gui_friendly_name="Tangent",
         enum_gui_description="Create vector face corner attribute from tangent",
         attribute_auto_name="Tangent",
         attribute_domain_on_default='CORNER',
@@ -647,12 +655,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "DRIVER_ROTATIONAL_DIFFERENCE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "CORNER_BITANGENT": ObjectDataSource(
-        enum_gui_friendly_name="Bitangent ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Bitangent",
+        enum_gui_friendly_name="Bitangent",
         enum_gui_description="Create vector face corner attribute from bitangent",
         attribute_auto_name="Bitangent",
         attribute_domain_on_default='CORNER',
@@ -663,12 +671,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "DRIVER_ROTATIONAL_DIFFERENCE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "CORNER_BITANGENT_SIGN": ObjectDataSource(
-        enum_gui_friendly_name="Bitangent Sign ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Bitangent Sign",
+        enum_gui_friendly_name="Bitangent Sign",
         enum_gui_description="Create float face corner attribute from corner bitangent sign",
         attribute_auto_name="Bitangent Sign",
         attribute_domain_on_default='CORNER',
@@ -679,12 +687,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "DRIVER_ROTATIONAL_DIFFERENCE",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.SHADING,
     ),
 
     "CORNER_EDGE_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Corner Edge Index ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Face Corner Edge Index",
+        enum_gui_friendly_name="Face Corner Edge Index",
         enum_gui_description="Create integer face corner attribute from assigned edge index",
         attribute_auto_name="Face Corner Edge Index",
         attribute_domain_on_default='CORNER',
@@ -695,12 +703,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
 
     "CORNER_VERTEX_INDEX": ObjectDataSource(
-        enum_gui_friendly_name="Face Corner Vertex Index ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="Face Corner Vertex Index",
+        enum_gui_friendly_name="Face Corner Vertex Index",
         enum_gui_description="Create integer face corner attribute from assigned vertex index",
         attribute_auto_name="Face Corner Vertex Index",
         attribute_domain_on_default='CORNER',
@@ -711,11 +719,12 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH'],
         icon= "LINENUMBERS_ON",
-        quick_ui_exec_type = 'EXEC_DEFAULT'
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.MISC_DATA,
     ),
+
     "UVMAP": ObjectDataSource(
-        enum_gui_friendly_name="UVMap ⁻ ᶜᵒʳⁿᵉʳ",
-        enum_gui_friendly_name_no_special_characters="UVMap",
+        enum_gui_friendly_name="UVMap",
         enum_gui_description="Create Vector2D UVMap attribute from selected UVMap",
         attribute_auto_name="UVMap",
         attribute_domain_on_default='CORNER',
@@ -726,19 +735,18 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.UV,
     ),
 
-    "INSERT_SEPARATOR_SPECIAL": None,
+    
 
     # # SPECIAL
+    # # UV
     # --------------------------------------
-    
-    # data len == len(loops) for both, idk how to proceed with this 
 
     "SELECTED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="UV Editor Selected Vertices ⁻ ᵘᵛ",
-        enum_gui_friendly_name_no_special_characters="Selected Vertices in UV Editor",
+        enum_gui_friendly_name="UV Editor Selected Vertices",
         enum_gui_description="Create Selected Vertices attribute from selected UVMap",
         attribute_auto_name="UVMap Selected Vertices",
         attribute_domain_on_default='CORNER',
@@ -749,13 +757,13 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.UV,
     ),
 
 
     "SELECTED_EDGES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="UV Editor Selected Edges ⁻ ᵘᵛ",
-        enum_gui_friendly_name_no_special_characters="Selected Edges in UV Editor",
+        enum_gui_friendly_name="UV Editor Selected Edges",
         enum_gui_description="Create Selected Edges attribute from selected UVMap",
         attribute_auto_name="UVMap Selected Edges",
         attribute_domain_on_default='CORNER',
@@ -766,12 +774,12 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.UV,
     ),
 
     "PINNED_VERTICES_IN_UV_EDITOR": ObjectDataSource(
-        enum_gui_friendly_name="UV Editor Pinned Vertices ⁻ ᵘᵛ",
-        enum_gui_friendly_name_no_special_characters="Pinned Vertices in UV Editor",
+        enum_gui_friendly_name="UV Editor Pinned Vertices",
         enum_gui_description="Create Pinned Vertices attribute from selected UVMap",
         attribute_auto_name="UVMap Pinned Vertices",
         attribute_domain_on_default='CORNER',
@@ -782,7 +790,8 @@ object_data_sources = {
         batch_convert_support=True,
         valid_data_sources = ['MESH'],
         icon= "UV",
-        quick_ui_exec_type = 'INVOKE_DEFAULT'
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.UV,
     ),
 
 }

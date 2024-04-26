@@ -2044,6 +2044,25 @@ def get_friendly_name_from_enum_function(context, enum_function, element:str):
     else:
         return None
 
+def get_friendly_name_and_icon_for_EObjectDataSourceUICategory(enum:static_data.EObjectDataSourceUICategory):
+    
+    cats = {static_data.EObjectDataSourceUICategory.OTHER: {'name': "Other", 'icon':'SNAP_VOLUME'},
+            static_data.EObjectDataSourceUICategory.VISIBILITY: {'name': 'Edit Mode Visibility', 'icon':'HIDE_OFF'},
+            static_data.EObjectDataSourceUICategory.SCULPTING: {'name': "Sculpting Mode Data", 'icon':'SCULPTMODE_HLT'},
+            static_data.EObjectDataSourceUICategory.COMMON: {'name': "Common Data", 'icon':'MESH_ICOSPHERE'},
+            static_data.EObjectDataSourceUICategory.SHADING: {'name': "Shading and Normals Data", 'icon':'NODE_MATERIAL'},
+            static_data.EObjectDataSourceUICategory.SUBDIV_MODIFIER: {'name': "Subdivision / Bevel Adjustment Data", 'icon':'MESH_UVSPHERE'},
+            static_data.EObjectDataSourceUICategory.VERTEX_GROUPS: {'name': "Vertex Groups Data", 'icon':'GROUP_VERTEX'},
+            static_data.EObjectDataSourceUICategory.SHAPE_KEYS: {'name': "Shape Keys Data", 'icon':'SHAPEKEY_DATA'},
+            static_data.EObjectDataSourceUICategory.UV: {'name': 'UV and UV Editor Data', 'icon':'UV'},
+            static_data.EObjectDataSourceUICategory.EFFECTS: {'name': 'Special Effects Data', 'icon':'SHADERFX'},
+            static_data.EObjectDataSourceUICategory.MISC_DATA: {'name': 'Miscellaneous Data', 'icon':'FREEZE'},
+            static_data.EObjectDataSourceUICategory.SELECTION: {'name': 'Edit Mode Selection', 'icon':'EDITMODE_HLT'},}
+    try:
+        return cats[enum]
+    except KeyError:
+        return {'name': enum.name, 'icon':'QUESTION'}
+
 
 # Data enums
 # --------------------------------------------
