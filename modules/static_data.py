@@ -84,6 +84,21 @@ object_data_sources = {
         quick_ui_exec_type = 'EXEC_DEFAULT'
     ),
 
+    "HIDDEN": ObjectDataSource(
+        enum_gui_friendly_name="Hidden in Edit Mode",
+        enum_gui_description="Create boolean attribute from domain visiblity",
+        attribute_auto_name="Hidden {domain}",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT', 'EDGE', 'FACE'],
+        data_type='BOOLEAN',
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['MESH'],
+        icon= "HIDE_OFF",
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+    ),
+
     "POSITION": ObjectDataSource(
         enum_gui_friendly_name="Position ⁻ ᵛᵉʳᵗᵉˣ ᵉᵈᵍᵉ ᶠᵃᶜᵉ",
         enum_gui_friendly_name_no_special_characters="Position",

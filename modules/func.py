@@ -1043,6 +1043,9 @@ def get_mesh_data(obj, data_type, source_domain, **kwargs):
     elif data_type == "VISIBLE":
         return [not val for val in get_domain_attribute_values(obj, source_domain, "hide")]
 
+    elif data_type == "HIDDEN":
+        return [val for val in get_domain_attribute_values(obj, source_domain, "hide")]
+
     # SELECTED
     elif data_type == "SELECTED":
         return get_domain_attribute_values(obj, source_domain, "select")
