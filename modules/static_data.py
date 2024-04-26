@@ -1473,48 +1473,60 @@ attribute_data_types = {
 # Defines mesh domain entries
 AttributeDomain = namedtuple("AttributeDomain", [
     "friendly_name",
+    "friendly_name_plural",
     "friendly_name_short",                      # The name presented to the user (shorter)
     "friendly_name_veryshort",                  # The name presented to the user (shorter)
     "min_blender_ver",
     "unsupported_from_blender_ver",
+    "icon",
 ])
 
 # Defines all mesh domains
 attribute_domains = {
     "POINT": AttributeDomain(
-        friendly_name="Vertex",
+        friendly_name="Vertex / Point",
+        friendly_name_plural="Vertices / Points",
         friendly_name_short="Vertex",
         friendly_name_veryshort="V",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        icon='VERTEXSEL'
     ),
     "EDGE": AttributeDomain(
         friendly_name="Edge",
+        friendly_name_plural="Edges",
         friendly_name_short="Edge",
         friendly_name_veryshort="E",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        icon='EDGESEL'
     ),
     "FACE": AttributeDomain(
         friendly_name="Face",
+        friendly_name_plural="Faces",
         friendly_name_short="Face",
         friendly_name_veryshort="V",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        icon='FACE_MAPS'
     ),
     "CORNER": AttributeDomain(
         friendly_name="Face Corner",
+        friendly_name_plural="Face Corners",
         friendly_name_short="Corner",
         friendly_name_veryshort="C",
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
+        icon='FACE_CORNER'
     ),
     "CURVE": AttributeDomain(
         friendly_name="Spline",
+        friendly_name_plural="Splines",
         friendly_name_short="Spline",
         friendly_name_veryshort="S",
         min_blender_ver=(3,3),
         unsupported_from_blender_ver=None,
+        icon='CURVE_DATA'
     ),
 }
 

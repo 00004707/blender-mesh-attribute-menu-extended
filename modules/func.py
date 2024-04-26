@@ -1983,14 +1983,31 @@ def get_friendly_domain_name(domain_name_raw, plural=False, short=False):
     Returns:
         str: Friendly string
     """
+    try:
+        obj = static_data.attribute_domains[domain_name_raw]
+    except KeyError:
+        return "..."
     if short:
-        return static_data.attribute_domains[domain_name_raw].friendly_name_short
-    elif domain_name_raw == 'POINT':
-        return "Vertex" if not plural else "Vertices"
-    elif domain_name_raw == 'CORNER':
-        return "Face Corner" if not plural else "Face Corners"
-    else:
-        return domain_name_raw.lower().capitalize() if not plural else domain_name_raw.lower().capitalize() + "s"
+        return obj.friendly_name_short
+
+    return obj.friendly_name if not plural else obj.friendly_name_plural
+
+    # else:
+    #     return domain_name_raw.lower().capitalize() if not plural else domain_name_raw.lower().capitalize() + "s"
+
+def get_domain_icon(domain_name_raw):
+    """Returns icon string for domain
+
+    Args:
+        domain_name_raw (str): eg. POINT
+
+    Returns:
+        str: icon string
+    """
+    try:
+        return static_data.attribute_domains[domain_name_raw].icon
+    except KeyError:
+        return 'ERROR'
 
 def get_friendly_data_type_name(data_type_raw):
     """Gets friendly name for attribute data types, to use it in GUI
@@ -2207,7 +2224,7 @@ def get_uvmaps_enum(self, context):
 
 # extra gui enums
 
-def get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context):
+def get_supported_domains_for_selected_datablock_source_enum_entry(self, context):
     """Gets aa list of compatible domains from enum selection in self.domain_data_type, for reading or writing mesh data from object
 
     Example being mean bevel that can be stored either in edges or vertices.
@@ -2221,22 +2238,29 @@ def get_supported_domains_for_selected_mesh_data_source_enum_entry(self, context
         list: List of tuples to be used in enum
     """
     items = []
+    if (self.domain_data_type_enum is None 
+        or self.domain_data_type_enum == ''
+        or type(static_data.object_data_sources[self.domain_data_type_enum]) != static_data.ObjectDataSource):
+        return [("NULL", "None", "...")]
+
     domains_supported = static_data.object_data_sources[self.domain_data_type_enum].domains_supported
 
-    
     if 'POINT' in domains_supported:
-        items.append(("POINT", "Vertex", "Use vertex domain for data type"))
+        items.append(("POINT", get_friendly_domain_name("POINT"), "Use vertex domain for data type", get_domain_icon('POINT'), 0))
     if 'EDGE' in domains_supported:
-        items.append(("EDGE", "Edge", "Use edge domain for data type"))
+        items.append(("EDGE", get_friendly_domain_name("EDGE"), "Use edge domain for data type", get_domain_icon('EDGE'), 1))
     if 'FACE' in domains_supported:
-        items.append(("FACE", "Face", "Use face domain for data type"))
+        items.append(("FACE", get_friendly_domain_name("FACE"), "Use face domain for data type", get_domain_icon('FACE'), 2))
     if 'CORNER' in domains_supported:
-        items.append(("CORNER", "Face Corner", "Use face corner domain for data type"))
+        items.append(("CORNER", get_friendly_domain_name("CORNER"), "Use face corner domain for data type", get_domain_icon('CORNER'), 3))
+    if 'CURVE' in domains_supported:
+        items.append(("CURVE", get_friendly_domain_name("CURVE"), "Use spline domain for data type", get_domain_icon('CURVE'), 4))
 
     return items
 
 def get_mesh_data_enum_entry_icon(data_item):
-    """Sets the enum entry icon. Fallbacks to default icon if none is set.
+    """Sets the enum dropdown list entry icon (create from datablock data).
+    Fallbacks to default icon, defined below by domain, if none is set.
 
     Args:
         data_item (Reference): Reference to namedtuple from data.object_data_sources or data.object_data_targets
@@ -2247,16 +2271,32 @@ def get_mesh_data_enum_entry_icon(data_item):
     # set the default icon based on supported domains, if none is set
     if data_item.icon == "":
         domains = data_item.domains_supported
+        
+        # Default for multiple domains entry
         if len(domains) > 1:
             icon = "MATCUBE"
+        
+        # Default for point domain entry
         elif domains[0] == "POINT":
             icon = "VERTEXSEL"
+
+        # Default for edge domain entry
         elif domains[0] == "EDGE":
             icon = "EDGESEL"
+
+        # Default for face domain entry
         elif domains[0] == "FACE":
             icon = "FACESEL"
+
+        # Default for face corner domain entry
         elif domains[0] == "CORNER":
             icon = "SNAP_PERPENDICULAR"
+
+        # Default for curve domain entry
+        elif domains[0] == "CURVE":
+            icon = "OUTLINER_DATA_CURVES" if etc.get_blender_support((3,3,0)) else "MOD_CURVE"
+    
+    # Use specified icon
     else:
         icon = data_item.icon
     return icon
