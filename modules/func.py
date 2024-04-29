@@ -2613,6 +2613,9 @@ def get_attributes_of_type_enum(self, context, data_types = [], domains = ['POIN
     
     return enum_entries
  
+def get_attributes_enum(self, context):
+    return get_attributes_of_type_enum(self, context, domains = [])
+
 def get_attribute_comparison_conditions_enum_for_property(self,context):
     """All available conditions for attributes that store numeric values
 
@@ -2775,6 +2778,55 @@ def get_built_in_attributes_enum(self, context):
                 l.append((item, name, static_data.defined_attributes[item].description, static_data.defined_attributes[item].icon, i))
     return l
 
+def get_objects_with_same_datablock_enum(self, context):
+    """Returns enum of object names that have same datablock as object in context
+
+    Args:
+        context (ref): context
+
+    Returns:
+        list: enum list
+    """
+
+    x = []
+    obj, obj_data = get_object_in_context(context)
+        
+    # Active object always on top
+    if bpy.context.active_object and bpy.context.active_object.data == obj_data:
+        x.append((obj.name, f"{obj.name} (Active Object)", f"Use {obj.name} and it's modifiers to grab data from", 'OBJECT_DATAMODE', 0))
+    
+    # Other objects lower
+    for i, sceneobj in enumerate([o for o in bpy.context.scene.objects if o.data == obj_data]):
+        if sceneobj == bpy.context.active_object:
+            continue
+        else:
+            x.append((sceneobj.name, sceneobj.name, f"Use {sceneobj.name} and it's modifiers to grab data from"))
+    return x
+
+def get_objects_in_scene_enum(self, context):
+    """Returns enum of object names are in the same scene as active
+
+    Args:
+        context (ref): context
+
+    Returns:
+        list: enum list
+    """
+    x = []
+    obj, obj_data = get_object_in_context(context)
+        
+    # Active object always on top
+    if bpy.context.active_object and bpy.context.active_object.data == obj_data:
+        x.append((obj.name, f"{obj.name} (Active Object)", f"Use {obj.name} and it's modifiers to grab data from", 'OBJECT_DATAMODE', 0))
+    
+    # Other objects lower
+    for i, sceneobj in enumerate(bpy.context.scene.objects):
+        if sceneobj == bpy.context.active_object:
+            continue
+        else:
+            x.append((sceneobj.name, sceneobj.name, f"Use {sceneobj.name}"))
+    return x
+
 # Multi-use operator poll functions
 # --------------------------------
 
@@ -2893,6 +2945,27 @@ def get_attribute_compatibility_check(attribute):
     elif attribute.domain not in static_data.attribute_domains:
         return False
     return True
+
+def get_object_type_class_by_str(name:str):
+    """Converts strings like 'MESH' to object class from bpy.types
+
+    Args:
+        name (str): The name of the object type
+
+    Returns:
+        class: bpy.types
+    """
+
+    if name == 'MESH':
+        return bpy.types.Mesh
+    elif name == 'CURVES':
+        return bpy.types.Curves
+    elif name == 'POINTCLOUD':
+        return bpy.types.PointCloud
+    else:
+        return None # idc about other types
+
+
 
 # Properties Panel Pinned Mesh
 # --------------------------------
@@ -3177,6 +3250,41 @@ def get_node_tree_parent(node_tree, tree_type = None):
                 return gn
     else: 
         return None
+
+# Nodes Editors 
+# ----------------------------------------------
+
+def get_geometry_node_geometry_output_pins(node):
+    """Gets Geometry output pins for input node
+
+    Args:
+        node (ref): node reference
+
+    Returns:
+        list: list of node.output elements
+    """
+
+    outputs = []
+    for output in node.outputs:
+        if output.type == 'GEOMETRY':
+            outputs.append(output)
+    return outputs
+
+def get_geometry_node_boolean_inputs(node):
+    """Gets boolean input pins for input node
+
+    Args:
+        node (ref): node reference
+
+    Returns:
+        list: list of node.inputs elements
+    """
+
+    inputs = []
+    for output in node.inputs:
+        if output.type == 'BOOLEAN':
+            inputs.append(output)
+    return inputs
 
 
 # CSV Export related
