@@ -3105,23 +3105,65 @@ def update_last_object_reference_for_pinned_datablock(context, ob_data):
     for i in gc_refs_ids:
         gui_prop_group.last_object_refs.remove(i)
 
-    # Make or refresh reference if not pinned yet
+    # Make or refresh reference if pin is not yet enabled
     if context.object:
+
+        # Create new pin reference
         if not pin_ref:
             pin_ref = gui_prop_group.last_object_refs.add() 
-            # print("Created pin")
 
+        # Fill in the data
         pin_ref.datablock_ref_name = ob_data.name
         pin_ref.obj_ref_name = context.object.name
         pin_ref.workspace_name = context.window.workspace.name
-    
+
+    # DEBUG: Block pin reference creation
+    if etc.get_preferences_attrib('pinned_mesh_block_ref_creation') and etc.get_preferences_attrib('debug_operators'):
+        pass
+
+    # If pin is enabled 
     else:
-        # Update data if active object has the same datablock
-        if pin_ref and bpy.context.active_object and bpy.context.active_object.data.name == pin_ref.datablock_ref_name:
+        # Update data if 
+        if (# pin exists, and active object has same data as pin
+            (pin_ref and bpy.context.active_object and bpy.context.active_object.data.name == pin_ref.datablock_ref_name)
+            
+            # Or pin does not exist but input ob_data is same as active object
+            or (ob_data and bpy.context.active_object and bpy.context.active_object.data 
+                and ob_data.name == bpy.context.active_object.data.name)):
+
+            # Create new pin reference
+            if not pin_ref:
+                pin_ref = gui_prop_group.last_object_refs.add() 
+
+            # Fill in the data
             ob_data = bpy.context.active_object.data
             pin_ref.datablock_ref_name = bpy.context.active_object.data.name
             pin_ref.obj_ref_name = bpy.context.active_object.name
             pin_ref.workspace_name = context.window.workspace.name
+        
+        # Try finding first object with that mesh data in scene
+        elif (# If pin does not exist or object is not in current scene
+            (not pin_ref or pin_ref.obj_ref_name not in bpy.context.scene.objects) 
+            # and scene is small
+            and len(bpy.context.scene.objects) < 256):
+
+            for sceneobj in bpy.context.scene.objects:
+                try:
+                    if sceneobj.data.name == ob_data.name:
+                        
+                        # Create new pin reference
+                        pin_ref = gui_prop_group.last_object_refs.add() 
+
+                        # Fill in the data
+                        ob_data = sceneobj.data
+                        pin_ref.datablock_ref_name = sceneobj.data.name
+                        pin_ref.obj_ref_name = sceneobj.name
+                        pin_ref.workspace_name = context.window.workspace.name
+
+                        break
+                except AttributeError:
+                    continue
+        
         elif not pin_ref:
             etc.log(update_last_object_reference_for_pinned_datablock, f"No reference yet for {ob_data.name if ob_data else None}", etc.ELogLevel.SUPER_VERBOSE)
     
@@ -3146,7 +3188,10 @@ def get_pinned_mesh_object_and_mesh_reference(context):
     for el in gui_prop_group.last_object_refs:
         if el.workspace_name == context.window.workspace.name and el.datablock_ref_name == context.space_data.pin_id.name:
             mesh_datablock = context.space_data.pin_id
-            object_datablock = bpy.data.objects[el.obj_ref_name]
+            try:
+                object_datablock = bpy.data.objects[el.obj_ref_name] # TODO MIGHT FAIL IF INVALID
+            except KeyError:
+                return None, None
             return object_datablock, mesh_datablock
     return None, None
 
