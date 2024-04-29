@@ -186,7 +186,7 @@ class MAMENukePinnedObjectReferenceList(bpy.types.Operator):
 
 classes = [MAMECreateAllAttributes,
            MAMECreatePointCloudObject,
-           MAMETestAll]
+           MAMETestAll,
            MAMENukePinnedObjectReferenceList]
 
 def force_register():
