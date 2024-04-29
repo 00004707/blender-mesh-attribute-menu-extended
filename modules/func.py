@@ -3154,29 +3154,34 @@ def get_pinned_mesh_object_and_mesh_reference(context):
 # Node Editors 
 # ----------------------------------------------
 
-def get_node_editor_type(area = None, use_id = False, return_enum=False):
+def get_node_editor_type(area = None, use_id = False, return_enum=False, space_data = None):
     """Returns an enum of ENodeEditor for given area or a string
 
     Args:
         area (ref, optional): Reference to area from window_manager.windows.screen.area
         use_id (bool, optional): Whether to use (window_id, area_id) tuple instead of reference. Defaults to False.
         return_enum (bool, optional): Whether to return static_data.ENodeEditor instead of tree_type string. Defaults to False.
-
+        use_space_data (ref, optional): Use context.space_data to get node editor type. WARNING: Won't check for area type, make sure to use in node editors.
     Returns:
         ENodeEditor or str: type of the node tree in node editor
     """
-    if use_id:
-        area = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
+    
+    if space_data is None:
+        if use_id:
+            area = bpy.context.window_manager.windows[area[0]].screen.areas[area[1]]
 
-    if area.type != 'NODE_EDITOR':
-        return None
-    elif return_enum:
-        if area.spaces[0].tree_type in static_data.node_editors:
-            return static_data.node_editors[area.spaces[0].tree_type].enum
+        space_data = area.spaces[0]
+        if area.type != 'NODE_EDITOR':
+            return None
+
+    
+    if return_enum:
+        if space_data.tree_type in static_data.node_editors:
+            return static_data.node_editors[space_data.tree_type].enum
         else:
             return None
     else:
-        return area.spaces[0].tree_type
+        return space_data.tree_type
         
 def get_node_editor_areas(ids=False):
     """Returns all areas that are node editors
@@ -3249,7 +3254,6 @@ def get_all_open_properties_panel_pinned_mesh_names():
                         meshes.append(space.pin_id.name)
 
     return meshes
-
 
 def get_node_tree_parent(node_tree, tree_type = None):
     """
