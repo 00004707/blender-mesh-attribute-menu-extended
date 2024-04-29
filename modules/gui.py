@@ -209,6 +209,27 @@ def attribute_assign_panel(self, context):
                                 r2.label(text="You can edit but won't see selected elements")
                         except Exception:
                             pass
+        
+        # Reminder about mesh datablock not in scene
+        if mesh_data_pinned and pin_ref is not None and pin_ref.obj_ref_name not in bpy.context.scene.objects:
+            try:
+                box = layout.box()
+                box.alert = True
+                col2 = box.column(align=True)
+                r= col2.row()
+                r.label(icon='INFO', text="The pinned object is not in active scene")
+                r2 = col2.row()
+                try:
+                    r2.label(text="Select object with")
+                    r2.label(text=f"{context.space_data.pin_id.name}", icon='OUTLINER_DATA_MESH')
+                    r2.label(text=" datablock again in this scene")
+                except AttributeError:
+                    r2.label(text="Select object with this datablock again in this scene")
+            except Exception:
+                pass
+        
+        # Opeartor Context
+        uiel_operator_context(self, context)
 
         # Pin exception info                
         uiel_pin_exception_info(self, context, layout, pin_ref, mesh_data_pinned)
