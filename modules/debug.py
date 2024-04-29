@@ -163,12 +163,31 @@ class MAMECreatePointCloudObject(bpy.types.Operator):
     def poll(self, context):
         return True
 
+class MAMENukePinnedObjectReferenceList(bpy.types.Operator):
+    """
+    Clears pinned mesh object reference list
+    """
+    bl_idname = "mame.debug_nuke_pinned_object_reference_list"
+    bl_label = "Nuke Pinned Refs"
+    bl_description = ""
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+    def execute(self, context):
+        gui_prop_group = context.window_manager.MAME_GUIPropValues
+        gui_prop_group.last_object_refs.clear()
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(self, context):
+        return True
+
 # Utility
 # ----------------------------
 
 classes = [MAMECreateAllAttributes,
            MAMECreatePointCloudObject,
            MAMETestAll]
+           MAMENukePinnedObjectReferenceList]
 
 def force_register():
     for c in classes:

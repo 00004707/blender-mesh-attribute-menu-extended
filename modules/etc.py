@@ -622,6 +622,7 @@ class AddonPreferences(bpy.types.AddonPreferences):
                 box.prop(self, 'max_log_lines')
                 box.prop(self, 'force_assign_on_selected_by_value')
                 box.prop(self, 'force_assign_on_selected_by_foreach_get_foreach_set')
+                box.prop(self, 'pinned_mesh_block_ref_creation')
                 
 
         
