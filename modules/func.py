@@ -1975,17 +1975,30 @@ def get_all_mesh_data_indexes_of_type(obj,data_type):
 # String Getters
 # ------------------------------------------
 
-def get_friendly_domain_name(domain_name_raw, plural=False, short=False):
+def get_friendly_domain_name(domain_name_raw, plural=False, short=False, context=None):
     """Converts internal domain name to friendly name to be used in UI
     eg. CORNER to Face Corners
 
     Args:
         domain_name_raw (str): Domain name
         plural (bool, optional): Return plural string. Defaults to False.
+        context (ref): Optional, for changing vertices to points if applicable
 
     Returns:
         str: Friendly string
     """
+
+    # For python api points are vertices and points, oops
+    if context is not None and domain_name_raw == 'POINT':
+        obj, obj_data = get_object_in_context(context)
+        if obj_data is not None and type(obj_data) in [get_object_type_class_by_str(a) for a in ['CURVES', 'POINTCLOUD']]:
+            if short:
+                return 'P'
+            elif plural:
+                return 'Points'
+            else: 
+                return 'Point'
+
     try:
         obj = static_data.attribute_domains[domain_name_raw]
     except KeyError:
@@ -1998,15 +2011,23 @@ def get_friendly_domain_name(domain_name_raw, plural=False, short=False):
     # else:
     #     return domain_name_raw.lower().capitalize() if not plural else domain_name_raw.lower().capitalize() + "s"
 
-def get_domain_icon(domain_name_raw):
+def get_domain_icon(domain_name_raw, context=None):
     """Returns icon string for domain
 
     Args:
         domain_name_raw (str): eg. POINT
+        context (ref): optional for setting the icon to point instead of vertex
 
     Returns:
         str: icon string
     """
+
+    # For python api points are vertices and points, oops
+    if context is not None and domain_name_raw == 'POINT':
+        obj, obj_data = get_object_in_context(context)
+        if obj_data is not None and type(obj_data) in [get_object_type_class_by_str(a) for a in ['CURVES', 'POINTCLOUD']]:
+            return 'DOT'
+
     try:
         return static_data.attribute_domains[domain_name_raw].icon
     except KeyError:
@@ -2057,7 +2078,9 @@ def get_friendly_name_and_icon_for_EObjectDataSourceUICategory(enum:static_data.
             static_data.EObjectDataSourceUICategory.UV: {'name': 'UV and UV Editor Data', 'icon':'UV'},
             static_data.EObjectDataSourceUICategory.EFFECTS: {'name': 'Special Effects Data', 'icon':'SHADERFX'},
             static_data.EObjectDataSourceUICategory.MISC_DATA: {'name': 'Miscellaneous Data', 'icon':'FREEZE'},
-            static_data.EObjectDataSourceUICategory.SELECTION: {'name': 'Edit Mode Selection', 'icon':'EDITMODE_HLT'},}
+            static_data.EObjectDataSourceUICategory.SELECTION: {'name': 'Edit Mode Selection', 'icon':'EDITMODE_HLT'},
+            static_data.EObjectDataSourceUICategory.CURVES: {'name': 'Curves', 'icon':get_domain_icon('CURVE')},
+            static_data.EObjectDataSourceUICategory.POINT_DATA: {'name': 'Points', 'icon':'DOT'},}
     try:
         return cats[enum]
     except KeyError:
@@ -2084,14 +2107,13 @@ def get_face_maps_enum(self, context):
     """
 
     items = []
-    if is_pinned_mesh_used(context):
-        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
-    else:
-        obj = bpy.context.active_object
+    obj, obj_data = get_object_in_context(context)
 
-    # case: no data
-    if not hasattr(obj, 'face_maps') or not len(obj.face_maps):
-        return [("NULL", "[!] No face maps", "")]
+    # case: object type invalid
+    if (type(obj_data) != get_object_type_class_by_str('MESH') or
+        # or no data
+        not hasattr(obj, 'face_maps') or not len(obj.face_maps)):
+            return [("NULL", "No face maps", "", 'ERROR', 0)]
 
 
     for face_map in obj.face_maps:
@@ -2120,7 +2142,7 @@ def get_material_slots_enum(self, context):
 
     # case: no data
     if not len(obj.material_slots):
-        return [("NULL", "[!] No material slots", "")]
+        return [("NULL", "No material slots", "", 'ERROR', 0)]
 
     for i, material_slot in enumerate(obj.material_slots):
         if material_slot is not None:
@@ -2145,9 +2167,13 @@ def get_materials_enum(self, context):
 
     items = []
 
-    # case: no data
-    if not len(bpy.data.materials):
-        return [("NULL", "[!] No materials", "")]
+    obj, obj_data = get_object_in_context(context)
+
+    # case: object type invalid
+    if (type(obj_data) != get_object_type_class_by_str('MESH') or
+        # or no data
+        not len(bpy.data.materials)):
+        return [("NULL", "No materials", "", 'ERROR', 0)]
 
 
     for i, material in enumerate(bpy.data.materials):
@@ -2171,14 +2197,13 @@ def get_vertex_groups_enum(self, context):
     """
 
     items = []
-    if is_pinned_mesh_used(context):
-        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
-    else:
-        obj = bpy.context.active_object
+    obj, obj_data = get_object_in_context(context)
 
-    # case: no data
-    if not len(obj.vertex_groups):
-        return [("NULL", "[!] No Vertex Groups", "")]
+    # case: object type invalid
+    if (type(obj_data) != get_object_type_class_by_str('MESH') or
+        # or no data
+        not len(obj.vertex_groups)):
+        return [("NULL", "No Vertex Groups", "", 'ERROR', 0)]
 
     for vg in obj.vertex_groups:
         items.append((str(vg.index), vg.name, f"Use {vg.name} vertex group"))
@@ -2200,14 +2225,13 @@ def get_shape_keys_enum(self, context):
     """
 
     items = []
-    if is_pinned_mesh_used(context):
-        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
-    else:
-        obj = bpy.context.active_object
+    obj, obj_data = get_object_in_context(context)
 
-    # case: no data
-    if obj.data.shape_keys is None:
-        return [("NULL", "[!] No Shape Keys", "")]
+    # case: object type invalid
+    if (type(obj_data) != get_object_type_class_by_str('MESH') or
+        # or no data
+        obj.data.shape_keys is None):
+        return [("NULL", "No Shape Keys", "", 'ERROR', 0)]
 
     for i, sk in enumerate(obj.data.shape_keys.key_blocks):
         items.append((str(i), sk.name, f"Use {sk.name} shape key"))
@@ -2229,15 +2253,13 @@ def get_uvmaps_enum(self, context):
     """
 
     items = []
-    if is_pinned_mesh_used(context):
-        obj, obj_data = get_pinned_mesh_object_and_mesh_reference(context)
-    else:
-        obj = bpy.context.active_object
+    obj, obj_data = get_object_in_context(context)
 
-    # case: no data
-    if not len(obj.data.uv_layers):
-        return [("NULL", "NO UVMAPS", "")]
-
+    # case: object type invalid
+    if (type(obj_data) != get_object_type_class_by_str('MESH') or
+        # or no data
+        not len(obj.data.uv_layers)):
+        return [("NULL", "No UVMaps", "", 'ERROR', 0)]
 
     for i, uvmap in enumerate(obj.data.uv_layers):
         items.append((str(i), uvmap.name, f"Use {uvmap.name} UVMap"))
