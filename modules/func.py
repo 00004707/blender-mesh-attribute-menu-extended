@@ -2282,15 +2282,48 @@ def get_supported_domains_for_selected_datablock_source_enum_entry(self, context
         list: List of tuples to be used in enum
     """
     items = []
+
+    obj, obj_data = get_object_in_context(context)
+
     if (self.domain_data_type_enum is None 
         or self.domain_data_type_enum == ''
-        or type(static_data.object_data_sources[self.domain_data_type_enum]) != static_data.ObjectDataSource):
+        or type(static_data.object_data_sources[self.domain_data_type_enum]) != static_data.ObjectDataSource
+        or obj_data is None):
         return [("NULL", "None", "...")]
+    
+    # Handle special case for 'ATTRIBUTE' entry
+    if self.domain_data_type_enum == 'ATTRIBUTE':
+        try:
+            if self.enum_attributes is not None:
+                domains_supported = [obj.data.attributes[self.enum_attributes].domain]
+        except AttributeError:
+            return [("NULL", "None", "...")]
+    else:
+        # Get domains supported by the entry
+        domains_supported = static_data.object_data_sources[self.domain_data_type_enum].domains_supported
 
-    domains_supported = static_data.object_data_sources[self.domain_data_type_enum].domains_supported
+        # Get domains supported by object type
+        real_domains_supported = []
+        if type(obj_data) == get_object_type_class_by_str('MESH'):
+            for domain in domains_supported:
+                if domain in ['POINT', 'EDGE', 'FACE', 'CORNER']:
+                    real_domains_supported.append(domain)
+            domains_supported = real_domains_supported
+
+        elif type(obj_data) == get_object_type_class_by_str('CURVES'):
+            for domain in domains_supported:
+                if domain in ['POINT', 'CURVE']:
+                    real_domains_supported.append(domain)
+            domains_supported = real_domains_supported
+                
+        elif type(obj_data) == get_object_type_class_by_str('POINTCLOUD'):
+            if 'POINT' in domains_supported:
+                domains_supported = ['POINT']
+            else:
+                domains_supported = []
 
     if 'POINT' in domains_supported:
-        items.append(("POINT", get_friendly_domain_name("POINT"), "Use vertex domain for data type", get_domain_icon('POINT'), 0))
+        items.append(("POINT", get_friendly_domain_name("POINT", context=context), f"Use {get_friendly_domain_name('POINT', context=context)} domain for data type", get_domain_icon('POINT', context=context), 0))
     if 'EDGE' in domains_supported:
         items.append(("EDGE", get_friendly_domain_name("EDGE"), "Use edge domain for data type", get_domain_icon('EDGE'), 1))
     if 'FACE' in domains_supported:
