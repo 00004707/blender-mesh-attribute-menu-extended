@@ -13,6 +13,7 @@ func
 Function definitions 
 """
 
+import os
 import bpy 
 import bmesh
 import math
@@ -60,8 +61,8 @@ def get_attribute_types(attribute):
         at.append(static_data.EAttributeType.HIDDEN)
 
     # check for presets
-    if attribute.name in static_data.defined_attributes.keys():
-            at += static_data.defined_attributes[attribute.name].types
+    if attribute.name in static_data.built_in_attributes.keys():
+            at += static_data.built_in_attributes[attribute.name].types
     else:
         at.append(static_data.EAttributeType.NORMAL)
 
@@ -740,6 +741,7 @@ def get_mesh_selected_domain_indexes(obj, domain, spill=False):
             
             else:
                 return []
+
         
         else:
             raise etc.MeshDataReadException('get_mesh_selected_domain_indexes', f'The {obj.type} object type is not supported')
@@ -2002,6 +2004,7 @@ def get_friendly_domain_name(domain_name_raw, plural=False, short=False, context
     try:
         obj = static_data.attribute_domains[domain_name_raw]
     except KeyError:
+        etc.log(get_friendly_domain_name, f'Cannot find {domain_name_raw}', etc.ELogLevel.ERROR)
         return "..."
     if short:
         return obj.friendly_name_short
@@ -2033,6 +2036,19 @@ def get_domain_icon(domain_name_raw, context=None):
     except KeyError:
         return 'ERROR'
 
+def get_domain_supported_object_types(domain:str):
+    """Returns list of object types supported by this domain
+
+    Args:
+        domain (str): domain name
+    """
+
+    try:
+        return static_data.attribute_domains[domain].object_types
+    except KeyError:
+        etc.log(get_domain_supported_object_types, f'Cannot find {domain}', etc.ELogLevel.ERROR)
+        return []
+
 def get_friendly_data_type_name(data_type_raw):
     """Gets friendly name for attribute data types, to use it in GUI
     eg. INT8 -> 8-bit Integer. See data.attribute_data_types
@@ -2046,6 +2062,12 @@ def get_friendly_data_type_name(data_type_raw):
         return static_data.attribute_data_types[data_type_raw].friendly_name 
     else:
         return data_type_raw
+
+def get_data_type_icon(data_type_name_raw:str):
+    try:
+        return static_data.attribute_data_types[data_type_name_raw].icon
+    except KeyError:
+        return 'ERROR'
 
 def get_friendly_name_from_enum_function(context, enum_function, element:str):
     """Gets the Title from enum tuple
@@ -2825,12 +2847,27 @@ def get_built_in_attributes_enum(self, context):
     b_show_persistent = hasattr(self, 'b_show_persistent') and self.b_show_persistent
     b_show_attribute_names = hasattr(self, 'b_show_attribute_names') and self.b_show_attribute_names
 
-    for i, item in enumerate(static_data.defined_attributes):
-        if etc.get_blender_support(static_data.defined_attributes[item].min_blender_ver, 
-                                   static_data.defined_attributes[item].unsupported_from_blender_ver):
-            if not static_data.defined_attributes[item].cannot_create or b_show_persistent:
-                name = item if b_show_attribute_names else static_data.defined_attributes[item].friendly_name 
-                l.append((item, name, static_data.defined_attributes[item].description, static_data.defined_attributes[item].icon, i))
+    obj, obj_data = get_object_in_context(context)
+    obj_type = get_object_type_from_object_data(obj_data) 
+
+    for i, item in enumerate(static_data.built_in_attributes):
+        
+        # Determine supported object types for attribute, based on it's supported domains
+        supported_obj_types = []
+        for dom in static_data.built_in_attributes[item].domains:
+            supported_obj_types += get_domain_supported_object_types(dom)
+        
+        if (# Check if blender version is supported
+            etc.get_blender_support(static_data.built_in_attributes[item].min_blender_ver, 
+                                   static_data.built_in_attributes[item].unsupported_from_blender_ver)
+
+            # Check if object type is supported 
+            and obj_type in supported_obj_types
+
+            # Hide attributes that cannot be created or persistent
+            and (not static_data.built_in_attributes[item].cannot_create or b_show_persistent)):
+                name = item if b_show_attribute_names else static_data.built_in_attributes[item].friendly_name 
+                l.append((item, name, static_data.built_in_attributes[item].description, static_data.built_in_attributes[item].icon, i))
     return l
 
 def get_objects_with_same_datablock_enum(self, context):
@@ -2872,13 +2909,37 @@ def get_objects_in_scene_enum(self, context):
         
     # Active object always on top
     if bpy.context.active_object and bpy.context.active_object.data == obj_data:
-        x.append((obj.name, f"{obj.name} (Active Object)", f"Use {obj.name} and it's modifiers to grab data from", 'OBJECT_DATAMODE', 0))
+        x.append((obj.name, f"{obj.name} (Active Object)", f"Use {obj.name}", 'OBJECT_DATAMODE', 0))
     
     # Other objects lower
     for i, sceneobj in enumerate(bpy.context.scene.objects):
         if sceneobj == bpy.context.active_object:
             continue
         else:
+            x.append((sceneobj.name, sceneobj.name, f"Use {sceneobj.name}"))
+    return x
+
+def get_meshes_in_scene_enum(self, context):
+    """Returns enum of object names are in the same scene as active (meshes only)
+
+    Args:
+        context (ref): context
+
+    Returns:
+        list: enum list
+    """
+    x = []
+    obj, obj_data = get_object_in_context(context)
+        
+    # Active object always on top
+    if bpy.context.active_object and bpy.context.active_object.type == 'MESH' and bpy.context.active_object.data == obj_data:
+        x.append((obj.name, f"{obj.name} (Active Object)", f"Use {obj.name}", 'OBJECT_DATAMODE', 0))
+    
+    # Other objects lower
+    for i, sceneobj in enumerate(bpy.context.scene.objects):
+        if sceneobj == bpy.context.active_object:
+            continue
+        elif sceneobj.type == 'MESH':
             x.append((sceneobj.name, sceneobj.name, f"Use {sceneobj.name}"))
     return x
 
@@ -3019,6 +3080,26 @@ def get_object_type_class_by_str(name:str):
         return bpy.types.PointCloud
     else:
         return None # idc about other types
+
+def get_object_type_from_object_data(obj_data):
+    """Returns object type string from object data (if supported)
+
+    Args:
+        obj_data (ref): object data
+
+    Returns:
+        str: object type
+    """
+
+    t = type(obj_data)
+
+    if t == bpy.types.Mesh:
+        return 'MESH'
+    elif t == bpy.types.Curves:
+        return 'CURVES'
+    elif t == bpy.types.PointCloud:
+        return  'POINTCLOUD'
+    return None
 
 
 
@@ -3390,6 +3471,201 @@ def get_geometry_node_boolean_inputs(node):
             inputs.append(output)
     return inputs
 
+# Static data
+# ----------------------------------------------
+
+def get_built_in_attributes():
+    """Gets a list of built in attributes
+
+    Returns:
+        list: of static_data.BuiltInAttribute objects
+    """
+    l = []
+    for a in static_data.built_in_attributes:
+        l.append(static_data.built_in_attributes[a])
+
+    return l
+
+def get_built_in_attribute(key:str):
+    """Returns static_data.BuiltInAttribute object that defines built in attribute stuff
+
+    Args:
+        key (str): built_in_attributes key
+
+    Raises:
+        KeyError: Invalid key
+
+    Returns:
+        static_data.BuiltInAttribute: Built in attribute definition
+    """
+
+    return static_data.built_in_attributes[key]
+
+def get_built_in_attribute_compatible_domains_enum(self, context):
+    """Returns compatbble domains for built_in_attribute. 
+    [IMPORTANT] Self needs to have built_in_attribute_enum!
+
+    Returns:
+        list: enum tuples
+    """
+    if not hasattr(self, 'built_in_attribute_enum'):
+        return [('NULL', 'Invalid', '', 'ERROR', 0)]
+    
+    domains = []
+    for i, d in enumerate(static_data.built_in_attributes[self.built_in_attribute_enum].domains):
+        domains.append((d, get_friendly_domain_name(d), 
+                        f"Use {get_friendly_domain_name(d)} domain for this attribute", 
+                        get_domain_icon(d), i))
+    return domains
+
+def get_built_in_attribute_compatible_data_types_enum(self, context):
+    """Returns compatbble data_types for built_in_attribute. 
+    [IMPORTANT] Self needs to have built_in_attribute_enum!
+
+    Returns:
+        list: enum tuples
+    """
+    if not hasattr(self, 'built_in_attribute_enum'):
+        return [('NULL', 'Invalid', '', 'ERROR', 0)]
+    
+    data_types = []
+    for i, d in enumerate(static_data.built_in_attributes[self.built_in_attribute_enum].data_types):
+        data_types.append((d, 
+                           get_friendly_data_type_name(d), 
+                           f"Use {get_friendly_data_type_name(d)} data type for this attribute", 
+                           get_data_type_icon(d), 
+                           i))
+    return data_types
+
+# Properties
+
+def get_bpy_prop_for_attribute_data_type(data_type:str):
+    """Returns a bpy.props class for input data type
+
+    Args:
+        data_type (str): Data type
+
+    Returns:
+        class: bpy.props
+    """
+    try:
+        return static_data.attribute_data_types[data_type].bpy_props_class
+    except KeyError:
+        return None
+
+def get_all_attribute_data_types_property_group(b_ignore_safe_limits:bool = False, class_name:str = "AttributeDataTypePropertyGroup"):
+    """Returns a PropertyGroup class containing all compatible and available data types of an attribute
+
+    Args:
+        b_ignore_safe_limits (bool, optional): Removes min and max from attribute declarations. Defaults to False.
+
+    Returns:
+        class: PropertyGroup
+    """
+    dts = get_attribute_data_types()
+    
+    # Create jank
+    code_locals = {}
+    code = f"class {class_name}(bpy.types.PropertyGroup):\n"
+
+    for dt in dts:
+        prop = static_data.attribute_data_types[dt] 
+
+        # Check if supported by current blender version
+        if etc.get_blender_support(prop.min_blender_ver, prop.unsupported_from_blender_ver):
+            name = str("val_" + dt.lower())
+            
+            code += f'  {name}: bpy.props.{prop.bpy_props_class.__name__}('
+            code += f'name="{prop.friendly_name} Value"'
+            
+            # For string type
+            default = str(prop.default_value)
+            
+            if default == '':
+                code += f', default=""'
+            else:
+                code += f', default={prop.default_value}'
+
+            # Try adding vector size
+            try:
+                if default == '':
+                    raise TypeError # skip string
+                
+                vector_size = len(prop.default_value) 
+                code += f', size={str(vector_size)}'
+            except TypeError:
+                pass
+
+            # Try adding vector type
+            if prop.bpy_props_vector_subtype is not None:
+                code += f', subtype="{str(prop.bpy_props_vector_subtype)}"'
+
+            if not b_ignore_safe_limits:
+                # Try adding min
+                if prop.prop_value_min is not None:
+                    code += f', min={str(prop.prop_value_min)}'
+                # Try adding max
+                if prop.prop_value_max is not None:
+                    code += f', max={str(prop.prop_value_min)}'
+
+            code += ')\n'
+
+    # Register class
+    code += '\nbpy.utils.register_class(AttributeDataTypePropertyGroup)'
+    code += '\nc = AttributeDataTypePropertyGroup'
+
+    exec(code, None, code_locals)
+
+    c = code_locals['c']
+    etc.save_dynamically_created_class(c)
+
+    return code_locals['c']
+
+def get_all_attribute_datatype_property_group_value(prop_group, data_type:str):
+    """Gets value of property of datatype in class created by get_all_attribute_data_types_property_group
+
+    Args:
+        prop_group (str): property group
+        data_type (str): data type
+
+    Returns:
+        value: requested value
+    """
+    return getattr(prop_group, str("val_" + data_type.lower()))
+
+def set_all_attribute_datatype_property_group_value(prop_group, data_type:str, value):
+    """Sets the value of property of datatype in class created by get_all_attribute_data_types_property_group
+
+    Args:
+        prop_group (str): property group
+        data_type (str): data type
+        value: value to set
+
+    """
+    setattr(prop_group, str("val_" + data_type.lower()), value)
+
+def get_property_name_by_data_type_in_all_attribute_property_group(data_type):
+    return str("val_"+ data_type.lower())
+
+# Object data
+# ----------------------------------------------
+
+def get_uvmaps(object_data):
+    """Returns all UVMaps in object data
+
+    Args:
+        object_data (ref): object.data
+
+    Returns:
+        list: list of uvmaps
+    """
+    # case: object type invalid
+    if (get_object_type_from_object_data(object_data) != 'MESH' or
+        # or no data
+        not len(object_data.uv_layers)):
+        return []
+
+    return object_data.uv_layers
 
 # CSV Export related
 # ----------------------------------------------
