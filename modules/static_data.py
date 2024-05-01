@@ -52,14 +52,10 @@ ObjectDataSource = namedtuple("MeshDataSource", [
     "ui_category",                                              # Used to place the element in UI categories (EObjectDataSourceUICategory)
 ])
 
-
-
-
-
 # Contains object data sources
 object_data_sources = {
     # Formattable string values:
-    #   face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from
+    #   face_map shape_key domain vertex_group material material_slot shape_key_to shape_key_from attribute
     
     # ON ALL DOMAINS
     # --------------------------------------
@@ -76,6 +72,22 @@ object_data_sources = {
         batch_convert_support=False,
         valid_data_sources = ['MESH', 'CURVES', 'POINTCLOUD'],
         icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'EXEC_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.COMMON,
+    ),
+
+    "ATTRIBUTE": ObjectDataSource(
+        enum_gui_friendly_name="Attribute",
+        enum_gui_description="Duplicate attribute or create attribute from evaulated attribute",
+        attribute_auto_name="{attribute} Attribute",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT', 'EDGE', 'FACE', 'CORNER', 'CURVE'], # Special
+        data_type=None, # Special
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['MESH', 'CURVES', 'POINTCLOUD'],
+        icon= "OUTLINER_DATA_MESH",
         quick_ui_exec_type = 'EXEC_DEFAULT',
         ui_category = EObjectDataSourceUICategory.COMMON,
     ),
@@ -120,7 +132,7 @@ object_data_sources = {
         enum_gui_description="Create vertex attribute from domain position",
         attribute_auto_name="{domain} Position",
         attribute_domain_on_default='POINT',
-        domains_supported=['POINT', 'EDGE', 'FACE','SPLINE'],
+        domains_supported=['POINT', 'EDGE', 'FACE','CURVE'],
         data_type='FLOAT_VECTOR',
         min_blender_ver=None,
         unsupported_from_blender_ver=None,
@@ -741,7 +753,300 @@ object_data_sources = {
 
     
 
-    # # SPECIAL
+    # # CURVES POINT + POINT CLOUD ONLY
+    # --------------------------------------
+
+    "RADIUS": ObjectDataSource(
+        enum_gui_friendly_name="Radius",
+        enum_gui_description="Create radius attribute from curve ppoints",
+        attribute_auto_name="Curve Radius",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES', 'POINTCLOUD'],
+        icon= "FIXED_SIZE",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "BEZIER_HANDLE_LEFT": ObjectDataSource(
+        enum_gui_friendly_name="Bézier Curve Left Handle Position",
+        enum_gui_description="Create Bézier Curve Left Handle Position attribute",
+        attribute_auto_name="Bézier Curve Left Handle Position",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT_VECTOR',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "TRIA_LEFT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "BEZIER_HANDLE_RIGHT": ObjectDataSource(
+        enum_gui_friendly_name="Bézier Curve Right Handle Position",
+        enum_gui_description="Create Bézier Curve Right Handle Position attribute",
+        attribute_auto_name="Curve Radius",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT_VECTOR',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "TRIA_RIGHT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "BEZIER_HANDLE_TYPE_LEFT": ObjectDataSource(
+        enum_gui_friendly_name="Bézier Curve Left Handle Type",
+        enum_gui_description="Create Bézier Curve Right Handle Type attribute (8-Bit Integer)",
+        attribute_auto_name="Bézier Curve Left Handle Type",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "TRIA_LEFT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "BEZIER_HANDLE_TYPE_RIGHT": ObjectDataSource(
+        enum_gui_friendly_name="Bézier Curve Right Handle Type",
+        enum_gui_description="Create Bézier Curve Right Handle Type attribute (8-Bit Integer)",
+        attribute_auto_name="Bézier Curve Right Handle Type",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "TRIA_RIGHT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "NURBS_WEIGHT": ObjectDataSource(
+        enum_gui_friendly_name="NURBS Point Weight",
+        enum_gui_description="Create NURBS Point Weight attribute from curve ppoints",
+        attribute_auto_name="NURBS Point Weight",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_EASE_IN_OUT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "TILT": ObjectDataSource(
+        enum_gui_friendly_name="Tilt",
+        enum_gui_description="Create tilt attribute from curve points",
+        attribute_auto_name="Curve Tilt",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "ANIM_DATA",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    "VELOCITY": ObjectDataSource(
+        enum_gui_friendly_name="Velocity",
+        enum_gui_description="Create velocity attribute from points",
+        attribute_auto_name="Velocity",
+        attribute_domain_on_default='POINT',
+        domains_supported=['POINT'],
+        data_type='FLOAT_VECTOR',
+        min_blender_ver=None,
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['POINTCLOUD'],
+        icon= "DRIVER_DISTANCE",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.POINT_DATA,
+    ),
+
+    # # CURVES CURVE ONLY
+    # --------------------------------------
+
+    "POINTS_LENGTH": ObjectDataSource(
+        enum_gui_friendly_name="Points Count",
+        enum_gui_description="Create points count attribute from points count in a curve",
+        attribute_auto_name="Points Count",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "CURVE_SURFACE_UV": ObjectDataSource(
+        enum_gui_friendly_name="Surface UV Coordinate",
+        enum_gui_description="Create Surface UV Coordinate attribute from selected curves",
+        attribute_auto_name="Surface UV Coordinate",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='FLOAT_VECTOR',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "MOD_UVPROJECT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "FIRST_POINT_INDEX": ObjectDataSource(
+        enum_gui_friendly_name="First Point Index",
+        enum_gui_description="Create first point index attribute from first point index in a curve",
+        attribute_auto_name="First Point Index",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "LINENUMBERS_ON",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "SPLINE_RESOLUTION": ObjectDataSource(
+        enum_gui_friendly_name="Spline Resolution",
+        enum_gui_description="Create Spline Resolution attribute from point count in a curve",
+        attribute_auto_name="Spline Resolution",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_QUINT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "SPLINE_CYCLIC": ObjectDataSource(
+        enum_gui_friendly_name="Cyclic",
+        enum_gui_description="Create cyclic attribute from cyclic toggle of a curve",
+        attribute_auto_name="Cyclic",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='BOOLEAN',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "RECORD_OFF",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    # "SPLINE_SURFACE_NORMAL": ObjectDataSource(
+    #     enum_gui_friendly_name="Spline Surface Normal",
+    #     enum_gui_description="Create first point index attribute from first point index in a curve",
+    #     attribute_auto_name="First Point Index",
+    #     attribute_domain_on_default='CURVE',
+    #     domains_supported=['CURVE'],
+    #     data_type='INT',
+    #     min_blender_ver=(3,3),
+    #     unsupported_from_blender_ver=None,
+    #     batch_convert_support=False,
+    #     valid_data_sources = ['CURVES'],
+    #     icon= "LINENUMBERS_ON",
+    #     quick_ui_exec_type = 'INVOKE_DEFAULT',
+    #     ui_category = EObjectDataSourceUICategory.CURVES,
+    # ),
+
+    "SPLINE_NORMAL_MODE": ObjectDataSource(
+        enum_gui_friendly_name="Curve Normal Mode / Twist Method",
+        enum_gui_description="Create Curve Normal Mode attribute",
+        attribute_auto_name="Curve Normal Mode",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_EASE_IN_OUT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "SPLINE_KNOTS_MODE": ObjectDataSource(
+        enum_gui_friendly_name="NURBS Spline Knot Vector Adjustments",
+        enum_gui_description="Create NURBS Spline Knot Vector Adjustments attribute NURBS Spline Knot Vector Adjustments in a curve",
+        attribute_auto_name="NURBS Spline Knot Vector Adjustments",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_EASE_IN_OUT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "SPLINE_NURBS_ORDER": ObjectDataSource(
+        enum_gui_friendly_name="NURBS Order in U Direction",
+        enum_gui_description="Create NURBS Order in U Direction attribute from NURBS Order in U Direction in a curve",
+        attribute_auto_name="NURBS Order in U Direction",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_EASE_IN_OUT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
+    "SPLINE_TYPE": ObjectDataSource(
+        enum_gui_friendly_name="Spline Type",
+        enum_gui_description="Create Spline Type attribute from type of spline curve",
+        attribute_auto_name="Spline Type",
+        attribute_domain_on_default='CURVE',
+        domains_supported=['CURVE'],
+        data_type='INT8',
+        min_blender_ver=(3,3),
+        unsupported_from_blender_ver=None,
+        batch_convert_support=False,
+        valid_data_sources = ['CURVES'],
+        icon= "IPO_EASE_IN_OUT",
+        quick_ui_exec_type = 'INVOKE_DEFAULT',
+        ui_category = EObjectDataSourceUICategory.CURVES,
+    ),
+
     # # UV
     # --------------------------------------
 
