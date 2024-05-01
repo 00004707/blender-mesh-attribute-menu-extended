@@ -654,6 +654,48 @@ class MasksManagerPanel(bpy.types.Panel):
             r.alert=True
             col2.label(text="HiPoly mesh - slow operatons")
 
+# Value assignment UIs
+# -----------------------------------------
+
+def get_attribute_value_input_ui(layout,
+                    source,
+                    prop_name:str,
+                    data_type:str):
+    """Shows UI for inputting attribute values
+
+    Args:
+        layout (ref): Layout reference
+        source (ref): Source to get property from
+        prop_name (str): name of the property
+        data_type (str): Data type
+    """
+    
+    # Show true false for booleans
+    attr_val = getattr(source, prop_name)
+    if type(attr_val) == bool:
+        title_str = "True" if attr_val else "False"
+    else:
+        title_str = ""
+    
+    matrix_type = static_data.attribute_data_types[data_type].large_capacity_vector
+    matrix_w = static_data.attribute_data_types[data_type].large_capacity_vector_size_width
+    matrix_h = static_data.attribute_data_types[data_type].large_capacity_vector_size_height
+
+    # Matrix input UI
+    if matrix_type:
+        matrixcol = layout.column(align=True)
+        for i in range(0, matrix_w):
+            matrix_vals_col = matrixcol.column(align=True)
+            matrix_vals_row = matrix_vals_col.row(align=True)
+            for j in range(0, matrix_h):
+                matrix_vals_row.prop(source, prop_name, text=title_str, toggle=True, index=i*matrix_w+j)
+    
+    # Blender built-in method for other
+    else:
+        layout.prop(source, prop_name, text=title_str, toggle=True)
+
+
+
 # Multiselect List
 # -----------------------------------------
 
