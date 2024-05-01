@@ -34,6 +34,8 @@ class EObjectDataSourceUICategory(Enum):
     EFFECTS = 9
     MISC_DATA = 10
     SELECTION = 11
+    CURVES = 12
+    POINT_DATA = 13
 
 # Defines object data source
 ObjectDataSource = namedtuple("MeshDataSource", [
