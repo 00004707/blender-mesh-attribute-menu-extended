@@ -348,6 +348,7 @@ def attribute_context_menu_extension(self, context):
     self.layout.operator('mesh.attribute_copy', icon='COPYDOWN')
     self.layout.operator('mesh.attribute_resolve_name_collisions', icon='SYNTAX_OFF')
     self.layout.operator('mesh.attribute_conditioned_select', icon='CHECKBOX_HLT')
+    self.layout.operator('mesh.attribute_built_in_create', icon='ADD')
     self.layout.operator('mesh.attribute_randomize_value', icon='SHADERFX')
     self.layout.operator('mesh.attribute_remove_all', icon='REMOVE')
     if etc.get_blender_support(minver=(3,3,0)): 
