@@ -20,6 +20,7 @@ import bmesh
 from . import func
 from . import static_data
 from . import etc
+from . import gui
 from bpy_types import bpy_types
 from mathutils import Vector
 import numpy as np
@@ -4139,6 +4140,9 @@ class AttributesFromCSV(bpy.types.Operator):
         toggles_col.prop(self,'b_remove_data_type_str_from_name')
         toggles_col.prop(self, 'b_remove_domain_str_from_name')
 
+    
+
+
 # Register
 # ------------------------------------------
     
@@ -4155,12 +4159,9 @@ classes = [
     ReadValueFromSelectedDomains,
     RandomizeAttributeValue,
     AttributesFromCSV,
-    AttributesToCSV
+    AttributesToCSV,
+    AttributesToImage,
 ]
-
-# blender 3.3+
-if bpy.app.version >= (3,3,0):
-    classes += [AttributesToImage]
 
 def register():
     "Register classes. Exception handing in init"
