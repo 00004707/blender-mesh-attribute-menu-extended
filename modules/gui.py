@@ -119,22 +119,7 @@ def attribute_assign_panel(self, context):
                         
                         # Value Field
                         col2 = col.row(align=True)
-                        if dt == 'BOOLEAN':
-                            title_str = "True" if prop_group.val_boolean else "False"
-                        else:
-                            title_str = ""
-
-                        if static_data.attribute_data_types[dt].large_capacity_vector:
-                            matrixcol = col2.column(align=True)
-                            matrix_w = static_data.attribute_data_types[dt].large_capacity_vector_size_width
-                            matrix_h = static_data.attribute_data_types[dt].large_capacity_vector_size_height
-                            for i in range(0, matrix_w):
-                                matrix_vals_col = matrixcol.column(align=True)
-                                matrix_vals_row = matrix_vals_col.row(align=True)
-                                for j in range(0, matrix_h):
-                                    matrix_vals_row.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True, index=i*matrix_w+j)
-                        else:
-                            col2.prop(prop_group, f"val_{dt.lower()}", text=title_str, toggle=True)
+                        get_attribute_value_input_ui(col2, prop_group, f"val_{dt.lower()}", dt)
                         
                         # Randomize Button
                         if dt == 'STRING':

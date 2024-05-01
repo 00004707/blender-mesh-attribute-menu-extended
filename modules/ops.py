@@ -3802,10 +3802,6 @@ class AttributesToImage(bpy.types.Operator):
             except TypeError:
                 pass
         
-        
-        
-        
-
     def draw(self, context):
         obj = context.active_object
         active_attribute = func.get_active_attribute(obj)
@@ -4362,12 +4358,14 @@ class CreateBuiltInAttribute(bpy.types.Operator):
         c.separator()
         c.label(text='Custom value')
         c.prop(self, 'b_allow_custom_values', toggle=True)
+        val_row = c.row()
         if self.b_allow_custom_values:
-            gui.get_attribute_value_input_ui(c,
+            gui.get_attribute_value_input_ui(val_row,
                                             self.attribute_values_propgroup,
-                                            func.get_property_name_by_data_type_in_all_attribute_property_group(self.built_in_attribute_data_type))
+                                            func.get_property_name_by_data_type_in_all_attribute_property_group(self.built_in_attribute_data_type),
+                                            self.built_in_attribute_data_type)
         else:
-            c.label(text='')
+            val_row.label(text='')
             
         # Update again
         self.enum_watchdog_attribute(context)
