@@ -13,10 +13,11 @@ Debug
 """
 
 import bpy
-from . import ops
-from . import func
-from . import static_data
-from . import etc
+import func.util_func
+from ..modules import LEGACY_ops
+from ..modules import func
+from ..modules import LEGACY_static_data
+from ..modules import LEGACY_etc
 
 # Operators
 # ----------------------------
@@ -30,6 +31,21 @@ class MAMETestAll(bpy.types.Operator):
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
+    def test_set_attribute_value_to_selection():
+        #test speed as well
+        # Mesh
+        # Create sphere
+        
+        # create all attribute types
+
+        # on each attribute and domain type, randomize 3 times selection and try assignning
+        # switch edit mode one by one
+        # test again for spill if face corner
+
+        # Curves
+        # Create plane, add fur, remove all modifiers
+        pass
+
     def execute(self, context):
     
         def test_from_mesh_data(self, context):
@@ -38,7 +54,7 @@ class MAMETestAll(bpy.types.Operator):
                         'batch_convert_support']
             
             excs = []
-            for source_data in static_data.object_data_sources:
+            for source_data in LEGACY_static_data.object_data_sources:
                 
                 # ignore separators
                 if 'SEPARATOR' in source_data or 'NEWLINE' in source_data:
@@ -51,18 +67,18 @@ class MAMETestAll(bpy.types.Operator):
                 
                 # check attrs 
                 for attr in req_attrs:
-                    if not hasattr(static_data.object_data_sources[source_data], attr):
+                    if not hasattr(LEGACY_static_data.object_data_sources[source_data], attr):
                         print(F"[TESTS] NO REQ ATTR: {source_data} - {attr}")
                         raise Exception()
                     
                 # check support for current blender version
-                if not etc.get_blender_support(static_data.object_data_sources[source_data].min_blender_ver, static_data.object_data_sources[source_data].unsupported_from_blender_ver):
+                if not func.util_func.get_blender_support(LEGACY_static_data.object_data_sources[source_data].min_blender_ver, LEGACY_static_data.object_data_sources[source_data].unsupported_from_blender_ver):
                     print(f"[TESTS] Handled non-compatible version xception: {source_data}")
                     continue
                 
                 # test all cases
-                for domain in static_data.object_data_sources[source_data].domains_supported:
-                    for batch_mode_en in [True, False] if static_data.object_data_sources[source_data].batch_convert_support else [False]:
+                for domain in LEGACY_static_data.object_data_sources[source_data].domains_supported:
+                    for batch_mode_en in [True, False] if LEGACY_static_data.object_data_sources[source_data].batch_convert_support else [False]:
                         for overwrite in [True, False]:
                             for name_format_en in [True, False]:
                                 for auto_convert in [True, False]:
@@ -121,18 +137,18 @@ class MAMECreateAllAttributes(bpy.types.Operator):
     Operator to create and test all attributes.
     """
     bl_idname = "mame.create_all_attribs"
-    bl_label = "attrib test"
+    bl_label = "create all attribs"
     bl_description = ""
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     def execute(self, context):
         dts = []
-        for dt in static_data.attribute_data_types:
-             if etc.get_blender_support(static_data.attribute_data_types[dt].min_blender_ver, static_data.attribute_data_types[dt].unsupported_from_blender_ver):
+        for dt in LEGACY_static_data.attribute_data_types:
+             if func.util_func.get_blender_support(LEGACY_static_data.attribute_data_types[dt].min_blender_ver, LEGACY_static_data.attribute_data_types[dt].unsupported_from_blender_ver):
                   print(dt)
                   dts.append(dt)
              
-        for domain in static_data.attribute_domains:
+        for domain in LEGACY_static_data.attribute_domains:
             for data_type in dts:
                 try:
                     bpy.context.active_object.data.attributes.new(f"{domain} {data_type}", data_type, domain)
@@ -194,16 +210,16 @@ def force_register():
         try:
             bpy.utils.register_class(c)
         except Exception:
-            etc.log(force_register, f"Cannot register debug operator", etc.ELogLevel.ERROR)
+            LEGACY_etc.log(force_register, f"Cannot register debug operator", LEGACY_etc.ELogLevel.ERROR)
             continue
 
 
-def register():
-    if etc.get_preferences_attrib('register_debug_ops_on_start'):
+def register(init_module):
+    if LEGACY_etc.preferences.get_preferences_attrib('register_debug_ops_on_start'):
         force_register()
 
 
-def unregister():
+def unregister(init_module):
     for c in classes:
         try:
             bpy.utils.unregister_class(c)
