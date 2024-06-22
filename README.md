@@ -1,4 +1,17 @@
+⚠️ Addon will not be actively updated
+
+* I have used this addon less than 10 times during last 6 months, and still have not upgraded from blender 3.6 - i have little personal interest in updating it
+* I overestimated my ability to create addons - it tries to do everything, and many features are broken. The code is messy, refactor is pretty much required
+* The addon nature is technical, so interest in it is quite low (single download on gumroad as of 2024.06) - the other addon i made as a joke in an hour has shown more interest
+* Complexity of it pretty much guarantees that something will break next blender update, so it requires to be actively maintained
+
+I apologize for lack of support to current users of the addon, but simply it is just not something i want to allocate my time and effort to, and I prefer to state it directly instead of leaving it in uncertain/zombie state.
+The repository will not be archived, as i might work on it if it will be required again in projects of mine - please treat it as a publicly available "internal" addon rather than typical addon with active support. 
+
+Thank you very much for showing interest in this project! 
+
 # Mesh Attributes Menu eXtended
+
 ![Static Badge](https://img.shields.io/badge/blender-3.1.0%2B-orange)
 
  Addon that extends Mesh Attributes menu in blender (and more!).
